@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>F6AD — U14 Boys 2026</title>
+<style>
+:root {
+  --purple: #7b2fd4;
+  --purple-dark: #5a1fa0;
+  --purple-light: #ede5f8;
+  --black: #111;
+  --gray: #f5f5f5;
+  --border: #e0e0e0;
+  --text: #1a1a1a;
+  --muted: #666;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--gray);color:var(--text);line-height:1.5}
+a{color:var(--purple);text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+
+/* HEADER */
+header{background:var(--black);color:#fff;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:13px 20px;gap:12px}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo span{font-size:1.7rem}
+.logo h1{font-size:1.3rem;font-weight:900;text-transform:uppercase;letter-spacing:1px}
+nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+nav a{color:#ccc;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:4px 8px;border-radius:4px;transition:color .2s}
+nav a:hover{color:#fff}
+.btn-admin{background:var(--purple);color:#fff!important;border:none;padding:7px 14px;border-radius:6px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:5px}
+.btn-admin:hover{background:var(--purple-dark)!important}
+
+/* HERO */
+.hero{background:var(--black);color:#fff;text-align:center;padding:56px 20px 44px;border-bottom:3px solid var(--purple)}
+.hero-ball{font-size:3.5rem;margin-bottom:10px}
+.hero h2{font-size:2.4rem;font-weight:900;text-transform:uppercase;letter-spacing:3px}
+.hero p{color:#aaa;margin-top:8px;font-size:1rem}
+.hero-chips{display:flex;justify-content:center;gap:10px;margin-top:18px;flex-wrap:wrap}
+.chip{background:rgba(123,47,212,.3);border:1px solid var(--purple);color:#ddd;padding:4px 14px;border-radius:999px;font-size:.78rem;font-weight:600;letter-spacing:.5px}
+
+/* LAYOUT */
+.container{max-width:1100px;margin:0 auto;padding:40px 20px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.section-title{font-size:1.15rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:3px solid var(--purple)}
+
+/* VOTER SETUP */
+.voter-bar{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.voter-bar label{font-weight:700;font-size:.9rem;white-space:nowrap}
+.voter-bar input{border:2px solid var(--border);border-radius:6px;padding:7px 12px;font-size:.9rem;font-family:inherit;flex:1;min-width:160px;max-width:260px}
+.voter-bar input:focus{outline:none;border-color:var(--purple)}
+.voter-bar .btn-set{background:var(--purple);color:#fff;border:none;padding:8px 18px;border-radius:6px;font-weight:700;font-size:.85rem}
+.voter-bar .btn-set:hover{background:var(--purple-dark)}
+.voter-name-display{font-size:.9rem;color:var(--muted)}
+.voter-name-display strong{color:var(--purple)}
+.btn-change-voter{background:none;border:none;color:var(--purple);font-size:.82rem;font-weight:600;text-decoration:underline;padding:0;margin-left:6px}
+
+/* VOTE SUMMARY */
+.vote-summary-bar{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 22px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.vote-counts{display:flex;gap:14px;align-items:center;flex:1}
+.vc{font-size:.85rem;font-weight:700;display:flex;align-items:center;gap:4px}
+.vc.yes{color:#16a34a}
+.vc.maybe{color:#d97706}
+.vc.no{color:#dc2626}
+.btn-share{background:var(--purple);color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:.82rem;font-weight:700}
+.btn-share:hover{background:var(--purple-dark)}
+
+/* FILTERS */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.filter-label{font-size:.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.filter-btn{background:#fff;border:2px solid var(--border);color:var(--text);padding:5px 14px;border-radius:999px;font-size:.8rem;font-weight:600;transition:all .15s}
+.filter-btn:hover,.filter-btn.active{border-color:var(--purple);background:var(--purple-light);color:var(--purple)}
+select.filter-select{border:2px solid var(--border);border-radius:999px;padding:5px 14px;font-size:.8rem;font-family:inherit;font-weight:600;background:#fff;color:var(--text);cursor:pointer}
+select.filter-select:focus{outline:none;border-color:var(--purple)}
+
+/* TOURNAMENT GRID */
+.t-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.t-card{background:#fff;border-radius:10px;border:2px solid var(--border);padding:0;overflow:hidden;transition:box-shadow .2s,border-color .2s;display:flex;flex-direction:column}
+.t-card:hover{box-shadow:0 4px 18px rgba(0,0,0,.1)}
+.t-card.voted-yes{border-color:#16a34a}
+.t-card.voted-maybe{border-color:#d97706}
+.t-card.voted-no{border-color:#dc2626;opacity:.75}
+.t-card-head{padding:16px 18px 12px;border-bottom:1px solid #f0f0f0}
+.t-card-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.t-name{font-weight:800;font-size:.95rem;line-height:1.3;flex:1}
+.eligible-badge{flex-shrink:0;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:999px}
+.matrix-grade{background:#dcfce7;color:#15803d}
+.matrix-birth{background:#dbeafe;color:#1e40af}
+.matrix-verify{background:#fef9c3;color:#854d0e}
+.t-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.t-tag{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:3px}
+.t-tag.highlight{color:var(--purple);font-weight:700}
+.t-body{padding:12px 18px;flex:1}
+.t-fee-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.t-fee{font-weight:800;font-size:1rem;color:var(--black)}
+.t-fee.tbd{color:var(--muted);font-size:.85rem}
+.t-deadline{font-size:.75rem;color:var(--muted)}
+.t-notes-toggle{background:none;border:none;font-size:.78rem;color:var(--purple);font-weight:600;padding:0;text-decoration:underline;cursor:pointer;margin-bottom:8px;display:block}
+.t-notes{font-size:.8rem;color:#444;line-height:1.5;background:var(--purple-light);padding:10px 12px;border-radius:6px;margin-bottom:10px;display:none}
+.t-notes.open{display:block}
+.t-website{font-size:.78rem;color:var(--purple);word-break:break-all}
+.t-footer{padding:12px 18px 14px;border-top:1px solid #f0f0f0;background:#fafafa}
+.vote-buttons{display:flex;gap:8px}
+.vote-btn{flex:1;border:2px solid var(--border);background:#fff;border-radius:7px;padding:8px 4px;font-size:.82rem;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s;color:var(--muted)}
+.vote-btn .vb-emoji{font-size:1.2rem}
+.vote-btn.active-yes{border-color:#16a34a;background:#dcfce7;color:#15803d}
+.vote-btn.active-maybe{border-color:#d97706;background:#fef3c7;color:#92400e}
+.vote-btn.active-no{border-color:#dc2626;background:#fee2e2;color:#991b1b}
+.vote-btn:hover:not(.active-yes):not(.active-maybe):not(.active-no){border-color:#bbb;background:#f5f5f5;color:var(--text)}
+
+/* SCHEDULE */
+.schedule-section{margin-bottom:40px}
+.event-list{display:flex;flex-direction:column;gap:10px}
+.event-item{background:#fff;border:1px solid var(--border);border-radius:8px;display:flex;gap:14px;align-items:flex-start;padding:13px 16px;transition:box-shadow .15s}
+.event-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.event-date{background:var(--purple);color:#fff;border-radius:7px;text-align:center;min-width:50px;padding:6px 8px;flex-shrink:0}
+.event-date .month{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7)}
+.event-date .day{font-size:1.4rem;font-weight:900;line-height:1}
+.event-info{flex:1}
+.event-name{font-weight:700;font-size:.93rem}
+.event-detail{font-size:.8rem;color:var(--muted);margin-top:2px}
+.event-type{display:inline-block;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:999px;margin-top:4px}
+.type-game{background:var(--purple);color:#fff}
+.type-practice{background:#e8e8e8;color:#444}
+.type-event{background:#5a1fa0;color:#fff}
+.empty-state{background:#fff;border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;color:var(--muted);font-size:.9rem}
+.empty-state span{display:block;font-size:1.8rem;margin-bottom:8px}
+
+/* ANNOUNCEMENTS */
+.ann-section{margin-bottom:40px}
+.ann-list{display:flex;flex-direction:column;gap:12px}
+.ann-item{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:14px 18px}
+.ann-date{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
+.ann-title{font-weight:700;font-size:.93rem;margin-bottom:4px}
+.ann-body{font-size:.85rem;color:#555;line-height:1.55}
+
+/* ADMIN MODAL OVERLAY */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:720px;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden;margin:auto}
+.modal-header{background:var(--black);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between}
+.modal-header h2{font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+.modal-close{background:none;border:none;color:#fff;font-size:1.4rem;line-height:1;padding:0 4px;opacity:.7}
+.modal-close:hover{opacity:1}
+.modal-body{padding:24px}
+
+/* LOGIN */
+.login-form{display:flex;flex-direction:column;gap:14px;max-width:320px;margin:0 auto;padding:20px 0}
+.login-form label{font-weight:700;font-size:.9rem}
+.login-form input{border:2px solid var(--border);border-radius:7px;padding:10px 14px;font-size:1rem;font-family:inherit;width:100%}
+.login-form input:focus{outline:none;border-color:var(--purple)}
+.login-error{color:#dc2626;font-size:.82rem;margin-top:2px;display:none}
+
+/* ADMIN TABS */
+.admin-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:22px}
+.admin-tab{background:none;border:none;padding:10px 18px;font-size:.83rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s}
+.admin-tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+.admin-tab:hover:not(.active){color:var(--text)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* FORMS */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-weight:700;font-size:.83rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;color:var(--muted)}
+.form-group input,.form-group textarea,.form-group select{width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 12px;font-size:.9rem;font-family:inherit;background:#fff}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--purple)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn-primary{background:var(--purple);color:#fff;border:none;padding:9px 22px;border-radius:7px;font-weight:700;font-size:.88rem}
+.btn-primary:hover{background:var(--purple-dark)}
+.btn-danger{background:#dc2626;color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:700}
+.btn-danger:hover{background:#b91c1c}
+.btn-edit{background:#f0f0f0;color:var(--text);border:none;padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:700}
+.btn-edit:hover{background:#e0e0e0}
+
+/* ADMIN ITEMS LIST */
+.admin-item-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.admin-item{background:#fafafa;border:1px solid var(--border);border-radius:7px;padding:10px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.admin-item-info{flex:1;min-width:0}
+.admin-item-info strong{font-size:.88rem;display:block}
+.admin-item-info span{font-size:.78rem;color:var(--muted)}
+.admin-item-actions{display:flex;gap:6px;flex-shrink:0;align-items:flex-start}
+
+/* VOTE TALLY TABLE */
+.vote-tally-table{width:100%;border-collapse:collapse;font-size:.83rem;margin-bottom:20px}
+.vote-tally-table th{background:var(--black);color:#fff;padding:8px 12px;text-align:left;font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px}
+.vote-tally-table td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.vote-tally-table tr:hover td{background:var(--purple-light)}
+.tally-yes{color:#15803d;font-weight:700}
+.tally-maybe{color:#92400e;font-weight:700}
+.tally-no{color:#b91c1c;font-weight:700}
+.import-votes-area{background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:20px}
+.import-votes-area label{font-weight:700;font-size:.85rem;display:block;margin-bottom:8px}
+.import-votes-area textarea{width:100%;border:2px solid var(--border);border-radius:6px;padding:8px;font-size:.8rem;font-family:monospace;min-height:90px}
+.import-votes-area textarea:focus{outline:none;border-color:var(--purple)}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--black);color:#fff;padding:11px 24px;border-radius:8px;font-size:.88rem;font-weight:600;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* FOOTER */
+footer{background:var(--black);color:#aaa;text-align:center;padding:22px 20px;font-size:.8rem}
+footer strong{color:#fff}
+
+@media(max-width:600px){
+  .t-grid{grid-template-columns:1fr}
+  .hero h2{font-size:1.7rem}
+  .form-row{grid-template-columns:1fr}
+  nav a:not(.btn-admin){display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo"><span>⚽</span><h1>F6AD</h1></div>
+    <nav>
+      <a href="#tournaments">Tournaments</a>
+      <a href="#schedule">Schedule</a>
+      <a href="#announcements">News</a>
+      <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-ball">⚽</div>
+  <h2>F6AD</h2>
+  <p>U14 Boys · Summer 2026 Season</p>
+  <div class="hero-chips">
+    <span class="chip">⚽ U14 Boys</span>
+    <span class="chip">📅 Summer 2026</span>
+    <span class="chip">🏆 29 Tournaments</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+
+  <!-- TOURNAMENT VOTING -->
+  <section id="tournaments" style="margin-bottom:48px">
+    <div class="section-header">
+      <div class="section-title">🗳️ Tournament Vote</div>
+    </div>
+
+    <!-- Voter Setup -->
+    <div class="voter-bar" id="voter-setup">
+      <label>Your name:</label>
+      <input type="text" id="voter-name-input" placeholder="Enter your name to vote" maxlength="40"/>
+      <button class="btn-set" onclick="setVoter()">Start Voting</button>
+    </div>
+    <div class="voter-bar" id="voter-active" style="display:none">
+      <span class="voter-name-display">Voting as: <strong id="voter-display-name"></strong></span>
+      <button class="btn-change-voter" onclick="changeVoter()">change</button>
+      <div style="flex:1"></div>
+      <button class="btn-share" onclick="shareVotes()">📋 Copy My Votes Summary</button>
+    </div>
+
+    <!-- Vote summary bar -->
+    <div class="vote-summary-bar" id="vote-summary-bar" style="display:none">
+      <div class="vote-counts">
+        <span class="vc yes">✅ <span id="count-yes">0</span> Yes</span>
+        <span class="vc maybe">🤔 <span id="count-maybe">0</span> Maybe</span>
+        <span class="vc no">❌ <span id="count-no">0</span> No</span>
+        <span style="font-size:.8rem;color:var(--muted)" id="count-remaining"></span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <span class="filter-label">Filter:</span>
+      <button class="filter-btn active" onclick="filterTournaments('all',this)">All</button>
+      <button class="filter-btn" onclick="filterTournaments('nearby',this)">≤50 mi</button>
+      <button class="filter-btn" onclick="filterTournaments('grade',this)">🟢 Grade Year</button>
+      <button class="filter-btn" onclick="filterTournaments('birth',this)">🔵 Birth Year</button>
+      <button class="filter-btn" onclick="filterTournaments('voted-yes',this)">My ✅ Yes</button>
+      <button class="filter-btn" onclick="filterTournaments('voted-maybe',this)">My 🤔 Maybe</button>
+
+      <span class="filter-label" style="margin-left:8px">Sort:</span>
+      <select class="filter-select" onchange="sortTournaments(this.value)">
+        <option value="date">By Date</option>
+        <option value="distance">By Distance</option>
+        <option value="fee">By Fee</option>
+      </select>
+    </div>
+
+    <div class="t-grid" id="tournament-grid"></div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section id="schedule" class="schedule-section">
+    <div class="section-header">
+      <div class="section-title">📅 Team Schedule</div>
+    </div>
+    <div class="event-list" id="schedule-list"></div>
+    <div class="empty-state" id="schedule-empty">
+      <span>📅</span>
+      <strong>No events yet.</strong><br>Use the Admin panel to add games, practices, and events.
+    </div>
+  </section>
+
+  <!-- ANNOUNCEMENTS -->
+  <section id="announcements" class="ann-section">
+    <div class="section-header">
+      <div class="section-title">📢 Announcements</div>
+    </div>
+    <div class="ann-list" id="announcements-list"></div>
+    <div class="empty-state" id="ann-empty">
+      <span>📢</span>
+      <strong>No announcements yet.</strong><br>Use the Admin panel to post updates for the team.
+    </div>
+  </section>
+
+</div><!-- /container -->
+
+<footer>
+  <strong>F6AD</strong> &nbsp;·&nbsp; U14 Boys Summer 2026 &nbsp;·&nbsp; ⚽ Let's go!
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ======= ADMIN MODAL ======= -->
+<div class="modal-overlay" id="admin-overlay" onclick="overlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🔐 Admin Panel</h2>
+      <button class="modal-close" onclick="closeAdmin()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- LOGIN -->
+      <div id="admin-login">
+        <div class="login-form">
+          <label>Admin Password</label>
+          <input type="password" id="admin-pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()"/>
+          <div class="login-error" id="login-error">Incorrect password. Try again.</div>
+          <button class="btn-primary" onclick="tryLogin()">Unlock Admin</button>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:4px">Default password: <code>FUNTIME</code></p>
+        </div>
+      </div>
+
+      <!-- ADMIN PANEL -->
+      <div id="admin-panel" style="display:none">
+        <div class="admin-tabs">
+          <button class="admin-tab active" onclick="switchTab('votes',this)">🗳️ Votes</button>
+          <button class="admin-tab" onclick="switchTab('links',this)">🔗 Voter Links</button>
+          <button class="admin-tab" onclick="switchTab('schedule',this)">📅 Schedule</button>
+          <button class="admin-tab" onclick="switchTab('announcements',this)">📢 News</button>
+          <button class="admin-tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
+        </div>
+
+        <!-- VOTES TAB -->
+        <div id="tab-votes" class="tab-panel active">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Votes update here in real time as team members submit them. Hover the 👤 icon to see who voted which way.</p>
+          <table class="vote-tally-table" id="vote-tally-table">
+            <thead><tr><th>#</th><th>Tournament</th><th>Dates</th><th class="tally-yes">✅ Yes</th><th class="tally-maybe">🤔 Maybe</th><th class="tally-no">❌ No</th></tr></thead>
+            <tbody id="vote-tally-body"></tbody>
+          </table>
+          <button class="btn-primary" onclick="exportVoteTally()">📊 Copy Tally to Clipboard</button>
+        </div>
+
+        <!-- VOTER LINKS TAB -->
+        <div id="tab-links" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px">Generate a personalized link for each family. When they open it, their name is pre-filled and they can start voting immediately.</p>
+          <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:20px;flex-wrap:wrap">
+            <div class="form-group" style="margin:0;flex:1;min-width:180px">
+              <label>Name</label>
+              <input type="text" id="link-name-input" placeholder="e.g. Johnson Family" onkeydown="if(event.key==='Enter')generateLink()"/>
+            </div>
+            <button class="btn-primary" style="margin-bottom:1px" onclick="generateLink()">Generate Link</button>
+          </div>
+          <div id="generated-links-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        </div>
+
+        <!-- SCHEDULE TAB -->
+        <div id="tab-schedule" class="tab-panel">
+          <div class="admin-item-list" id="admin-schedule-list"></div>
+          <div style="background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:16px" id="schedule-form-wrap">
+            <p style="font-weight:800;font-size:.88rem;margin-bottom:12px" id="schedule-form-title">➕ Add Event</p>
+            <div class="form-row">
+              <div class="form-group"><label>Event Name</label><input type="text" id="ev-name" placeholder="vs. Red Lightning"/></div>
+              <div class="form-group"><label>Type</label>
+                <select id="ev-type"><option value="game">Game</option><option value="practice">Practice</option><option value="event">Event</option></select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Date</label><input type="date" id="ev-date"/></div>
+              <div class="form-group"><label>Time</label><input type="time" id="ev-time"/></div>
+            </div>
+            <div class="form-group"><label>Location</label><input type="text" id="ev-location" placeholder="Riverside Park Field 2"/></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button class="btn-primary" onclick="saveEvent()">Save Event</button>
+              <button class="btn-edit" onclick="cancelEventEdit()" id="cancel-ev-btn" style="display:none">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANNOUNCEMENTS TAB -->
+        <div id="tab-announcements" class="tab-panel">
+          <div class="admin-item-list" id="admin-ann-list"></div>
+          <div style="background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:16px">
+            <p style="font-weight:800;font-size:.88rem;margin-bottom:12px" id="ann-form-title">➕ Add Announcement</p>
+            <div class="form-group"><label>Title</label><input type="text" id="ann-title" placeholder="Uniform pickup this Saturday"/></div>
+            <div class="form-group"><label>Message</label><textarea id="ann-body" placeholder="Write your announcement here…"></textarea></div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button class="btn-primary" onclick="saveAnnouncement()">Post Announcement</button>
+              <button class="btn-edit" onclick="cancelAnnEdit()" id="cancel-ann-btn" style="display:none">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div id="tab-settings" class="tab-panel">
+          <div style="max-width:340px">
+            <p style="font-weight:800;font-size:.9rem;margin-bottom:14px">Change Admin Password</p>
+            <div class="form-group"><label>Current Password</label><input type="password" id="old-pw" /></div>
+            <div class="form-group"><label>New Password</label><input type="password" id="new-pw" /></div>
+            <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirm-pw" /></div>
+            <button class="btn-primary" onclick="changePassword()">Update Password</button>
+            <p style="font-size:.78rem;color:var(--muted);margin-top:10px" id="pw-msg"></p>
+          </div>
+          <hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">
+          <p style="font-weight:800;font-size:.9rem;margin-bottom:10px">Admin Actions</p>
+          <button class="btn-danger" onclick="clearAllVotes()">🗑️ Clear All Imported Votes</button>
+        </div>
+
+      </div><!-- /admin-panel -->
+    </div><!-- /modal-body -->
+  </div><!-- /modal -->
+</div><!-- /modal-overlay -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===================== FIREBASE =====================
+const firebaseConfig = {
+  apiKey: "AIzaSyBrvvXKGZwKX1VOU-C6WZvB98r1KO9I5HI",
+  authDomain: "f6ad-2913b.firebaseapp.com",
+  projectId: "f6ad-2913b",
+  storageBucket: "f6ad-2913b.firebasestorage.app",
+  messagingSenderId: "1000483275960",
+  appId: "1:1000483275960:web:f9f9974965854a5cbfa04d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Live data from Firestore
+let allVotes = {};
+let scheduleItems = [];
+let announcementItems = [];
+
+// ===================== DATA =====================
+const TOURNAMENTS = [
+  {id:1,name:"CRUSA Invitational (17th Annual)",host:"FC Bucks (formerly CRUSA)",location:"Richboro, Bucks County, PA",distance:30,dates:"Aug 1–2, 2026 (boys Sat Aug 1)",days:"1 day for boys",format:"11v11; 3-referee system",games:"3 guaranteed",fee:"$800 ($500 early bird by Jun 1)",deadline:"Jul 10, 2026",website:"fcbucks.com/august-invitational-tournament/",lodging:"Not stay-to-play",notes:"STRATEGICALLY CRITICAL: explicitly uses new Fall 2026 Aug–Jul age matrix. Premier preseason testing ground for new age-bracket chemistry. 100+ teams from NY/NJ/PA/DE/MD. Excellent value with early bird.",ageMatrix:"GRADE YEAR",matrixDetails:"EXPLICITLY uses Fall 2026 Aug–Jul grade year matrix — confirmed by FC Bucks tournament page"},
+  {id:2,name:"Kearny Skyline Cup",host:"International Sporting Events (iSE)",location:"Kearny / Harrison, NJ",distance:100,dates:"Jun 13–14, 2026",days:"2 days",format:"11v11; 60-min games",games:"3 guaranteed",fee:"$970",deadline:"May 29, 2026",website:"isportingevents.com/kearnyskylinecup",lodging:"iSE Pledge Policy – no payment until confirmed",notes:"Multi-team discounts. Rich soccer history in Kearny/Harrison area.",ageMatrix:"VERIFY",matrixDetails:"Not stated in sources — mid-June timing suggests birth year matrix; confirm with TD"},
+  {id:3,name:"EDP Summer Sizzler",host:"EDP Soccer / 3STEP Sports",location:"Hammonton, NJ",distance:70,dates:"Jul 25–26, 2026",days:"2 days",format:"11v11; 3×60-min games + playoffs",games:"3 guaranteed",fee:"$1,295 early bird (by 5/24) / $1,395 regular",deadline:"Jun 26, 2026",website:"edpsoccer.com/summer-sizzler",lodging:"Stay-to-Play via Team Travel Source",notes:"Capstone EDP Summer Series event. Played at peak summer heat — turf can be 30–40°F above ambient. Use 5-player guest pass for rotation. Tests cardio limits.",ageMatrix:"VERIFY",matrixDetails:"Late July — EDP has not publicly stated which matrix; capstone of summer series may still use old. Confirm with EDP directly."},
+  {id:4,name:"Greystone Cup",host:"International Sporting Events (iSE)",location:"Budd Lake / Morris Plains, NJ",distance:90,dates:"Jul 25–26, 2026",days:"2 days",format:"11v11; Elite + Premier flights",games:"3 guaranteed",fee:"$970",deadline:"Jul 10, 2026",website:"isportingevents.com/greystonecup",lodging:"iSE Pledge Policy – no payment until confirmed",notes:"Multiple competitive flight levels (Elite/Premier). Multi-team discounts.",ageMatrix:"VERIFY",matrixDetails:"Late July — matrix not stated in sources; confirm with iSE directly"},
+  {id:5,name:"Philly Summer Shootout",host:"Philadelphia Union + Sporting AC + S3",location:"Chester, PA (multi-site)",distance:30,dates:"Jul 25–26, 2026",days:"2 days",format:"⚠️ Format unspecified — VERIFY 11v11 before registering",games:"TBD",fee:"$1,195 regular / $1,125 early (pre-May 1)",deadline:"Jun 24, 2026",website:"sidelinesoccersolutions.com/events-connecter/philly-summer-shootout",lodging:"Hotels 'More Info Coming Soon'",notes:"VERIFY 11v11 FORMAT — sources conflict (organizer page does not yet specify). Refunds only via ViCoverage event insurance.",ageMatrix:"VERIFY",matrixDetails:"Late July — matrix not stated in sources (also format unconfirmed)"},
+  {id:6,name:"Penn Fusion Summer Classic (38th Annual)",host:"Penn Fusion Soccer Academy / S3",location:"West Chester, PA",distance:25,dates:"Aug 8–9, 2026 (boys Sat Aug 8)",days:"1 day for boys",format:"11v11",games:"3 guaranteed",fee:"TBD (~$700–$850 historically)",deadline:"Via GotSport",website:"pennfusion.org/tournaments",lodging:"Commuter event",notes:"38th annual — one of the longest-running EPYSA events. Ideal pre-fall tune-up. New 1-day boys format for 2026.",ageMatrix:"VERIFY",matrixDetails:"Aug 8 timing strongly suggests new Fall 2026 grade year matrix as preseason event — confirm with Penn Fusion"},
+  {id:7,name:"Philadelphia Union Summer Cooldown",host:"Philadelphia Union Youth / S3",location:"Chester, PA",distance:20,dates:"Aug 8–9, 2026",days:"2 days",format:"11v11 likely",games:"Standard",fee:"TBD",deadline:"TBD",website:"philadelphiaunion.com/youth/tournaments/home",lodging:"Commuter event",notes:"⚠️ WARNING: ChatGPT noted GotSoccer lists this as U8–U12 only. Exclude unless confirmed for U14.",ageMatrix:"VERIFY",matrixDetails:"Aug 8–9 timing suggests grade year matrix BUT U14 availability is disputed — confirm before registering"},
+  {id:8,name:"The Cup '26 (Philadelphia Union)",host:"Philadelphia Union Youth Programs",location:"Chester, PA",distance:20,dates:"Jun 6–7, 2026",days:"2 days",format:"11v11; 2×30-min halves; turf",games:"3 guaranteed",fee:"$1,300 early / $1,500 standard",deadline:"Early: Apr 1; Standard: May 1, 2026",website:"philadelphiaunion.com/youth/tournaments/the_cup",lodging:"Halpern Travel official housing partner",notes:"MLS-affiliated facility adjacent to Subaru Park. Limited to ~8 teams per division. Elite operational standards, scouting presence. 2nd annual.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (closing 25/26 season)"},
+  {id:9,name:"Lehigh Valley YSL Tournament (46th Annual)",host:"Lehigh Valley YSL / S3",location:"Allentown area, PA",distance:55,dates:"Jun 6–7, 2026",days:"2 days (boys Sat)",format:"11v11; 1-day per gender",games:"3 guaranteed",fee:"TBD",deadline:"TBD",website:"sidelinesoccersolutions.com",lodging:"Not specified",notes:"46th annual — one of the longest-running in the region. Awards for 1st and 2nd place.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (early June, 25/26 season)"},
+  {id:10,name:"Lancaster Summer Classic (16th Annual)",host:"Lancaster Elite + Manheim Township SC",location:"Lancaster, PA",distance:65,dates:"Jun 6–7, 2026",days:"2 days",format:"11v11; max roster 22, dress 18",games:"3+ guaranteed",fee:"$850 (+$100 late after May 13)",deadline:"May 13, 2026",website:"lancastersummerclassic.com",lodging:"Halpern Travel (required 100+ mi)",notes:"GotSport ranking points applied. College coaches for older brackets. ⚠️ Birth year listed inconsistently as 2011 vs 2012 — verify at registration.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (closing 25/26 season; lists U14 as 2011 or 2012 only)"},
+  {id:11,name:"Leon Grenko Soccer Tournament",host:"Berks County / Reading club",location:"Reading, PA",distance:45,dates:"Jun 6–7, 2026",days:"2 days",format:"11v11",games:"3 games",fee:"TBD (lower than elite showcases)",deadline:"TBD",website:"Search GotSport: Leon Grenko",lodging:"Commuter event",notes:"Long-standing community-driven event in Berks County. Lower-pressure, lower-cost alternative to elite showcases.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (early June, 25/26 season)"},
+  {id:12,name:"PA Classics Mid-Atlantic Cup (19th Annual)",host:"Pennsylvania Classics AC",location:"Manheim, PA",distance:65,dates:"Jun 13–14, 2026",days:"2 days",format:"11v11; max roster 22, dress 18",games:"3 guaranteed",fee:"$875",deadline:"Mid-May 2026",website:"paclassics.org/mid-atlantic-cup",lodging:"Halpern Travel partner",notes:"Cornerstone EPYSA event. e-waivers required. Discounted Hersheypark tickets for participants. Pristine grass and turf surfaces.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year — explicitly lists U14 = 2012"},
+  {id:13,name:"EDP Summer Classic",host:"EDP Soccer / 3STEP Sports",location:"Hammonton, NJ",distance:80,dates:"Jun 20–21, 2026",days:"2 days",format:"11v11; 3×60-min games + playoffs",games:"3 guaranteed",fee:"$1,295 early (by 4/19) / $1,395 regular",deadline:"May 8, 2026",website:"edpsoccer.com/summer-classic",lodging:"Stay-to-Play via Team Travel Source",notes:"Flagship EDP summer event. Draws MLS Next, ECNL, NL, EDP teams. ⚠️ Strict check-in — 2-0 forfeit for failure. 12-month ban for no-show. Allows up to 5 guest players.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (EDP June events use 25/26 season groupings)"},
+  {id:14,name:"Hershey Summer Classic",host:"Hershey Soccer Club",location:"Hershey, PA",distance:95,dates:"Jun 20–21, 2026",days:"2 days",format:"11v11",games:"3 guaranteed",fee:"$1,075",deadline:"May 17, 2026",website:"hersheysoccer.org/summerclassic",lodging:"Stay-to-Play for 90+ mi via Halpern",notes:"Tourism-integrated event. Discounted Hersheypark tickets. ~200 teams expected. Marquee mid-summer event.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year — explicitly Aug 1 cutoff but lists U14 = Aug 2012–Jul 2013, which excludes most 2013s"},
+  {id:15,name:"Liberty Summer Cup",host:"Sideline Soccer Solutions (S3)",location:"Downingtown / West Chester, PA",distance:25,dates:"Jun 27–28, 2026",days:"2 days",format:"11v11",games:"3 guaranteed",fee:"$800",deadline:"Via GotSport",website:"libertysummercup.com",lodging:"Commuter event",notes:"Very close. Multiple Chester County venues. Heavily used by 'Summer Select' programs. Excellent value at $800.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (late June, 25/26 season; Summer Select event)"},
+  {id:16,name:"NSA Summer Kickoff (51st Annual)",host:"Neptune Soccer Association",location:"Neptune, NJ",distance:85,dates:"Jun 27–28, 2026",days:"2 days",format:"11v11; up to 3 flight levels",games:"Multi-game",fee:"$870",deadline:"Via GotSport",website:"neptunesoccer.org/tournament/",lodging:"Family-friendly Jersey Shore (Asbury Park area)",notes:"51st year — LONGEST-RUNNING tournament in New Jersey. 100+ teams. Multiple flight levels. Outstanding value. Turf and grass.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (late June, 25/26 season)"},
+  {id:17,name:"Pocono Mountain Cup",host:"Pocono Mountain Youth Soccer Club",location:"Swiftwater, PA",distance:100,dates:"Jun 27–28, 2026",days:"2 days",format:"11v11; 3-referee system",games:"3 guaranteed",fee:"$875",deadline:"Jun 12, 2026",website:"poconomountaincup.com",lodging:"Resort/vacation setting — great for family trip combo",notes:"2nd annual. Cooler altitude reduces heat fatigue. 3-referee commitment. Game balls provided. On-site food trucks. Premium grass.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (uses birth years 2018–2010 = old matrix)"},
+  {id:18,name:"CenPenn Summer Cup",host:"UnitedGoals USA",location:"Manheim, PA",distance:80,dates:"Jun 27–28, 2026 (boys Sun Jun 28)",days:"1 day for boys",format:"11v11; 2×24-min halves",games:"3+ guaranteed",fee:"$725 (code '50CENPENN' valid thru Apr 30)",deadline:"Not stated — contact organizer",website:"unitedgoalsusa.com/cenpenn-youth-soccer-tournament-manheim/",lodging:"Partnered with Traveling Teams",notes:"8+ full-sized grass fields. Strong value at $725. ⚠️ Refund policy page has year typo ('May 1, 2025') — verify with organizer.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (lists 11v11 as 2007–2013s = old matrix)"},
+  {id:19,name:"Steel United Summer Trophy (12th Annual)",host:"Steel Sports / Steel United",location:"Montgomery Township, NJ",distance:35,dates:"Jul 11–12, 2026",days:"2 days",format:"11v11",games:"3 guaranteed",fee:"$1,045",deadline:"Jun 12, 2026 (paperwork Jun 26)",website:"steelsports.com/events/summer-trophy/",lodging:"Stay-to-Play via EventConnect housing",notes:"12th annual. Certified athletic trainer on site. Multi-team discounts. Less commercially intense than EDP — good for team-building/chemistry.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (mid-July, 25/26 season)"},
+  {id:20,name:"Lititz Summer Showcase",host:"Lititz Summer Showcase (Mike Henning, dir.)",location:"Lititz / Manheim, PA",distance:75,dates:"Jul 11–12, 2026",days:"2 days",format:"11v11",games:"Multi-game",fee:"$850",deadline:"App: Jun 14; Pay by check: Jun 7",website:"lititzsummershowcase.org",lodging:"Halpern Travel — REQUIRED for all teams",notes:"Date moved earlier in 2026 to avoid FIFA World Cup Final weekend. e-waivers via GotSport. Strong value vs EDP.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (mid-July, 25/26 season)"},
+  {id:21,name:"Central Jersey Invitational",host:"EDP Soccer / 3STEP Sports",location:"Somerset, NJ",distance:75,dates:"Jul 11–12, 2026",days:"2 days",format:"11v11; 3×60-min games + playoffs",games:"3 guaranteed",fee:"$1,225 early / $1,325 regular",deadline:"Jun 12, 2026",website:"edpsoccer.com/central-jersey-invitational",lodging:"Strict stay-to-play (Conshohocken on edge of commuter exemption)",notes:"Played at premier PDA complex. Long-running EDP event. EDP tie-breaker caps goal differential at 5. Allows up to 5 guest players.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (EDP July events use 25/26 season groupings)"},
+  {id:22,name:"Mid-Atlantic Cup at Maryland SoccerPlex",host:"Maryland SoccerPlex / SAM Soccer",location:"Boyds, MD",distance:140,dates:"Jun 13–14, 2026",days:"2–3 days",format:"11v11",games:"3 guaranteed + championship",fee:"TBD + $20 GotSport fee",deadline:"Standard May 1; Late May 10, 2026",website:"midatlanticcupmd.com",lodging:"Stay-to-play likely at this distance",notes:"⚠️ Different event from PA Classics' 'Mid-Atlantic Cup'. Nationally-rated Maryland SoccerPlex. New 2026: champions/finalists receive Washington Spirit match tickets.",ageMatrix:"VERIFY",matrixDetails:"Not stated in sources — mid-June timing suggests birth year matrix; confirm with TD"},
+  {id:23,name:"FSCI Summer Classic & Showcase (13th Annual)",host:"Fredericksburg Soccer Club, Inc.",location:"Fredericksburg, VA",distance:190,dates:"Jun 13–14, 2026",days:"2 days",format:"11v11; championship format",games:"3 guaranteed",fee:"$875 + $20 GotSport fee",deadline:"May 10, 2026",website:"fredericksburgsoccer.org/tournaments/june/",lodging:"Stay-to-play likely",notes:"Bermuda grass at VYSA training center. College coaches attend older showcase divisions.",ageMatrix:"VERIFY",matrixDetails:"Not stated in sources — mid-June timing suggests birth year matrix; confirm with TD"},
+  {id:24,name:"Mason Dixon Cup",host:"Hagerstown Soccer Club / Elite Tournaments",location:"Hagerstown, MD",distance:160,dates:"Jun 20–21, 2026",days:"2 days",format:"11v11; championship format",games:"Multiple + finals",fee:"TBD + $200 performance bond (U14–U19)",deadline:"Schedules posted Jun 3",website:"elitetournaments.com/tournaments/mason-dixon-cup/",lodging:"Stay-to-play likely",notes:"Running since 1991. All games at one complex. Father's Day weekend. Bridges PA/MD/WV communities.",ageMatrix:"VERIFY",matrixDetails:"Not stated in sources — Father's Day mid-June timing suggests birth year matrix; confirm with TD"},
+  {id:25,name:"Liberty Cup Long Island",host:"TSP / LIJSL ecosystem",location:"Brentwood, NY (Suffolk County)",distance:130,dates:"Jul 25–26, 2026",days:"2 days",format:"11v11; max 3 guest players",games:"Multi-game",fee:"$795 ($50 early bird discount)",deadline:"TBD",website:"Search GotSport: TSP Liberty Cup 2026",lodging:"NYC metro traffic — plan accordingly",notes:"Pulls from insular LIJSL ecosystem. Strict guest player rules: max 3 outside-club players (club-pass unlimited). Excellent value at $795.",ageMatrix:"VERIFY",matrixDetails:"Late July — matrix not stated in sources; confirm with TSP/LIJSL"},
+  {id:26,name:"Kick-Off Classic",host:"Globall Competitions / LI Rough Riders",location:"Uniondale, NY",distance:110,dates:"Aug 9, 2026 (Saturday)",days:"1 day",format:"11v11",games:"Condensed schedule",fee:"TBD",deadline:"TBD",website:"kickoffli.com",lodging:"Single-day event",notes:"Late-summer single-day pre-season primer. Like CRUSA, acts as transition into fall season. Maintained fields with significant spectator infrastructure.",ageMatrix:"VERIFY",matrixDetails:"Aug 9 timing strongly suggests new Fall 2026 grade year matrix as preseason event — confirm with Globall Competitions"},
+  {id:27,name:"Maryland Invitational",host:"Bethesda Soccer Club & DeMatha Soccer Academy",location:"Boyds, MD area",distance:130,dates:"Jun 5–7, 2026",days:"3 days",format:"11v11 (verify on site)",games:"TBD",fee:"TBD",deadline:"TBD",website:"Per USYS MD sanctioned tournament list",lodging:"Stay-to-play likely at 130 mi",notes:"Exposes EPYSA teams to MSYSA/VYSA possession-based tactical structure. Premier facility. Verify U14 boys bracket and 11v11 specifics.",ageMatrix:"BIRTH YEAR",matrixDetails:"Jun 5–7 — early June, birth year matrix (closing 25/26 season)"},
+  {id:28,name:"NRSA Father's Day Cup",host:"North Rockland Soccer Association",location:"Thiells, NY",distance:110,dates:"Jun 20–21, 2026 (boys Sun Jun 21 only)",days:"1 day for boys",format:"11v11; 50-min blocks; 3-referee",games:"3 full-sided games",fee:"$720",deadline:"TBD",website:"nrsa.org/fdc",lodging:"Commuter friendly",notes:"Single-day boys condensed format — peak endurance test. Just off Palisades Pkwy. Exposes team to ENYYSA/Hudson Valley physical direct style.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (mid-June, 25/26 season)"},
+  {id:29,name:"Independence Cup – Long Island (19th Annual)",host:"Globall Competitions",location:"Uniondale, NY",distance:130,dates:"Jun 27, 2026 (1 day)",days:"1 day",format:"11v11 for U13+ (likely)",games:"Limited (single-day)",fee:"TBD",deadline:"TBD",website:"indycupli.com",lodging:"Long Island — traffic-heavy",notes:"19th annual 'Red, white, and blue soccer showcase.' Long Island tradition. One-day format = minimal commitment but fewer games.",ageMatrix:"BIRTH YEAR",matrixDetails:"Jun 27 — late June, 25/26 season, birth year matrix"}
+];
+
+// ===================== STATE =====================
+let currentFilter = 'all';
+let currentSort = 'date';
+let editingEventId = null;
+let editingAnnId = null;
+
+function getVoterName() { return localStorage.getItem('f6ad_voter') || ''; }
+function saveVoterName(n) { localStorage.setItem('f6ad_voter', n); }
+function getAdminPw() { return localStorage.getItem('f6ad_pw') || 'FUNTIME'; }
+function saveAdminPw(p) { localStorage.setItem('f6ad_pw', p); }
+function isAdminUnlocked() { return sessionStorage.getItem('f6ad_admin') === '1'; }
+function setAdminUnlocked() { sessionStorage.setItem('f6ad_admin', '1'); }
+
+// ===================== REAL-TIME LISTENERS =====================
+function startListeners() {
+  db.collection('votes').onSnapshot(snap => {
+    allVotes = {};
+    snap.forEach(doc => { allVotes[doc.id] = doc.data().votes || {}; });
+    updateVoteSummary();
+    renderTournaments();
+    renderVoteTally();
+  });
+  db.collection('schedule').onSnapshot(snap => {
+    scheduleItems = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderSchedule();
+    if (document.getElementById('admin-panel').style.display !== 'none') renderAdminSchedule();
+  });
+  db.collection('announcements').onSnapshot(snap => {
+    announcementItems = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderAnnouncements();
+    if (document.getElementById('admin-panel').style.display !== 'none') renderAdminAnnouncements();
+  });
+}
+
+// ===================== VOTER =====================
+function setVoter() {
+  const n = document.getElementById('voter-name-input').value.trim();
+  if (!n) { showToast('Please enter your name.'); return; }
+  saveVoterName(n);
+  renderVoterBar();
+  renderTournaments();
+  updateVoteSummary();
+}
+function changeVoter() {
+  saveVoterName('');
+  renderVoterBar();
+  renderTournaments();
+}
+function renderVoterBar() {
+  const name = getVoterName();
+  document.getElementById('voter-setup').style.display = name ? 'none' : 'flex';
+  document.getElementById('voter-active').style.display = name ? 'flex' : 'none';
+  document.getElementById('vote-summary-bar').style.display = name ? 'flex' : 'none';
+  if (name) {
+    document.getElementById('voter-display-name').textContent = name;
+    updateVoteSummary();
+  }
+}
+function updateVoteSummary() {
+  const name = getVoterName();
+  const votes = name ? (allVotes[name] || {}) : {};
+  let yes = 0, maybe = 0, no = 0;
+  TOURNAMENTS.forEach(t => {
+    if (votes[t.id] === 'yes') yes++;
+    else if (votes[t.id] === 'maybe') maybe++;
+    else if (votes[t.id] === 'no') no++;
+  });
+  document.getElementById('count-yes').textContent = yes;
+  document.getElementById('count-maybe').textContent = maybe;
+  document.getElementById('count-no').textContent = no;
+  const remaining = TOURNAMENTS.length - yes - maybe - no;
+  document.getElementById('count-remaining').textContent = remaining > 0 ? `· ${remaining} not yet voted` : '· All tournaments voted!';
+}
+
+// ===================== VOTING =====================
+function castVote(tournId, vote) {
+  const name = getVoterName();
+  if (!name) { showToast('Enter your name first to vote!'); return; }
+  const myVotes = {...(allVotes[name] || {})};
+  if (myVotes[tournId] === vote) { delete myVotes[tournId]; }
+  else { myVotes[tournId] = vote; }
+  db.collection('votes').doc(name).set({
+    name, votes: myVotes,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(e => showToast('Error saving vote: ' + e.message));
+}
+
+function shareVotes() {
+  const name = getVoterName();
+  if (!name) { showToast('Set your name first.'); return; }
+  const votes = allVotes[name] || {};
+  const yes = [], maybe = [], no = [], unvoted = [];
+  TOURNAMENTS.forEach(t => {
+    const v = votes[t.id];
+    const short = `#${t.id} ${t.name}`;
+    if (v === 'yes') yes.push(short);
+    else if (v === 'maybe') maybe.push(short);
+    else if (v === 'no') no.push(short);
+    else unvoted.push(short);
+  });
+  let text = `F6AD TOURNAMENT VOTES — ${name}\n${'='.repeat(50)}\n`;
+  if (yes.length) text += `\n✅ YES (${yes.length}):\n` + yes.map(x=>`  ${x}`).join('\n');
+  if (maybe.length) text += `\n\n🤔 MAYBE (${maybe.length}):\n` + maybe.map(x=>`  ${x}`).join('\n');
+  if (no.length) text += `\n\n❌ NO (${no.length}):\n` + no.map(x=>`  ${x}`).join('\n');
+  if (unvoted.length) text += `\n\n⬜ NOT VOTED (${unvoted.length}):\n` + unvoted.map(x=>`  ${x}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Votes copied!'));
+}
+
+// ===================== TOURNAMENTS =====================
+function filterTournaments(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderTournaments();
+}
+function sortTournaments(s) {
+  currentSort = s;
+  renderTournaments();
+}
+
+function parseDate(dateStr) {
+  const m = dateStr.match(/(\w+)\s+(\d+)/);
+  if (!m) return new Date('2026-12-31');
+  const months = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  return new Date(2026, (months[m[1]]||6)-1, parseInt(m[2]));
+}
+function parseFee(feeStr) {
+  const m = feeStr.replace(/,/g,'').match(/\$(\d+)/);
+  return m ? parseInt(m[1]) : 99999;
+}
+
+function renderTournaments() {
+  const voterName = getVoterName();
+  const votes = voterName ? (allVotes[voterName] || {}) : {};
+  let list = [...TOURNAMENTS];
+  // Filter
+  if (currentFilter === 'nearby') list = list.filter(t => t.distance <= 50);
+  if (currentFilter === 'grade') list = list.filter(t => t.ageMatrix === 'GRADE YEAR');
+  if (currentFilter === 'birth') list = list.filter(t => t.ageMatrix === 'BIRTH YEAR');
+  if (currentFilter === 'voted-yes') list = list.filter(t => votes[t.id] === 'yes');
+  if (currentFilter === 'voted-maybe') list = list.filter(t => votes[t.id] === 'maybe');
+
+  // Sort
+  if (currentSort === 'date') list.sort((a,b) => parseDate(a.dates) - parseDate(b.dates));
+  if (currentSort === 'distance') list.sort((a,b) => a.distance - b.distance);
+  if (currentSort === 'fee') list.sort((a,b) => parseFee(a.fee) - parseFee(b.fee));
+
+  const grid = document.getElementById('tournament-grid');
+  grid.innerHTML = list.map(t => {
+    const vote = votes[t.id];
+    const cardClass = vote === 'yes' ? 'voted-yes' : vote === 'maybe' ? 'voted-maybe' : vote === 'no' ? 'voted-no' : '';
+    const matrixClass = t.ageMatrix === 'GRADE YEAR' ? 'matrix-grade' : t.ageMatrix === 'BIRTH YEAR' ? 'matrix-birth' : 'matrix-verify';
+    const matrixLabel = t.ageMatrix === 'GRADE YEAR' ? '🟢 Grade Year' : t.ageMatrix === 'BIRTH YEAR' ? '🔵 Birth Year' : '🟡 Verify Matrix';
+    const feeDisplay = t.fee === 'TBD' ? '<span class="t-fee tbd">Fee TBD</span>' : `<span class="t-fee">${t.fee.split('(')[0].trim()}</span>`;
+    const disableVote = !voterName;
+    return `
+    <div class="t-card ${cardClass}" id="card-${t.id}">
+      <div class="t-card-head">
+        <div class="t-card-row1">
+          <span class="t-name">${t.name}</span>
+          <span class="eligible-badge ${matrixClass}" title="${t.matrixDetails}">${matrixLabel}</span>
+        </div>
+        <div class="t-meta">
+          <span class="t-tag highlight">📅 ${t.dates}</span>
+          <span class="t-tag">📍 ${t.location}</span>
+          <span class="t-tag">🚗 ${t.distance} mi</span>
+          <span class="t-tag">⏱️ ${t.games}</span>
+        </div>
+      </div>
+      <div class="t-body">
+        <div class="t-fee-row">
+          ${feeDisplay}
+          <span class="t-deadline">⏰ Deadline: ${t.deadline}</span>
+        </div>
+        <button class="t-notes-toggle" onclick="toggleNotes(${t.id})">📋 Show notes &amp; details</button>
+        <div class="t-notes" id="notes-${t.id}">
+          <strong>Host:</strong> ${t.host}<br>
+          <strong>Format:</strong> ${t.format}<br>
+          <strong>Lodging:</strong> ${t.lodging}<br>
+          <strong>Age Matrix:</strong> ${t.ageMatrix} — ${t.matrixDetails}<br><br>
+          <em>${t.notes}</em><br><br>
+          <strong>Website:</strong> <a href="https://${t.website}" target="_blank" class="t-website">${t.website}</a>
+        </div>
+      </div>
+      <div class="t-footer">
+        <div class="vote-buttons" ${disableVote ? 'title="Enter your name above to vote"' : ''}>
+          <button class="vote-btn ${vote==='yes'?'active-yes':''}" onclick="castVote(${t.id},'yes')" ${disableVote?'disabled':''}>
+            <span class="vb-emoji">✅</span><span>Yes</span>
+          </button>
+          <button class="vote-btn ${vote==='maybe'?'active-maybe':''}" onclick="castVote(${t.id},'maybe')" ${disableVote?'disabled':''}>
+            <span class="vb-emoji">🤔</span><span>Maybe</span>
+          </button>
+          <button class="vote-btn ${vote==='no'?'active-no':''}" onclick="castVote(${t.id},'no')" ${disableVote?'disabled':''}>
+            <span class="vb-emoji">❌</span><span>No</span>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNotes(id) {
+  const el = document.getElementById('notes-'+id);
+  const btn = el.previousElementSibling;
+  el.classList.toggle('open');
+  btn.textContent = el.classList.contains('open') ? '📋 Hide notes & details' : '📋 Show notes & details';
+}
+
+// ===================== SCHEDULE =====================
+function renderSchedule() {
+  const items = [...scheduleItems].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const list = document.getElementById('schedule-list');
+  const empty = document.getElementById('schedule-empty');
+  if (!items.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = items.map(ev => {
+    const d = new Date(ev.date + 'T00:00:00');
+    const month = d.toLocaleString('en-US',{month:'short'});
+    const day = d.getDate();
+    const time = ev.time ? (() => { const [h,m]=ev.time.split(':'); const hr=+h; return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; })() : '';
+    return `<div class="event-item">
+      <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
+      <div class="event-info">
+        <div class="event-name">${ev.name}</div>
+        <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
+        <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdminSchedule() {
+  const items = [...scheduleItems].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const el = document.getElementById('admin-schedule-list');
+  if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
+  el.innerHTML = items.map(ev => `
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <strong>${ev.name}</strong>
+        <span>${ev.date}${ev.time?' · '+ev.time:''} · ${ev.location} · ${ev.type}</span>
+      </div>
+      <div class="admin-item-actions">
+        <button class="btn-edit" onclick="editEvent('${ev.id}')">Edit</button>
+        <button class="btn-danger" onclick="deleteEvent('${ev.id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function saveEvent() {
+  const name = document.getElementById('ev-name').value.trim();
+  const type = document.getElementById('ev-type').value;
+  const date = document.getElementById('ev-date').value;
+  const time = document.getElementById('ev-time').value;
+  const location = document.getElementById('ev-location').value.trim();
+  if (!name || !date) { showToast('Name and date are required.'); return; }
+  const data = {name, type, date, time, location};
+  const p = editingEventId
+    ? db.collection('schedule').doc(editingEventId).set(data)
+    : db.collection('schedule').add(data);
+  p.then(() => { cancelEventEdit(); showToast('✅ Event saved!'); })
+   .catch(e => showToast('Error: ' + e.message));
+}
+
+function editEvent(id) {
+  const ev = scheduleItems.find(e => e.id === id);
+  if (!ev) return;
+  editingEventId = id;
+  document.getElementById('ev-name').value = ev.name;
+  document.getElementById('ev-type').value = ev.type;
+  document.getElementById('ev-date').value = ev.date;
+  document.getElementById('ev-time').value = ev.time || '';
+  document.getElementById('ev-location').value = ev.location;
+  document.getElementById('schedule-form-title').textContent = '✏️ Edit Event';
+  document.getElementById('cancel-ev-btn').style.display = 'inline-block';
+}
+
+function cancelEventEdit() {
+  editingEventId = null;
+  ['ev-name','ev-date','ev-time','ev-location'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ev-type').value = 'game';
+  document.getElementById('schedule-form-title').textContent = '➕ Add Event';
+  document.getElementById('cancel-ev-btn').style.display = 'none';
+}
+
+function deleteEvent(id) {
+  if (!confirm('Delete this event?')) return;
+  db.collection('schedule').doc(id).delete()
+    .then(() => showToast('Event deleted.'))
+    .catch(e => showToast('Error: ' + e.message));
+}
+
+// ===================== ANNOUNCEMENTS =====================
+function renderAnnouncements() {
+  const items = [...announcementItems].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+  const list = document.getElementById('announcements-list');
+  const empty = document.getElementById('ann-empty');
+  if (!items.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = items.map(a => `
+    <div class="ann-item">
+      <div class="ann-date">${a.date}</div>
+      <div class="ann-title">${a.title}</div>
+      <div class="ann-body">${a.body}</div>
+    </div>`).join('');
+}
+
+function renderAdminAnnouncements() {
+  const items = [...announcementItems].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+  const el = document.getElementById('admin-ann-list');
+  if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No announcements yet.</p>'; return; }
+  el.innerHTML = items.map(a => `
+    <div class="admin-item">
+      <div class="admin-item-info"><strong>${a.title}</strong><span>${a.date}</span></div>
+      <div class="admin-item-actions">
+        <button class="btn-edit" onclick="editAnn('${a.id}')">Edit</button>
+        <button class="btn-danger" onclick="deleteAnn('${a.id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function saveAnnouncement() {
+  const title = document.getElementById('ann-title').value.trim();
+  const body = document.getElementById('ann-body').value.trim();
+  if (!title || !body) { showToast('Title and message are required.'); return; }
+  const now = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const p = editingAnnId
+    ? db.collection('announcements').doc(editingAnnId).update({title, body})
+    : db.collection('announcements').add({title, body, date: now, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+  p.then(() => { cancelAnnEdit(); showToast('✅ Announcement posted!'); })
+   .catch(e => showToast('Error: ' + e.message));
+}
+
+function editAnn(id) {
+  const a = announcementItems.find(x => x.id === id);
+  if (!a) return;
+  editingAnnId = id;
+  document.getElementById('ann-title').value = a.title;
+  document.getElementById('ann-body').value = a.body;
+  document.getElementById('ann-form-title').textContent = '✏️ Edit Announcement';
+  document.getElementById('cancel-ann-btn').style.display = 'inline-block';
+}
+
+function cancelAnnEdit() {
+  editingAnnId = null;
+  document.getElementById('ann-title').value = '';
+  document.getElementById('ann-body').value = '';
+  document.getElementById('ann-form-title').textContent = '➕ Add Announcement';
+  document.getElementById('cancel-ann-btn').style.display = 'none';
+}
+
+function deleteAnn(id) {
+  if (!confirm('Delete this announcement?')) return;
+  db.collection('announcements').doc(id).delete()
+    .then(() => showToast('Announcement deleted.'))
+    .catch(e => showToast('Error: ' + e.message));
+}
+
+// ===================== ADMIN =====================
+function openAdmin() {
+  document.getElementById('admin-overlay').classList.add('open');
+  if (isAdminUnlocked()) showAdminPanel();
+}
+function closeAdmin() {
+  document.getElementById('admin-overlay').classList.remove('open');
+}
+function overlayClick(e) {
+  if (e.target === document.getElementById('admin-overlay')) closeAdmin();
+}
+
+function tryLogin() {
+  const pw = document.getElementById('admin-pw-input').value;
+  if (pw === getAdminPw()) {
+    setAdminUnlocked();
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('admin-pw-input').value = '';
+    showAdminPanel();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+function showAdminPanel() {
+  document.getElementById('admin-login').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  renderAdminSchedule();
+  renderAdminAnnouncements();
+  renderVoteTally();
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+function changePassword() {
+  const old = document.getElementById('old-pw').value;
+  const n = document.getElementById('new-pw').value;
+  const c = document.getElementById('confirm-pw').value;
+  const msg = document.getElementById('pw-msg');
+  if (old !== getAdminPw()) { msg.textContent = '❌ Current password incorrect.'; msg.style.color='#dc2626'; return; }
+  if (!n || n.length < 4) { msg.textContent = '❌ New password must be at least 4 characters.'; msg.style.color='#dc2626'; return; }
+  if (n !== c) { msg.textContent = '❌ Passwords do not match.'; msg.style.color='#dc2626'; return; }
+  saveAdminPw(n);
+  ['old-pw','new-pw','confirm-pw'].forEach(id => document.getElementById(id).value = '');
+  msg.textContent = '✅ Password updated!';
+  msg.style.color = '#16a34a';
+}
+
+// ===================== VOTE TALLY (live from Firestore) =====================
+function renderVoteTally() {
+  const voters = Object.keys(allVotes);
+  const tally = {};
+  TOURNAMENTS.forEach(t => tally[t.id] = {yes:0,maybe:0,no:0,yNames:[],mNames:[],nNames:[]});
+  voters.forEach(voter => {
+    Object.entries(allVotes[voter]||{}).forEach(([tid,v]) => {
+      const id = parseInt(tid);
+      if (!tally[id]) return;
+      if (v==='yes'){tally[id].yes++;tally[id].yNames.push(voter);}
+      else if(v==='maybe'){tally[id].maybe++;tally[id].mNames.push(voter);}
+      else if(v==='no'){tally[id].no++;tally[id].nNames.push(voter);}
+    });
+  });
+  const sorted = [...TOURNAMENTS].sort((a,b)=>(tally[b.id].yes-tally[a.id].yes)||(tally[b.id].maybe-tally[a.id].maybe));
+  const body = document.getElementById('vote-tally-body');
+  const active = voters.filter(v=>Object.keys(allVotes[v]||{}).length>0);
+  if (!active.length) {
+    body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No votes yet — share personalized links with your team!</td></tr>`;
+    return;
+  }
+  body.innerHTML = sorted.map(t => {
+    const v = tally[t.id];
+    if (!v.yes&&!v.maybe&&!v.no) return '';
+    return `<tr>
+      <td>${t.id}</td>
+      <td style="max-width:200px;font-weight:600">${t.name}</td>
+      <td style="color:var(--muted);font-size:.75rem">${t.dates}</td>
+      <td class="tally-yes" title="${v.yNames.join(', ')}">${v.yes}${v.yNames.length?' 👤':''}</td>
+      <td class="tally-maybe" title="${v.mNames.join(', ')}">${v.maybe}${v.mNames.length?' 👤':''}</td>
+      <td class="tally-no" title="${v.nNames.join(', ')}">${v.no}${v.nNames.length?' 👤':''}</td>
+    </tr>`;
+  }).filter(Boolean).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No votes yet.</td></tr>`;
+}
+
+function exportVoteTally() {
+  const voters = Object.keys(allVotes);
+  const tally = {};
+  TOURNAMENTS.forEach(t => tally[t.id]={yes:0,maybe:0,no:0});
+  voters.forEach(voter => {
+    Object.entries(allVotes[voter]||{}).forEach(([tid,v]) => {
+      const id=parseInt(tid);
+      if(tally[id]&&(v==='yes'||v==='maybe'||v==='no')) tally[id][v]++;
+    });
+  });
+  const sorted=[...TOURNAMENTS].sort((a,b)=>tally[b.id].yes-tally[a.id].yes);
+  let text=`F6AD TOURNAMENT VOTE TALLY (${voters.length} voters)\n${'='.repeat(60)}\n`;
+  sorted.forEach(t=>{const v=tally[t.id];if(v.yes+v.maybe+v.no>0)text+=`\n${t.name}\n  ✅ Yes: ${v.yes}  🤔 Maybe: ${v.maybe}  ❌ No: ${v.no}\n`;});
+  navigator.clipboard.writeText(text).then(()=>showToast('📊 Tally copied!'));
+}
+
+function clearAllVotes() {
+  if (!confirm('Delete ALL votes from the database? This cannot be undone.')) return;
+  const batch = db.batch();
+  db.collection('votes').get().then(snap => {
+    snap.forEach(doc => batch.delete(doc.ref));
+    return batch.commit();
+  }).then(()=>showToast('All votes cleared.')).catch(e=>showToast('Error: '+e.message));
+}
+
+function generateLink() {
+  const name = document.getElementById('link-name-input').value.trim();
+  if (!name) { showToast('Enter a name first.'); return; }
+  const base = window.location.href.split('?')[0];
+  const url = `${base}?voter=${encodeURIComponent(name)}`;
+  const container = document.getElementById('generated-links-list');
+  // Check if already exists
+  if (document.getElementById('link-'+CSS.escape(name))) {
+    showToast('Link for that name already generated below.');
+    return;
+  }
+  const div = document.createElement('div');
+  div.id = 'link-' + name;
+  div.style.cssText = 'background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
+  div.innerHTML = `
+    <span style="font-weight:700;font-size:.88rem;flex:0 0 auto">${name}</span>
+    <input readonly value="${url}" style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:.78rem;font-family:monospace;background:#fff;color:#444" onclick="this.select()"/>
+    <button class="btn-primary" style="padding:7px 14px;font-size:.78rem" onclick="copyLink('${url}', this)">Copy</button>
+    <button class="btn-danger" style="padding:7px 14px;font-size:.78rem" onclick="this.closest('div').remove()">✕</button>`;
+  container.prepend(div);
+  document.getElementById('link-name-input').value = '';
+  showToast(`✅ Link generated for ${name}`);
+}
+
+function copyLink(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1800);
+  });
+}
+
+function clearAllVotes() {
+  if (!confirm('Clear all imported vote tallies? This cannot be undone.')) return;
+  saveState({importedVotes: {}});
+  renderVoteTally();
+  showToast('Votes cleared.');
+}
+
+// ===================== UTILS =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ===================== INIT =====================
+document.addEventListener('DOMContentLoaded', () => {
+  const urlVoter = new URLSearchParams(window.location.search).get('voter');
+  if (urlVoter && urlVoter.trim() && !getVoterName()) saveVoterName(urlVoter.trim());
+  renderVoterBar();
+  renderTournaments();
+  renderSchedule();
+  renderAnnouncements();
+  startListeners();
+});
+</script>
+</body>
+</html>
