@@ -199,6 +199,43 @@ select.filter-select:focus{outline:none;border-color:var(--purple)}
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--black);color:#fff;padding:11px 24px;border-radius:8px;font-size:.88rem;font-weight:600;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
+/* VOTE INTRO */
+.vote-intro{font-size:.9rem;color:#444;background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:14px 18px;margin-bottom:20px;line-height:1.6}
+
+/* TOP 3 TICKER */
+.top3-ticker{background:linear-gradient(135deg,var(--black),#2a0d5e);color:#fff;border-radius:10px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.ticker-label{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.65);white-space:nowrap;flex-shrink:0}
+.ticker-items{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+.ticker-item{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:8px 14px}
+.ticker-rank{font-size:1.15rem;flex-shrink:0}
+.ticker-name{font-size:.78rem;font-weight:700;line-height:1.3}
+.ticker-count{font-size:.7rem;color:rgba(255,255,255,.65);margin-top:1px}
+
+/* LIVE VOTE COUNTS ON CARD */
+.card-vote-counts{display:flex;gap:10px;padding:8px 18px 6px;font-size:.77rem;align-items:center;border-top:1px solid #f0f0f0;flex-wrap:wrap}
+.cvc-yes{color:#15803d;font-weight:700}
+.cvc-maybe{color:#92400e;font-weight:700}
+.cvc-no{color:#b91c1c;font-weight:700}
+.cvc-divider{color:var(--border);font-size:.7rem}
+
+/* VOTE NOTE INPUT */
+.vote-note-wrap{padding:8px 18px 4px}
+.vote-note-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px;display:block}
+.vote-note-textarea{width:100%;border:2px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.8rem;font-family:inherit;resize:vertical;min-height:54px;color:var(--text);transition:border-color .15s}
+.vote-note-textarea:focus{outline:none;border-color:var(--purple)}
+.vote-note-actions{display:flex;align-items:center;gap:8px;margin-top:5px}
+.vote-note-save{background:var(--purple);color:#fff;border:none;padding:5px 14px;border-radius:5px;font-size:.77rem;font-weight:700;cursor:pointer;transition:background .15s}
+.vote-note-save:hover{background:var(--purple-dark)}
+.vote-note-saved{color:#16a34a;font-size:.75rem;display:none;font-weight:600}
+
+/* PUBLIC NOTES */
+.public-notes-wrap{padding:4px 18px 12px}
+.public-notes-toggle{background:none;border:none;color:var(--purple);font-size:.77rem;font-weight:600;text-decoration:underline;cursor:pointer;padding:0}
+.public-notes-list{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.public-note-item{background:var(--purple-light);border-radius:6px;padding:8px 10px}
+.public-note-author{font-weight:700;font-size:.77rem;color:var(--purple)}
+.public-note-text{font-size:.78rem;color:#444;margin-top:2px;line-height:1.45}
+
 /* FOOTER */
 footer{background:var(--black);color:#aaa;text-align:center;padding:22px 20px;font-size:.8rem}
 footer strong{color:#fff}
@@ -245,6 +282,13 @@ footer strong{color:#fff}
   <section id="tournaments" style="margin-bottom:48px">
     <div class="section-header">
       <div class="section-title">🗳️ Tournament Vote</div>
+    </div>
+    <p class="vote-intro">This is where <strong>team families help decide</strong> which tournaments F6AD registers for this summer. Browse the options below, cast your votes, and leave a note to share your thinking with the rest of the team. Every family's voice matters — the more who weigh in, the better decisions we make together! 🏆</p>
+
+    <!-- Top 3 Ticker -->
+    <div id="top3-ticker" class="top3-ticker" style="display:none">
+      <span class="ticker-label">🏆 Top 3 Right Now</span>
+      <div id="top3-items" class="ticker-items"></div>
     </div>
 
     <!-- Voter Setup -->
@@ -451,6 +495,7 @@ const db = firebase.firestore();
 
 // Live data from Firestore
 let allVotes = {};
+let allNotes = {};
 let scheduleItems = [];
 let announcementItems = [];
 
@@ -504,10 +549,15 @@ function setAdminUnlocked() { sessionStorage.setItem('f6ad_admin', '1'); }
 function startListeners() {
   db.collection('votes').onSnapshot(snap => {
     allVotes = {};
-    snap.forEach(doc => { allVotes[doc.id] = doc.data().votes || {}; });
+    allNotes = {};
+    snap.forEach(doc => {
+      allVotes[doc.id] = doc.data().votes || {};
+      allNotes[doc.id] = doc.data().notes || {};
+    });
     updateVoteSummary();
     renderTournaments();
     renderVoteTally();
+    renderTopTicker();
   });
   db.collection('schedule').onSnapshot(snap => {
     scheduleItems = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -634,6 +684,37 @@ function renderTournaments() {
   if (currentSort === 'distance') list.sort((a,b) => a.distance - b.distance);
   if (currentSort === 'fee') list.sort((a,b) => parseFee(a.fee) - parseFee(b.fee));
 
+  // Compute live tallies from all voters
+  const tally = {};
+  TOURNAMENTS.forEach(t => tally[t.id] = {yes:0, maybe:0, no:0});
+  Object.entries(allVotes).forEach(([voter, voterVotes]) => {
+    Object.entries(voterVotes).forEach(([tid, v]) => {
+      const id = parseInt(tid);
+      if (!tally[id]) return;
+      if (v === 'yes') tally[id].yes++;
+      else if (v === 'maybe') tally[id].maybe++;
+      else if (v === 'no') tally[id].no++;
+    });
+  });
+
+  // Collect public notes per tournament
+  const pubNotes = {};
+  TOURNAMENTS.forEach(t => pubNotes[t.id] = []);
+  Object.entries(allNotes).forEach(([voter, voterNotes]) => {
+    Object.entries(voterNotes).forEach(([tid, note]) => {
+      const id = parseInt(tid);
+      if (pubNotes[id] !== undefined && note && note.trim()) {
+        pubNotes[id].push({voter, note: note.trim(), voteVal: (allVotes[voter] || {})[id]});
+      }
+    });
+  });
+
+  // Preserve any in-progress note drafts the user is typing
+  const savedDrafts = {};
+  document.querySelectorAll('[id^="note-input-"]').forEach(el => {
+    savedDrafts[el.id.replace('note-input-', '')] = el.value;
+  });
+
   const grid = document.getElementById('tournament-grid');
   grid.innerHTML = list.map(t => {
     const vote = votes[t.id];
@@ -642,6 +723,39 @@ function renderTournaments() {
     const matrixLabel = t.ageMatrix === 'GRADE YEAR' ? '🟢 Grade Year' : t.ageMatrix === 'BIRTH YEAR' ? '🔵 Birth Year' : '🟡 Verify Matrix';
     const feeDisplay = t.fee === 'TBD' ? '<span class="t-fee tbd">Fee TBD</span>' : `<span class="t-fee">${t.fee.split('(')[0].trim()}</span>`;
     const disableVote = !voterName;
+    const tc = tally[t.id];
+    const totalVotes = tc.yes + tc.maybe + tc.no;
+    const myNote = voterName ? ((allNotes[voterName] || {})[t.id] || '') : '';
+    const notes = pubNotes[t.id] || [];
+
+    const liveCountsHtml = totalVotes > 0
+      ? `<span class="cvc-yes">✅ ${tc.yes}</span><span class="cvc-divider">·</span><span class="cvc-maybe">🤔 ${tc.maybe}</span><span class="cvc-divider">·</span><span class="cvc-no">❌ ${tc.no}</span><span style="font-size:.7rem;color:var(--muted);margin-left:2px">(${totalVotes} vote${totalVotes!==1?'s':''})</span>`
+      : `<span style="font-size:.72rem;color:var(--muted)">No votes yet — be the first!</span>`;
+
+    const noteInputHtml = (voterName && vote) ? `
+      <div class="vote-note-wrap">
+        <span class="vote-note-label">Your note (shared with all families)</span>
+        <textarea class="vote-note-textarea" id="note-input-${t.id}" placeholder="Why did you vote this way? Any concerns or enthusiasm to share?">${myNote}</textarea>
+        <div class="vote-note-actions">
+          <button class="vote-note-save" onclick="saveNote(${t.id})">💾 Save Note</button>
+          <span class="vote-note-saved" id="note-saved-${t.id}">✅ Saved!</span>
+        </div>
+      </div>` : '';
+
+    const pubNotesHtml = notes.length ? `
+      <div class="public-notes-wrap">
+        <button class="public-notes-toggle" onclick="togglePublicNotes(${t.id})">💬 ${notes.length} note${notes.length>1?'s':''} from families — show/hide</button>
+        <div class="public-notes-list" id="pub-notes-${t.id}" style="display:none">
+          ${notes.map(n => {
+            const voteLabel = n.voteVal === 'yes' ? ' ✅' : n.voteVal === 'maybe' ? ' 🤔' : n.voteVal === 'no' ? ' ❌' : '';
+            return `<div class="public-note-item">
+              <div class="public-note-author">${n.voter}${voteLabel}</div>
+              <div class="public-note-text">${n.note}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>` : '';
+
     return `
     <div class="t-card ${cardClass}" id="card-${t.id}">
       <div class="t-card-head">
@@ -672,6 +786,7 @@ function renderTournaments() {
         </div>
       </div>
       <div class="t-footer">
+        <div class="card-vote-counts">${liveCountsHtml}</div>
         <div class="vote-buttons" ${disableVote ? 'title="Enter your name above to vote"' : ''}>
           <button class="vote-btn ${vote==='yes'?'active-yes':''}" onclick="castVote(${t.id},'yes')" ${disableVote?'disabled':''}>
             <span class="vb-emoji">✅</span><span>Yes</span>
@@ -683,9 +798,17 @@ function renderTournaments() {
             <span class="vb-emoji">❌</span><span>No</span>
           </button>
         </div>
+        ${noteInputHtml}
+        ${pubNotesHtml}
       </div>
     </div>`;
   }).join('');
+
+  // Restore any in-progress note drafts the user hadn't saved yet
+  Object.entries(savedDrafts).forEach(([id, val]) => {
+    const el = document.getElementById('note-input-' + id);
+    if (el) el.value = val;
+  });
 }
 
 function toggleNotes(id) {
@@ -994,6 +1117,54 @@ function clearAllVotes() {
   saveState({importedVotes: {}});
   renderVoteTally();
   showToast('Votes cleared.');
+}
+
+// ===================== TOP 3 TICKER =====================
+function renderTopTicker() {
+  const tally = {};
+  TOURNAMENTS.forEach(t => tally[t.id] = {yes:0, id:t.id, name:t.name});
+  Object.values(allVotes).forEach(voterVotes => {
+    Object.entries(voterVotes).forEach(([tid, v]) => {
+      const id = parseInt(tid);
+      if (tally[id] && v === 'yes') tally[id].yes++;
+    });
+  });
+  const top3 = Object.values(tally).filter(t => t.yes > 0).sort((a,b) => b.yes - a.yes).slice(0,3);
+  const ticker = document.getElementById('top3-ticker');
+  if (!top3.length) { ticker.style.display = 'none'; return; }
+  ticker.style.display = 'flex';
+  const medals = ['🥇','🥈','🥉'];
+  document.getElementById('top3-items').innerHTML = top3.map((t,i) => `
+    <div class="ticker-item">
+      <span class="ticker-rank">${medals[i]}</span>
+      <div>
+        <div class="ticker-name">${t.name.length>38?t.name.slice(0,38)+'…':t.name}</div>
+        <div class="ticker-count">${t.yes} yes vote${t.yes!==1?'s':''}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ===================== NOTES =====================
+function saveNote(tournId) {
+  const name = getVoterName();
+  if (!name) return;
+  const el = document.getElementById('note-input-' + tournId);
+  if (!el) return;
+  const note = el.value.trim();
+  const myNotes = {...(allNotes[name] || {})};
+  myNotes[tournId] = note;
+  db.collection('votes').doc(name).set({notes: myNotes}, {merge: true})
+    .then(() => {
+      const saved = document.getElementById('note-saved-' + tournId);
+      if (saved) { saved.style.display = 'inline'; setTimeout(() => saved.style.display = 'none', 2200); }
+    })
+    .catch(e => showToast('Error saving note: ' + e.message));
+}
+
+function togglePublicNotes(id) {
+  const el = document.getElementById('pub-notes-' + id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
 // ===================== UTILS =====================
