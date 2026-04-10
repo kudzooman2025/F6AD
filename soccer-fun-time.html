@@ -236,6 +236,11 @@ select.filter-select:focus{outline:none;border-color:var(--purple)}
 .public-note-author{font-weight:700;font-size:.77rem;color:var(--purple)}
 .public-note-text{font-size:.78rem;color:#444;margin-top:2px;line-height:1.45}
 
+/* STICKY HEADER CREDIT BADGE */
+.header-credit-badge{display:none;align-items:center;gap:5px;background:var(--purple);color:#fff;border-radius:6px;padding:5px 13px;font-size:.8rem;font-weight:700;white-space:nowrap;transition:background .2s}
+.header-credit-badge.warn{background:#d97706}
+.header-credit-badge.empty{background:#dc2626}
+
 /* CREDIT ALLOCATION */
 .credit-alloc-row{display:flex;align-items:center;gap:8px;padding:10px 18px 8px;flex-wrap:wrap}
 .credit-adj-btn{background:#f0f0f0;border:2px solid var(--border);color:var(--text);border-radius:6px;width:36px;height:36px;font-size:1.1rem;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;line-height:1}
@@ -273,6 +278,7 @@ footer strong{color:#fff}
       <a href="#tournaments">Tournaments</a>
       <a href="#schedule">Schedule</a>
       <a href="#announcements">News</a>
+      <span id="header-credit-badge" class="header-credit-badge">💰 <span id="header-credits-remaining">1000</span> credits left</span>
       <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
     </nav>
   </div>
@@ -524,7 +530,7 @@ const TOURNAMENTS = [
   {id:8,name:"The Cup '26 (Philadelphia Union)",host:"Philadelphia Union Youth Programs",location:"Chester, PA",distance:20,dates:"Jun 6–7, 2026",days:"2 days",format:"11v11; 2×30-min halves; turf",games:"3 guaranteed",fee:"$1,300 early / $1,500 standard",deadline:"Early: Apr 1; Standard: May 1, 2026",website:"philadelphiaunion.com/youth/tournaments/the_cup",lodging:"Halpern Travel official housing partner",notes:"MLS-affiliated facility adjacent to Subaru Park. Limited to ~8 teams per division. Elite operational standards, scouting presence. 2nd annual.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (closing 25/26 season)"},
   {id:9,name:"Lehigh Valley YSL Tournament (46th Annual)",host:"Lehigh Valley YSL / S3",location:"Allentown area, PA",distance:55,dates:"Jun 6–7, 2026",days:"2 days (boys Sat)",format:"11v11; 1-day per gender",games:"3 guaranteed",fee:"TBD",deadline:"TBD",website:"sidelinesoccersolutions.com",lodging:"Not specified",notes:"46th annual — one of the longest-running in the region. Awards for 1st and 2nd place.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (early June, 25/26 season)"},
   {id:10,name:"Lancaster Summer Classic (16th Annual)",host:"Lancaster Elite + Manheim Township SC",location:"Lancaster, PA",distance:65,dates:"Jun 6–7, 2026",days:"2 days",format:"11v11; max roster 22, dress 18",games:"3+ guaranteed",fee:"$850 (+$100 late after May 13)",deadline:"May 13, 2026",website:"lancastersummerclassic.com",lodging:"Halpern Travel (required 100+ mi)",notes:"GotSport ranking points applied. College coaches for older brackets. ⚠️ Birth year listed inconsistently as 2011 vs 2012 — verify at registration.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (closing 25/26 season; lists U14 as 2011 or 2012 only)"},
-  {id:11,name:"Leon Grenko Soccer Tournament",host:"Berks County / Reading club",location:"Reading, PA",distance:45,dates:"Jun 6–7, 2026",days:"2 days",format:"11v11",games:"3 games",fee:"TBD (lower than elite showcases)",deadline:"TBD",website:"Search GotSport: Leon Grenko",lodging:"Commuter event",notes:"Long-standing community-driven event in Berks County. Lower-pressure, lower-cost alternative to elite showcases.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (early June, 25/26 season)"},
+  {id:11,name:"Leon Grenko Soccer Tournament",host:"Berks County / Reading club",location:"Reading, PA",distance:45,dates:"Jun 6–7, 2026",days:"2 days",format:"11v11",games:"3 games",fee:"TBD (lower than elite showcases)",deadline:"TBD",website:"berkssoccer.org",lodging:"Commuter event",notes:"Long-standing community-driven event in Berks County. Lower-pressure, lower-cost alternative to elite showcases.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (early June, 25/26 season)"},
   {id:12,name:"PA Classics Mid-Atlantic Cup (19th Annual)",host:"Pennsylvania Classics AC",location:"Manheim, PA",distance:65,dates:"Jun 13–14, 2026",days:"2 days",format:"11v11; max roster 22, dress 18",games:"3 guaranteed",fee:"$875",deadline:"Mid-May 2026",website:"paclassics.org/mid-atlantic-cup",lodging:"Halpern Travel partner",notes:"Cornerstone EPYSA event. e-waivers required. Discounted Hersheypark tickets for participants. Pristine grass and turf surfaces.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year — explicitly lists U14 = 2012"},
   {id:13,name:"EDP Summer Classic",host:"EDP Soccer / 3STEP Sports",location:"Hammonton, NJ",distance:80,dates:"Jun 20–21, 2026",days:"2 days",format:"11v11; 3×60-min games + playoffs",games:"3 guaranteed",fee:"$1,295 early (by 4/19) / $1,395 regular",deadline:"May 8, 2026",website:"edpsoccer.com/summer-classic",lodging:"Stay-to-Play via Team Travel Source",notes:"Flagship EDP summer event. Draws MLS Next, ECNL, NL, EDP teams. ⚠️ Strict check-in — 2-0 forfeit for failure. 12-month ban for no-show. Allows up to 5 guest players.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (EDP June events use 25/26 season groupings)"},
   {id:14,name:"Hershey Summer Classic",host:"Hershey Soccer Club",location:"Hershey, PA",distance:95,dates:"Jun 20–21, 2026",days:"2 days",format:"11v11",games:"3 guaranteed",fee:"$1,075",deadline:"May 17, 2026",website:"hersheysoccer.org/summerclassic",lodging:"Stay-to-Play for 90+ mi via Halpern",notes:"Tourism-integrated event. Discounted Hersheypark tickets. ~200 teams expected. Marquee mid-summer event.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year — explicitly Aug 1 cutoff but lists U14 = Aug 2012–Jul 2013, which excludes most 2013s"},
@@ -538,12 +544,161 @@ const TOURNAMENTS = [
   {id:22,name:"Mid-Atlantic Cup at Maryland SoccerPlex",host:"Maryland SoccerPlex / SAM Soccer",location:"Boyds, MD",distance:140,dates:"Jun 13–14, 2026",days:"2–3 days",format:"11v11",games:"3 guaranteed + championship",fee:"TBD + $20 GotSport fee",deadline:"Standard May 1; Late May 10, 2026",website:"midatlanticcupmd.com",lodging:"Stay-to-play likely at this distance",notes:"⚠️ Different event from PA Classics' 'Mid-Atlantic Cup'. Nationally-rated Maryland SoccerPlex. New 2026: champions/finalists receive Washington Spirit match tickets.",ageMatrix:"VERIFY",matrixDetails:"Not stated in sources — mid-June timing suggests birth year matrix; confirm with TD"},
   {id:23,name:"FSCI Summer Classic & Showcase (13th Annual)",host:"Fredericksburg Soccer Club, Inc.",location:"Fredericksburg, VA",distance:190,dates:"Jun 13–14, 2026",days:"2 days",format:"11v11; championship format",games:"3 guaranteed",fee:"$875 + $20 GotSport fee",deadline:"May 10, 2026",website:"fredericksburgsoccer.org/tournaments/june/",lodging:"Stay-to-play likely",notes:"Bermuda grass at VYSA training center. College coaches attend older showcase divisions.",ageMatrix:"VERIFY",matrixDetails:"Not stated in sources — mid-June timing suggests birth year matrix; confirm with TD"},
   {id:24,name:"Mason Dixon Cup",host:"Hagerstown Soccer Club / Elite Tournaments",location:"Hagerstown, MD",distance:160,dates:"Jun 20–21, 2026",days:"2 days",format:"11v11; championship format",games:"Multiple + finals",fee:"TBD + $200 performance bond (U14–U19)",deadline:"Schedules posted Jun 3",website:"elitetournaments.com/tournaments/mason-dixon-cup/",lodging:"Stay-to-play likely",notes:"Running since 1991. All games at one complex. Father's Day weekend. Bridges PA/MD/WV communities.",ageMatrix:"VERIFY",matrixDetails:"Not stated in sources — Father's Day mid-June timing suggests birth year matrix; confirm with TD"},
-  {id:25,name:"Liberty Cup Long Island",host:"TSP / LIJSL ecosystem",location:"Brentwood, NY (Suffolk County)",distance:130,dates:"Jul 25–26, 2026",days:"2 days",format:"11v11; max 3 guest players",games:"Multi-game",fee:"$795 ($50 early bird discount)",deadline:"TBD",website:"Search GotSport: TSP Liberty Cup 2026",lodging:"NYC metro traffic — plan accordingly",notes:"Pulls from insular LIJSL ecosystem. Strict guest player rules: max 3 outside-club players (club-pass unlimited). Excellent value at $795.",ageMatrix:"VERIFY",matrixDetails:"Late July — matrix not stated in sources; confirm with TSP/LIJSL"},
+  {id:25,name:"Liberty Cup Long Island",host:"TSP / LIJSL ecosystem",location:"Brentwood, NY (Suffolk County)",distance:130,dates:"Jul 25–26, 2026",days:"2 days",format:"11v11; max 3 guest players",games:"Multi-game",fee:"$795 ($50 early bird discount)",deadline:"TBD",website:"lijsl.org",lodging:"NYC metro traffic — plan accordingly",notes:"Pulls from insular LIJSL ecosystem. Strict guest player rules: max 3 outside-club players (club-pass unlimited). Excellent value at $795.",ageMatrix:"VERIFY",matrixDetails:"Late July — matrix not stated in sources; confirm with TSP/LIJSL"},
   {id:26,name:"Kick-Off Classic",host:"Globall Competitions / LI Rough Riders",location:"Uniondale, NY",distance:110,dates:"Aug 9, 2026 (Saturday)",days:"1 day",format:"11v11",games:"Condensed schedule",fee:"TBD",deadline:"TBD",website:"kickoffli.com",lodging:"Single-day event",notes:"Late-summer single-day pre-season primer. Like CRUSA, acts as transition into fall season. Maintained fields with significant spectator infrastructure.",ageMatrix:"VERIFY",matrixDetails:"Aug 9 timing strongly suggests new Fall 2026 grade year matrix as preseason event — confirm with Globall Competitions"},
-  {id:27,name:"Maryland Invitational",host:"Bethesda Soccer Club & DeMatha Soccer Academy",location:"Boyds, MD area",distance:130,dates:"Jun 5–7, 2026",days:"3 days",format:"11v11 (verify on site)",games:"TBD",fee:"TBD",deadline:"TBD",website:"Per USYS MD sanctioned tournament list",lodging:"Stay-to-play likely at 130 mi",notes:"Exposes EPYSA teams to MSYSA/VYSA possession-based tactical structure. Premier facility. Verify U14 boys bracket and 11v11 specifics.",ageMatrix:"BIRTH YEAR",matrixDetails:"Jun 5–7 — early June, birth year matrix (closing 25/26 season)"},
+  {id:27,name:"Maryland Invitational",host:"Bethesda Soccer Club & DeMatha Soccer Academy",location:"Boyds, MD area",distance:130,dates:"Jun 5–7, 2026",days:"3 days",format:"11v11 (verify on site)",games:"TBD",fee:"TBD",deadline:"TBD",website:"bethesdasoccer.org",lodging:"Stay-to-play likely at 130 mi",notes:"Exposes EPYSA teams to MSYSA/VYSA possession-based tactical structure. Premier facility. Verify U14 boys bracket and 11v11 specifics.",ageMatrix:"BIRTH YEAR",matrixDetails:"Jun 5–7 — early June, birth year matrix (closing 25/26 season)"},
   {id:28,name:"NRSA Father's Day Cup",host:"North Rockland Soccer Association",location:"Thiells, NY",distance:110,dates:"Jun 20–21, 2026 (boys Sun Jun 21 only)",days:"1 day for boys",format:"11v11; 50-min blocks; 3-referee",games:"3 full-sided games",fee:"$720",deadline:"TBD",website:"nrsa.org/fdc",lodging:"Commuter friendly",notes:"Single-day boys condensed format — peak endurance test. Just off Palisades Pkwy. Exposes team to ENYYSA/Hudson Valley physical direct style.",ageMatrix:"BIRTH YEAR",matrixDetails:"Old Jan–Dec birth year (mid-June, 25/26 season)"},
   {id:29,name:"Independence Cup – Long Island (19th Annual)",host:"Globall Competitions",location:"Uniondale, NY",distance:130,dates:"Jun 27, 2026 (1 day)",days:"1 day",format:"11v11 for U13+ (likely)",games:"Limited (single-day)",fee:"TBD",deadline:"TBD",website:"indycupli.com",lodging:"Long Island — traffic-heavy",notes:"19th annual 'Red, white, and blue soccer showcase.' Long Island tradition. One-day format = minimal commitment but fewer games.",ageMatrix:"BIRTH YEAR",matrixDetails:"Jun 27 — late June, 25/26 season, birth year matrix"}
 ];
+
+// ===================== TOURNAMENT EXTRAS (attractions, restaurants, past winners) =====================
+const TOURNAMENT_EXTRAS = {
+  1: {
+    attractions: "Tyler State Park (hiking, trails & fishing) · Peddler's Village (boutique shops & restaurants, 10 min) · Northampton Township Rec Center (pools & sports fields)",
+    restaurants: "Piccolo Trattoria (award-winning Italian) · The Irish Horne (farm-to-table pub) · Bacco Pizza (casual Italian dine-in)",
+    pastWinners: "Not publicly listed"
+  },
+  2: {
+    attractions: "Red Bull Arena in Harrison (MLS stadium, tours available) · Branch Brook Park (largest cherry blossom collection in US) · West Hudson Park (trails, fishing, athletics)",
+    restaurants: "Keepers Bar & Restaurant (American classics near the arena) · La Fiamma (brick-oven pizza) · Takorea BBQ (Korean-Mexican fusion)",
+    pastWinners: "Not publicly listed"
+  },
+  3: {
+    attractions: "Batsto Village (19th-century ironmaking historic village) · DiMeo Farms (pick-your-own blueberries & peaches) · Hammonton Lake Park (fishing, trails, recreation)",
+    restaurants: "Scarpelli's Restaurant (family Italian since 1970) · The Jersey G.O.A.T. (elevated comfort food) · Rocco's Italian Kitchen (classic Italian diner)",
+    pastWinners: "Not publicly listed"
+  },
+  4: {
+    attractions: "Budd Lake (swimming, kayaking, paddleboarding) · Central Park of Morris County (trails, picnic areas) · Historical Society of Morris County (local heritage exhibits)",
+    restaurants: "Efsane Mediterranean Cuisine (family-owned Turkish) · Budd Lake Diner (classic American comfort food) · Stony Hill Inn (upscale American, 5 min away)",
+    pastWinners: "Not publicly listed"
+  },
+  5: {
+    attractions: "Subaru Park (home of Philadelphia Union — tours available) · Brandywine Creek State Park (hiking, birding, swimming) · Harrah's Philadelphia Casino (waterfront entertainment)",
+    restaurants: "The Wing Kitchen (Chopped champion Chef Timothy Witcher) · Pennsylvania Ale Works (craft beers, pub food) · Lorenzo and Sons (legendary Philly pizza)",
+    pastWinners: "Not publicly listed"
+  },
+  6: {
+    attractions: "American Helicopter Museum & Education Center (35+ aircraft) · West Chester Railroad (scenic 90-min steam train rides) · Brandywine Creek State Park (hiking, swimming holes)",
+    restaurants: "Pietro's Prime (premium steaks, 80-year family tradition) · Más Mexicali Cantina (award-winning Mexican) · The Gables at Chadds Ford (historic 1861 tavern)",
+    pastWinners: "Not publicly listed"
+  },
+  7: {
+    attractions: "Subaru Park (Philadelphia Union MLS stadium) · Brandywine Creek State Park (hiking, swimming) · Chester County History Center (80,000+ artifacts)",
+    restaurants: "The Wing Kitchen (celebrated local chef) · Rivertown Brewing Co. (waterfront craft beers) · Mad Mex (lively Mexican, family-friendly)",
+    pastWinners: "Not publicly listed"
+  },
+  8: {
+    attractions: "Subaru Park (tours, right next door) · Harrah's Philadelphia Casino & Racetrack · Delaware County Historical Society (local history exhibits)",
+    restaurants: "The Wing Kitchen (Chopped-winning chef) · Chickie's & Pete's (Philly institution, famous crab fries) · Lorenzo and Sons Pizza (legendary Philly slice)",
+    pastWinners: "Not publicly listed"
+  },
+  9: {
+    attractions: "Dorney Park & Wildwater Kingdom (major amusement & water park, 20 min) · Da Vinci Science Center (interactive STEM exhibits) · Allentown Art Museum (Frank Lloyd Wright-designed room)",
+    restaurants: "Wert's Cafe (iconic cheeseburgers, 50+ years) · Union & Finch (American bistro, wood-heavy décor) · Brü Daddy's Brewing Co. (family-friendly craft beers & food)",
+    pastWinners: "Not publicly listed"
+  },
+  10: {
+    attractions: "Spooky Nook Sports (USA's largest indoor sports complex — rock climbing, ninja course, arcade) · Amish Farm & House (horse & buggy rides, cultural experience) · Dutch Wonderland amusement park (15 min)",
+    restaurants: "Shady Maple Smorgasbord (largest smorgasbord in the USA) · Forklift & Palate (on-site at Warehouse Hotel) · Isaac's Restaurant & Deli (local Lancaster favorite)",
+    pastWinners: "Not publicly listed"
+  },
+  11: {
+    attractions: "Reading Public Museum (art, science & history) · Mid-Atlantic Air Museum (historic aircraft, WWII events) · GoggleWorks Center for the Arts (glassblowing studios & café)",
+    restaurants: "Austin's Restaurant (family-friendly, pasta & ribs) · Sovereign Restaurant & Bar (upscale American) · Berks Country Kitchen (classic Pennsylvania comfort food)",
+    pastWinners: "Not publicly listed"
+  },
+  12: {
+    attractions: "Pennsylvania Renaissance Faire (costumed performers & jousting, Jun–Oct) · Kreider Farms (100-ft observation silo, dairy tour) · Waltz Vineyards Estate Winery (award-winning PA wines)",
+    restaurants: "The Cat's Meow (1920s-themed steak & seafood) · Rettew's Twin Kiss (beloved local burger & ice cream drive-in) · Twisted Sisters Ice Cream & Handmade Chocolates",
+    pastWinners: "Not publicly listed"
+  },
+  13: {
+    attractions: "Batsto Village (historic ironmaking village & Pinelands nature area) · DiMeo Farms (pick-your-own fruit) · Atlantic City Boardwalk (30 min — entertainment & beach)",
+    restaurants: "Scarpelli's Restaurant (family Italian, local staple) · The Jersey G.O.A.T. (elevated comfort food) · Ram's Head Inn (fine dining, 20 min away)",
+    pastWinners: "Not publicly listed"
+  },
+  14: {
+    attractions: "Hersheypark (120 acres, 80+ rides, Boardwalk waterpark) · Hershey's Chocolate World (chocolate tour, 4D movie, tastings) · ZooAmerica North American Wildlife Park (200+ animals, walkable from park)",
+    restaurants: "Fenicci's of Hershey (Italian, open since 1935) · Bears' Den Sports Bar (hockey memorabilia, hearty food) · The Chocolatier Restaurant (Hershey Lodge family dining)",
+    pastWinners: "Not publicly listed"
+  },
+  15: {
+    attractions: "American Helicopter Museum (35+ aircraft, aviation history) · Highland Orchard (pick-your-own fruit & farm market) · West Chester Railroad (scenic steam train rides)",
+    restaurants: "Pietro's Prime (premium Black Angus steaks) · Más Mexicali Cantina (award-winning Mexican) · Iron Hill Brewery & Restaurant (craft beers, American menu)",
+    pastWinners: "Not publicly listed"
+  },
+  16: {
+    attractions: "Asbury Park Boardwalk (iconic Jersey Shore, Stone Pony music venue) · Silverball Museum Arcade (600+ vintage pinball & arcade games) · Shark River Park (hiking, fishing, picnicking)",
+    restaurants: "Pete & Elda's / Carmen's Pizzeria (legendary thin-crust pizza, 60+ years) · Porta (Neapolitan pizza, 2 min from boardwalk) · Pascal & Sabine (French-inspired Asbury Park bistro)",
+    pastWinners: "Not publicly listed"
+  },
+  17: {
+    attractions: "Pocono Mountains outdoor adventures (whitewater rafting, zip-lining, hiking) · Camelback Mountain Resort (waterpark in summer) · Delaware Water Gap National Recreation Area (70,000 acres, 27 miles of river)",
+    restaurants: "Barley Creek Brewing Company (award-winning craft beers & pub food) · The Cove at Pocono Manor (lakeside dining) · Backdraft Bar & Grille (fire station theme, casual family fun)",
+    pastWinners: "Not publicly listed"
+  },
+  18: {
+    attractions: "Spooky Nook Sports (same campus — America's largest indoor complex, rock climbing, arcade) · Kreider Farms Dairy Tour (100-ft observation silo) · Pennsylvania Renaissance Faire (15 min away)",
+    restaurants: "Forklift & Palate (on-site at Warehouse Hotel, upscale comfort food) · Shady Maple Smorgasbord (20 min, legendary all-you-can-eat) · Rettew's Twin Kiss (local burgers & ice cream)",
+    pastWinners: "Not publicly listed"
+  },
+  19: {
+    attractions: "Six Flags Great Adventure (theme park & safari, 30 min) · Duke Farms (1,800-acre estate, formal gardens, farm animals) · Delaware & Raritan Canal State Park (hiking & biking trails)",
+    restaurants: "Harvest Moon Inn (award-winning farm-to-table) · Da Filippo (family Italian, local favorite) · Stuff Yer Face (iconic NJ stromboli & calzone, New Brunswick)",
+    pastWinners: "Not publicly listed"
+  },
+  20: {
+    attractions: "Sturgis Pretzel House (oldest pretzel bakery in America, est. 1861) · Lititz Springs Park (local tradition, picnic areas, creek) · Spooky Nook Sports (rock climbing, ninja course, 5 min away)",
+    restaurants: "Tomato Pie Café (Lititz's beloved local staple) · Café Chocolate (chocolate-themed café, Lititz) · Forklift & Palate (Warehouse Hotel, 5 min away)",
+    pastWinners: "Not publicly listed"
+  },
+  21: {
+    attractions: "Duke Farms (1,800-acre estate, formal gardens & farm animals) · Delaware & Raritan Canal State Park (33-mile trail, hiking & biking) · Sourland Mountain Preserve (rugged trails, birding)",
+    restaurants: "Harvest Moon Inn (acclaimed farm-to-table, New Brunswick area) · Salt Creek Grille (Princeton area American dining) · Teresa Caffe (upscale Italian, Princeton, 15 min)",
+    pastWinners: "Not publicly listed"
+  },
+  22: {
+    attractions: "Little Seneca Lake (kayaking, paddleboarding & rowing, 5 min walk from fields) · South Germantown Recreational Park (695 acres — splash park, mini golf, BMX track) · Black Hill Regional Park (nature center, 38 miles of trails)",
+    restaurants: "Mamma Lena Trattoria Napoletana (authentic Neapolitan Italian) · KPOT Korean BBQ & Hot Pot (all-you-can-eat interactive dining) · Dogfish Head Alehouse (Gaithersburg, craft beers & pub food)",
+    pastWinners: "Not publicly listed"
+  },
+  23: {
+    attractions: "Fredericksburg & Spotsylvania National Military Park (Civil War battlefield tours) · Fun Land of Fredericksburg (laser tag, bowling, go-karts, climbing wall) · George Washington's Ferry Farm (birthplace site, living history programs)",
+    restaurants: "Ristorante Renato (charming family-owned Italian, Old Town) · Castiglia's Italian Restaurant (rooftop dining) · Sammy T's (Fredericksburg's most-loved family restaurant)",
+    pastWinners: "Not publicly listed"
+  },
+  24: {
+    attractions: "Antietam National Battlefield (Civil War landmark, 10 mi away) · Catoctin Wildlife Preserve & Zoo (800+ animals, walk-through exhibits) · Hagerstown Aviation Museum (28 historic aircraft from 1919–1993)",
+    restaurants: "Schmankerl Stube (authentic Bavarian cuisine & Munich draft beers) · Los Amigos Mexican Restaurant (vibrant family atmosphere) · Sidewalk Café Hagerstown (beloved local breakfast & lunch spot)",
+    pastWinners: "Not publicly listed"
+  },
+  25: {
+    attractions: "Cradle of Aviation Museum (Apollo lunar module, 40,000 sq ft of exhibits) · Long Island Children's Museum (Garden City, 10 min) · Jones Beach State Park (iconic Long Island beach, 6.5-mile boardwalk)",
+    restaurants: "Casa Vieja (Spanish & South American cuisine) · Argyle Restaurant (classic American, Babylon area) · Mill Pond House (waterfront dining, Centerport)",
+    pastWinners: "Not publicly listed"
+  },
+  26: {
+    attractions: "Nassau Veterans Memorial Coliseum (major concerts & sporting events) · Hofstra University campus (free public gardens & museum) · Cradle of Aviation Museum (Apollo lunar module, 10 min away)",
+    restaurants: "Umberto's of New Hyde Park (landmark NY-style pizza) · Ciao Baby Cucina (Italian, Garden City) · The Landmark (classic American dining, Uniondale area)",
+    pastWinners: "Not publicly listed"
+  },
+  27: {
+    attractions: "Little Seneca Lake (paddleboarding, kayaking, scenic walks) · South Germantown Recreational Park (splash park, mini golf, BMX track) · Seneca Creek State Park (14 miles of trails, fishing)",
+    restaurants: "Mamma Lena Trattoria Napoletana (authentic Neapolitan Italian) · KPOT Korean BBQ & Hot Pot (interactive dining) · Dogfish Head Alehouse (Gaithersburg, craft beers & pub food)",
+    pastWinners: "Not publicly listed"
+  },
+  28: {
+    attractions: "Bear Mountain State Park (Hudson River views, hiking, Perkins Memorial Tower, small zoo) · Harriman State Park (50,000 acres, 200 miles of trails, 31 lakes) · Rockland Lake State Park (swimming complex, cycling, golf)",
+    restaurants: "Hudson's Mill (American food & craft beers, Haverstraw) · La Cascada Bar & Restaurant (Latin & Spanish cuisine) · Marcello's Ristorante (Italian, Suffern, 10 min away)",
+    pastWinners: "Not publicly listed"
+  },
+  29: {
+    attractions: "Cradle of Aviation Museum (actual Apollo lunar module, 40,000 sq ft) · Jones Beach State Park (6.5-mile boardwalk, iconic Long Island beach) · Bethpage State Park (5 public golf courses including the famed Black Course)",
+    restaurants: "Umberto's of New Hyde Park (landmark NY pizza) · Borrelli's Restaurant (classic Long Island Italian, East Meadow) · Ciao Baby Cucina (Italian, Garden City)",
+    pastWinners: "Not publicly listed"
+  }
+};
 
 // ===================== STATE =====================
 let currentFilter = 'all';
@@ -787,6 +942,9 @@ function renderTournaments() {
           <strong>Lodging:</strong> ${t.lodging}<br>
           <strong>Age Matrix:</strong> ${t.ageMatrix} — ${t.matrixDetails}<br><br>
           <em>${t.notes}</em><br><br>
+          ${(TOURNAMENT_EXTRAS[t.id]||{}).attractions?`<strong>📍 Nearby Attractions:</strong> ${TOURNAMENT_EXTRAS[t.id].attractions}<br>`:''}
+          ${(TOURNAMENT_EXTRAS[t.id]||{}).restaurants?`<strong>🍽️ Restaurants Nearby:</strong> ${TOURNAMENT_EXTRAS[t.id].restaurants}<br>`:''}
+          ${(TOURNAMENT_EXTRAS[t.id]||{}).pastWinners?`<strong>🏆 Past U14 Boys Winners:</strong> ${TOURNAMENT_EXTRAS[t.id].pastWinners}<br><br>`:''}
           <strong>Website:</strong> <a href="https://${t.website}" target="_blank" class="t-website">${t.website}</a>
         </div>
       </div>
@@ -1129,11 +1287,24 @@ function getRemainingCredits() {
 function updateCreditDisplay() {
   const remaining = getRemainingCredits();
   const used = TOTAL_CREDITS - remaining;
+  const colorClass = remaining === 0 ? ' empty' : remaining < 200 ? ' warn' : '';
+
+  // Voter bar badge
   const badge = document.getElementById('credits-remaining-display');
   if (badge) {
     badge.textContent = `💰 ${remaining} credits remaining`;
-    badge.className = 'credits-remaining-display' + (remaining === 0 ? ' empty' : remaining < 200 ? ' warn' : '');
+    badge.className = 'credits-remaining-display' + colorClass;
   }
+
+  // Sticky header badge
+  const headerBadge = document.getElementById('header-credit-badge');
+  const headerCount = document.getElementById('header-credits-remaining');
+  if (headerBadge && headerCount) {
+    headerBadge.style.display = getVoterName() ? 'flex' : 'none';
+    headerCount.textContent = remaining;
+    headerBadge.className = 'header-credit-badge' + colorClass;
+  }
+
   const countUsed = document.getElementById('count-used');
   if (countUsed) countUsed.textContent = used;
   const countRem = document.getElementById('count-remaining');
