@@ -236,6 +236,21 @@ select.filter-select:focus{outline:none;border-color:var(--purple)}
 .public-note-author{font-weight:700;font-size:.77rem;color:var(--purple)}
 .public-note-text{font-size:.78rem;color:#444;margin-top:2px;line-height:1.45}
 
+/* CREDIT ALLOCATION */
+.credit-alloc-row{display:flex;align-items:center;gap:8px;padding:10px 18px 8px;flex-wrap:wrap}
+.credit-adj-btn{background:#f0f0f0;border:2px solid var(--border);color:var(--text);border-radius:6px;width:36px;height:36px;font-size:1.1rem;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;line-height:1}
+.credit-adj-btn:hover:not(:disabled){background:var(--purple-light);border-color:var(--purple);color:var(--purple)}
+.credit-adj-btn:disabled{opacity:.32;cursor:not-allowed}
+.credit-input-field{border:2px solid var(--border);border-radius:6px;padding:6px 8px;font-size:1rem;font-weight:800;width:74px;text-align:center;font-family:inherit;color:var(--text);transition:border-color .15s}
+.credit-input-field:focus{outline:none;border-color:var(--purple)}
+.credit-label{font-size:.75rem;font-weight:700;color:var(--muted)}
+.credit-pct{font-size:.7rem;color:var(--purple);font-weight:700;margin-left:4px}
+.t-card.has-credits{border-color:var(--purple)}
+.t-card.has-credits .t-card-head{background:var(--purple-light)}
+.credits-remaining-display{background:var(--purple);color:#fff;border-radius:6px;padding:5px 14px;font-size:.82rem;font-weight:700;white-space:nowrap}
+.credits-remaining-display.warn{background:#d97706}
+.credits-remaining-display.empty{background:#dc2626}
+
 /* FOOTER */
 footer{background:var(--black);color:#aaa;text-align:center;padding:22px 20px;font-size:.8rem}
 footer strong{color:#fff}
@@ -283,7 +298,7 @@ footer strong{color:#fff}
     <div class="section-header">
       <div class="section-title">🗳️ Tournament Vote</div>
     </div>
-    <p class="vote-intro">This is where <strong>team families help decide</strong> which tournaments F6AD registers for this summer. Browse the options below, cast your votes, and leave a note to share your thinking with the rest of the team. Every family's voice matters — the more who weigh in, the better decisions we make together! 🏆</p>
+    <p class="vote-intro">This is where <strong>team families help decide</strong> which tournaments F6AD registers for this summer. Each family gets <strong>1,000 credits</strong> to spread across as many tournaments as they'd like — max 200 per tournament. Put more credits on the ones you really want, fewer on maybes, and zero on ones that don't work for you. Leave a note to share your thinking. Every family's voice matters — the more who weigh in, the better decisions we make together! 🏆</p>
 
     <!-- Top 3 Ticker -->
     <div id="top3-ticker" class="top3-ticker" style="display:none">
@@ -301,15 +316,14 @@ footer strong{color:#fff}
       <span class="voter-name-display">Voting as: <strong id="voter-display-name"></strong></span>
       <button class="btn-change-voter" onclick="changeVoter()">change</button>
       <div style="flex:1"></div>
+      <span id="credits-remaining-display" class="credits-remaining-display">💰 1000 credits remaining</span>
       <button class="btn-share" onclick="shareVotes()">📋 Copy My Votes Summary</button>
     </div>
 
     <!-- Vote summary bar -->
     <div class="vote-summary-bar" id="vote-summary-bar" style="display:none">
       <div class="vote-counts">
-        <span class="vc yes">✅ <span id="count-yes">0</span> Yes</span>
-        <span class="vc maybe">🤔 <span id="count-maybe">0</span> Maybe</span>
-        <span class="vc no">❌ <span id="count-no">0</span> No</span>
+        <span class="vc yes">💰 <span id="count-used">0</span> / 1000 credits allocated</span>
         <span style="font-size:.8rem;color:var(--muted)" id="count-remaining"></span>
       </div>
     </div>
@@ -321,8 +335,7 @@ footer strong{color:#fff}
       <button class="filter-btn" onclick="filterTournaments('nearby',this)">≤50 mi</button>
       <button class="filter-btn" onclick="filterTournaments('grade',this)">🟢 Grade Year</button>
       <button class="filter-btn" onclick="filterTournaments('birth',this)">🔵 Birth Year</button>
-      <button class="filter-btn" onclick="filterTournaments('voted-yes',this)">My ✅ Yes</button>
-      <button class="filter-btn" onclick="filterTournaments('voted-maybe',this)">My 🤔 Maybe</button>
+      <button class="filter-btn" onclick="filterTournaments('my-picks',this)">💰 My Picks</button>
 
       <span class="filter-label" style="margin-left:8px">Sort:</span>
       <select class="filter-select" onchange="sortTournaments(this.value)">
@@ -402,7 +415,7 @@ footer strong{color:#fff}
         <div id="tab-votes" class="tab-panel active">
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Votes update here in real time as team members submit them. Hover the 👤 icon to see who voted which way.</p>
           <table class="vote-tally-table" id="vote-tally-table">
-            <thead><tr><th>#</th><th>Tournament</th><th>Dates</th><th class="tally-yes">✅ Yes</th><th class="tally-maybe">🤔 Maybe</th><th class="tally-no">❌ No</th></tr></thead>
+            <thead><tr><th>#</th><th>Tournament</th><th>Dates</th><th class="tally-yes">💰 Credits</th><th>Voters</th></tr></thead>
             <tbody id="vote-tally-body"></tbody>
           </table>
           <button class="btn-primary" onclick="exportVoteTally()">📊 Copy Tally to Clipboard</button>
@@ -538,6 +551,13 @@ let currentSort = 'date';
 let editingEventId = null;
 let editingAnnId = null;
 
+// Credit allocation state
+const TOTAL_CREDITS = 1000;
+const MAX_PER_TOURNAMENT = 200;
+let localCredits = {};        // { tournId: amount } for current voter
+let creditSaveTimers = {};
+const pendingCreditSaves = new Set();
+
 function getVoterName() { return localStorage.getItem('f6ad_voter') || ''; }
 function saveVoterName(n) { localStorage.setItem('f6ad_voter', n); }
 function getAdminPw() { return localStorage.getItem('f6ad_pw') || 'FUNTIME'; }
@@ -554,6 +574,7 @@ function startListeners() {
       allVotes[doc.id] = doc.data().votes || {};
       allNotes[doc.id] = doc.data().notes || {};
     });
+    initLocalCredits();
     updateVoteSummary();
     renderTournaments();
     renderVoteTally();
@@ -576,9 +597,11 @@ function setVoter() {
   const n = document.getElementById('voter-name-input').value.trim();
   if (!n) { showToast('Please enter your name.'); return; }
   saveVoterName(n);
+  initLocalCredits();
   renderVoterBar();
   renderTournaments();
   updateVoteSummary();
+  updateCreditDisplay();
 }
 function changeVoter() {
   saveVoterName('');
@@ -593,56 +616,35 @@ function renderVoterBar() {
   if (name) {
     document.getElementById('voter-display-name').textContent = name;
     updateVoteSummary();
+    updateCreditDisplay();
   }
 }
 function updateVoteSummary() {
-  const name = getVoterName();
-  const votes = name ? (allVotes[name] || {}) : {};
-  let yes = 0, maybe = 0, no = 0;
-  TOURNAMENTS.forEach(t => {
-    if (votes[t.id] === 'yes') yes++;
-    else if (votes[t.id] === 'maybe') maybe++;
-    else if (votes[t.id] === 'no') no++;
-  });
-  document.getElementById('count-yes').textContent = yes;
-  document.getElementById('count-maybe').textContent = maybe;
-  document.getElementById('count-no').textContent = no;
-  const remaining = TOURNAMENTS.length - yes - maybe - no;
-  document.getElementById('count-remaining').textContent = remaining > 0 ? `· ${remaining} not yet voted` : '· All tournaments voted!';
+  const remaining = getRemainingCredits();
+  const used = TOTAL_CREDITS - remaining;
+  const countUsed = document.getElementById('count-used');
+  if (countUsed) countUsed.textContent = used;
+  const countRem = document.getElementById('count-remaining');
+  if (countRem) countRem.textContent = remaining > 0 ? `· ${remaining} credits remaining` : '· All credits allocated!';
 }
 
-// ===================== VOTING =====================
-function castVote(tournId, vote) {
-  const name = getVoterName();
-  if (!name) { showToast('Enter your name first to vote!'); return; }
-  const myVotes = {...(allVotes[name] || {})};
-  if (myVotes[tournId] === vote) { delete myVotes[tournId]; }
-  else { myVotes[tournId] = vote; }
-  db.collection('votes').doc(name).set({
-    name, votes: myVotes,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(e => showToast('Error saving vote: ' + e.message));
-}
 
 function shareVotes() {
   const name = getVoterName();
   if (!name) { showToast('Set your name first.'); return; }
-  const votes = allVotes[name] || {};
-  const yes = [], maybe = [], no = [], unvoted = [];
+  const myVotes = allVotes[name] || {};
+  const allocated = [], unallocated = [];
   TOURNAMENTS.forEach(t => {
-    const v = votes[t.id];
-    const short = `#${t.id} ${t.name}`;
-    if (v === 'yes') yes.push(short);
-    else if (v === 'maybe') maybe.push(short);
-    else if (v === 'no') no.push(short);
-    else unvoted.push(short);
+    const credits = typeof myVotes[t.id] === 'number' ? myVotes[t.id] : 0;
+    if (credits > 0) allocated.push({name: `#${t.id} ${t.name}`, credits});
+    else unallocated.push(`#${t.id} ${t.name}`);
   });
-  let text = `F6AD TOURNAMENT VOTES — ${name}\n${'='.repeat(50)}\n`;
-  if (yes.length) text += `\n✅ YES (${yes.length}):\n` + yes.map(x=>`  ${x}`).join('\n');
-  if (maybe.length) text += `\n\n🤔 MAYBE (${maybe.length}):\n` + maybe.map(x=>`  ${x}`).join('\n');
-  if (no.length) text += `\n\n❌ NO (${no.length}):\n` + no.map(x=>`  ${x}`).join('\n');
-  if (unvoted.length) text += `\n\n⬜ NOT VOTED (${unvoted.length}):\n` + unvoted.map(x=>`  ${x}`).join('\n');
-  navigator.clipboard.writeText(text).then(() => showToast('✅ Votes copied!'));
+  allocated.sort((a,b) => b.credits - a.credits);
+  const used = allocated.reduce((s,x) => s + x.credits, 0);
+  let text = `F6AD TOURNAMENT CREDIT VOTES — ${name}\n${'='.repeat(50)}\n${used} / ${TOTAL_CREDITS} credits used\n`;
+  if (allocated.length) text += `\n💰 ALLOCATED (${allocated.length} tournaments):\n` + allocated.map(x=>`  ${x.name} — ${x.credits} credits`).join('\n');
+  if (unallocated.length) text += `\n\n⬜ NO CREDITS (${unallocated.length}):\n` + unallocated.map(x=>`  ${x}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => showToast('✅ Credits summary copied!'));
 }
 
 // ===================== TOURNAMENTS =====================
@@ -670,30 +672,26 @@ function parseFee(feeStr) {
 
 function renderTournaments() {
   const voterName = getVoterName();
-  const votes = voterName ? (allVotes[voterName] || {}) : {};
   let list = [...TOURNAMENTS];
   // Filter
   if (currentFilter === 'nearby') list = list.filter(t => t.distance <= 50);
   if (currentFilter === 'grade') list = list.filter(t => t.ageMatrix === 'GRADE YEAR');
   if (currentFilter === 'birth') list = list.filter(t => t.ageMatrix === 'BIRTH YEAR');
-  if (currentFilter === 'voted-yes') list = list.filter(t => votes[t.id] === 'yes');
-  if (currentFilter === 'voted-maybe') list = list.filter(t => votes[t.id] === 'maybe');
-
+  if (currentFilter === 'my-picks') list = list.filter(t => (localCredits[t.id] || 0) > 0);
   // Sort
   if (currentSort === 'date') list.sort((a,b) => parseDate(a.dates) - parseDate(b.dates));
   if (currentSort === 'distance') list.sort((a,b) => a.distance - b.distance);
   if (currentSort === 'fee') list.sort((a,b) => parseFee(a.fee) - parseFee(b.fee));
 
-  // Compute live tallies from all voters
+  // Compute live credit totals from all voters
   const tally = {};
-  TOURNAMENTS.forEach(t => tally[t.id] = {yes:0, maybe:0, no:0});
+  TOURNAMENTS.forEach(t => tally[t.id] = {credits:0, voterCount:0});
   Object.entries(allVotes).forEach(([voter, voterVotes]) => {
     Object.entries(voterVotes).forEach(([tid, v]) => {
       const id = parseInt(tid);
-      if (!tally[id]) return;
-      if (v === 'yes') tally[id].yes++;
-      else if (v === 'maybe') tally[id].maybe++;
-      else if (v === 'no') tally[id].no++;
+      if (!tally[id] || typeof v !== 'number' || v <= 0) return;
+      tally[id].credits += v;
+      tally[id].voterCount++;
     });
   });
 
@@ -704,38 +702,48 @@ function renderTournaments() {
     Object.entries(voterNotes).forEach(([tid, note]) => {
       const id = parseInt(tid);
       if (pubNotes[id] !== undefined && note && note.trim()) {
-        pubNotes[id].push({voter, note: note.trim(), voteVal: (allVotes[voter] || {})[id]});
+        const credits = (allVotes[voter] || {})[id];
+        pubNotes[id].push({voter, note: note.trim(), credits: typeof credits === 'number' ? credits : 0});
       }
     });
   });
 
-  // Preserve any in-progress note drafts the user is typing
+  // Preserve in-progress note drafts
   const savedDrafts = {};
   document.querySelectorAll('[id^="note-input-"]').forEach(el => {
     savedDrafts[el.id.replace('note-input-', '')] = el.value;
   });
 
+  const remaining = getRemainingCredits();
   const grid = document.getElementById('tournament-grid');
   grid.innerHTML = list.map(t => {
-    const vote = votes[t.id];
-    const cardClass = vote === 'yes' ? 'voted-yes' : vote === 'maybe' ? 'voted-maybe' : vote === 'no' ? 'voted-no' : '';
+    const myCredits = localCredits[t.id] || 0;
+    const cardClass = myCredits > 0 ? 'has-credits' : '';
     const matrixClass = t.ageMatrix === 'GRADE YEAR' ? 'matrix-grade' : t.ageMatrix === 'BIRTH YEAR' ? 'matrix-birth' : 'matrix-verify';
     const matrixLabel = t.ageMatrix === 'GRADE YEAR' ? '🟢 Grade Year' : t.ageMatrix === 'BIRTH YEAR' ? '🔵 Birth Year' : '🟡 Verify Matrix';
     const feeDisplay = t.fee === 'TBD' ? '<span class="t-fee tbd">Fee TBD</span>' : `<span class="t-fee">${t.fee.split('(')[0].trim()}</span>`;
-    const disableVote = !voterName;
     const tc = tally[t.id];
-    const totalVotes = tc.yes + tc.maybe + tc.no;
     const myNote = voterName ? ((allNotes[voterName] || {})[t.id] || '') : '';
     const notes = pubNotes[t.id] || [];
 
-    const liveCountsHtml = totalVotes > 0
-      ? `<span class="cvc-yes">✅ ${tc.yes}</span><span class="cvc-divider">·</span><span class="cvc-maybe">🤔 ${tc.maybe}</span><span class="cvc-divider">·</span><span class="cvc-no">❌ ${tc.no}</span><span style="font-size:.7rem;color:var(--muted);margin-left:2px">(${totalVotes} vote${totalVotes!==1?'s':''})</span>`
-      : `<span style="font-size:.72rem;color:var(--muted)">No votes yet — be the first!</span>`;
+    const liveCountsHtml = tc.credits > 0
+      ? `<span style="color:var(--purple);font-weight:700">💰 ${tc.credits} credits</span> <span class="cvc-divider">·</span> <span style="font-size:.7rem;color:var(--muted)">${tc.voterCount} voter${tc.voterCount!==1?'s':''}</span>`
+      : `<span style="font-size:.72rem;color:var(--muted)">No credits yet — be first!</span>`;
 
-    const noteInputHtml = (voterName && vote) ? `
+    const canAdd = remaining > 0 && myCredits < MAX_PER_TOURNAMENT;
+    const creditAllocHtml = voterName ? `
+      <div class="credit-alloc-row">
+        <button class="credit-adj-btn" id="credit-minus-${t.id}" onclick="adjustCredits(${t.id},-25)" ${myCredits<=0?'disabled':''}>−</button>
+        <input type="number" class="credit-input-field" id="credit-input-${t.id}" value="${myCredits}" min="0" max="${Math.min(myCredits+remaining, MAX_PER_TOURNAMENT)}" oninput="handleCreditInput(${t.id})" onblur="handleCreditInput(${t.id})"/>
+        <button class="credit-adj-btn" id="credit-plus-${t.id}" onclick="adjustCredits(${t.id},25)" ${!canAdd?'disabled':''}>+</button>
+        <span class="credit-label">credits (max 200)</span>
+        <span class="credit-pct" id="credit-pct-${t.id}">${myCredits>0?`${((myCredits/TOTAL_CREDITS)*100).toFixed(0)}% of budget`:''}</span>
+      </div>` : `<div style="padding:10px 18px;font-size:.8rem;color:var(--muted);font-style:italic">Enter your name above to allocate credits</div>`;
+
+    const noteInputHtml = (voterName && myCredits > 0) ? `
       <div class="vote-note-wrap">
         <span class="vote-note-label">Your note (shared with all families)</span>
-        <textarea class="vote-note-textarea" id="note-input-${t.id}" placeholder="Why did you vote this way? Any concerns or enthusiasm to share?">${myNote}</textarea>
+        <textarea class="vote-note-textarea" id="note-input-${t.id}" placeholder="Why are you putting credits here? Any concerns or enthusiasm to share?">${myNote}</textarea>
         <div class="vote-note-actions">
           <button class="vote-note-save" onclick="saveNote(${t.id})">💾 Save Note</button>
           <span class="vote-note-saved" id="note-saved-${t.id}">✅ Saved!</span>
@@ -746,13 +754,10 @@ function renderTournaments() {
       <div class="public-notes-wrap">
         <button class="public-notes-toggle" onclick="togglePublicNotes(${t.id})">💬 ${notes.length} note${notes.length>1?'s':''} from families — show/hide</button>
         <div class="public-notes-list" id="pub-notes-${t.id}" style="display:none">
-          ${notes.map(n => {
-            const voteLabel = n.voteVal === 'yes' ? ' ✅' : n.voteVal === 'maybe' ? ' 🤔' : n.voteVal === 'no' ? ' ❌' : '';
-            return `<div class="public-note-item">
-              <div class="public-note-author">${n.voter}${voteLabel}</div>
-              <div class="public-note-text">${n.note}</div>
-            </div>`;
-          }).join('')}
+          ${notes.map(n => `<div class="public-note-item">
+            <div class="public-note-author">${n.voter}${n.credits>0?` <span style="font-size:.7rem;color:var(--muted)">(${n.credits} credits)</span>`:''}</div>
+            <div class="public-note-text">${n.note}</div>
+          </div>`).join('')}
         </div>
       </div>` : '';
 
@@ -787,24 +792,14 @@ function renderTournaments() {
       </div>
       <div class="t-footer">
         <div class="card-vote-counts">${liveCountsHtml}</div>
-        <div class="vote-buttons" ${disableVote ? 'title="Enter your name above to vote"' : ''}>
-          <button class="vote-btn ${vote==='yes'?'active-yes':''}" onclick="castVote(${t.id},'yes')" ${disableVote?'disabled':''}>
-            <span class="vb-emoji">✅</span><span>Yes</span>
-          </button>
-          <button class="vote-btn ${vote==='maybe'?'active-maybe':''}" onclick="castVote(${t.id},'maybe')" ${disableVote?'disabled':''}>
-            <span class="vb-emoji">🤔</span><span>Maybe</span>
-          </button>
-          <button class="vote-btn ${vote==='no'?'active-no':''}" onclick="castVote(${t.id},'no')" ${disableVote?'disabled':''}>
-            <span class="vb-emoji">❌</span><span>No</span>
-          </button>
-        </div>
+        ${creditAllocHtml}
         ${noteInputHtml}
         ${pubNotesHtml}
       </div>
     </div>`;
   }).join('');
 
-  // Restore any in-progress note drafts the user hadn't saved yet
+  // Restore note drafts
   Object.entries(savedDrafts).forEach(([id, val]) => {
     const el = document.getElementById('note-input-' + id);
     if (el) el.value = val;
@@ -1022,53 +1017,50 @@ function changePassword() {
 
 // ===================== VOTE TALLY (live from Firestore) =====================
 function renderVoteTally() {
-  const voters = Object.keys(allVotes);
   const tally = {};
-  TOURNAMENTS.forEach(t => tally[t.id] = {yes:0,maybe:0,no:0,yNames:[],mNames:[],nNames:[]});
-  voters.forEach(voter => {
-    Object.entries(allVotes[voter]||{}).forEach(([tid,v]) => {
+  TOURNAMENTS.forEach(t => tally[t.id] = {credits:0, voters:[], id:t.id});
+  Object.entries(allVotes).forEach(([voter, voterVotes]) => {
+    Object.entries(voterVotes).forEach(([tid, v]) => {
       const id = parseInt(tid);
-      if (!tally[id]) return;
-      if (v==='yes'){tally[id].yes++;tally[id].yNames.push(voter);}
-      else if(v==='maybe'){tally[id].maybe++;tally[id].mNames.push(voter);}
-      else if(v==='no'){tally[id].no++;tally[id].nNames.push(voter);}
+      if (!tally[id] || typeof v !== 'number' || v <= 0) return;
+      tally[id].credits += v;
+      tally[id].voters.push(`${voter} (${v})`);
     });
   });
-  const sorted = [...TOURNAMENTS].sort((a,b)=>(tally[b.id].yes-tally[a.id].yes)||(tally[b.id].maybe-tally[a.id].maybe));
+  const sorted = [...TOURNAMENTS].sort((a,b) => tally[b.id].credits - tally[a.id].credits);
   const body = document.getElementById('vote-tally-body');
-  const active = voters.filter(v=>Object.keys(allVotes[v]||{}).length>0);
-  if (!active.length) {
-    body.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No votes yet — share personalized links with your team!</td></tr>`;
+  const hasAny = Object.values(tally).some(t => t.credits > 0);
+  if (!hasAny) {
+    body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No credits allocated yet — share personalized links with your team!</td></tr>`;
     return;
   }
   body.innerHTML = sorted.map(t => {
     const v = tally[t.id];
-    if (!v.yes&&!v.maybe&&!v.no) return '';
+    if (!v.credits) return '';
     return `<tr>
       <td>${t.id}</td>
       <td style="max-width:200px;font-weight:600">${t.name}</td>
       <td style="color:var(--muted);font-size:.75rem">${t.dates}</td>
-      <td class="tally-yes" title="${v.yNames.join(', ')}">${v.yes}${v.yNames.length?' 👤':''}</td>
-      <td class="tally-maybe" title="${v.mNames.join(', ')}">${v.maybe}${v.mNames.length?' 👤':''}</td>
-      <td class="tally-no" title="${v.nNames.join(', ')}">${v.no}${v.nNames.length?' 👤':''}</td>
+      <td class="tally-yes" title="${v.voters.join(', ')}">💰 ${v.credits}${v.voters.length?' 👤':''}</td>
+      <td style="font-size:.75rem;color:var(--muted)">${v.voters.length}</td>
     </tr>`;
-  }).filter(Boolean).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No votes yet.</td></tr>`;
+  }).filter(Boolean).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No credits allocated yet.</td></tr>`;
 }
 
 function exportVoteTally() {
-  const voters = Object.keys(allVotes);
   const tally = {};
-  TOURNAMENTS.forEach(t => tally[t.id]={yes:0,maybe:0,no:0});
-  voters.forEach(voter => {
-    Object.entries(allVotes[voter]||{}).forEach(([tid,v]) => {
-      const id=parseInt(tid);
-      if(tally[id]&&(v==='yes'||v==='maybe'||v==='no')) tally[id][v]++;
+  TOURNAMENTS.forEach(t => tally[t.id] = {credits:0});
+  Object.entries(allVotes).forEach(([voter, voterVotes]) => {
+    Object.entries(voterVotes).forEach(([tid, v]) => {
+      const id = parseInt(tid);
+      if (tally[id] && typeof v === 'number') tally[id].credits += v;
     });
   });
-  const sorted=[...TOURNAMENTS].sort((a,b)=>tally[b.id].yes-tally[a.id].yes);
-  let text=`F6AD TOURNAMENT VOTE TALLY (${voters.length} voters)\n${'='.repeat(60)}\n`;
-  sorted.forEach(t=>{const v=tally[t.id];if(v.yes+v.maybe+v.no>0)text+=`\n${t.name}\n  ✅ Yes: ${v.yes}  🤔 Maybe: ${v.maybe}  ❌ No: ${v.no}\n`;});
-  navigator.clipboard.writeText(text).then(()=>showToast('📊 Tally copied!'));
+  const voterCount = Object.keys(allVotes).length;
+  const sorted = [...TOURNAMENTS].sort((a,b) => tally[b.id].credits - tally[a.id].credits);
+  let text = `F6AD TOURNAMENT CREDIT TALLY (${voterCount} voters)\n${'='.repeat(60)}\n`;
+  sorted.forEach(t => { if (tally[t.id].credits > 0) text += `\n${t.name}\n  💰 ${tally[t.id].credits} credits\n`; });
+  navigator.clipboard.writeText(text).then(() => showToast('📊 Tally copied!'));
 }
 
 function clearAllVotes() {
@@ -1112,24 +1104,109 @@ function copyLink(url, btn) {
   });
 }
 
-function clearAllVotes() {
-  if (!confirm('Clear all imported vote tallies? This cannot be undone.')) return;
-  saveState({importedVotes: {}});
-  renderVoteTally();
-  showToast('Votes cleared.');
+
+// ===================== CREDIT ALLOCATION =====================
+function initLocalCredits() {
+  const name = getVoterName();
+  if (!name) { localCredits = {}; return; }
+  const v = allVotes[name] || {};
+  TOURNAMENTS.forEach(t => {
+    if (!pendingCreditSaves.has(t.id)) {
+      const val = v[t.id];
+      localCredits[t.id] = (typeof val === 'number' && val >= 0) ? Math.min(Math.round(val), MAX_PER_TOURNAMENT) : 0;
+    }
+  });
+}
+
+function getTotalUsed() {
+  return Object.values(localCredits).reduce((sum, v) => sum + (parseInt(v) || 0), 0);
+}
+
+function getRemainingCredits() {
+  return TOTAL_CREDITS - getTotalUsed();
+}
+
+function updateCreditDisplay() {
+  const remaining = getRemainingCredits();
+  const used = TOTAL_CREDITS - remaining;
+  const badge = document.getElementById('credits-remaining-display');
+  if (badge) {
+    badge.textContent = `💰 ${remaining} credits remaining`;
+    badge.className = 'credits-remaining-display' + (remaining === 0 ? ' empty' : remaining < 200 ? ' warn' : '');
+  }
+  const countUsed = document.getElementById('count-used');
+  if (countUsed) countUsed.textContent = used;
+  const countRem = document.getElementById('count-remaining');
+  if (countRem) countRem.textContent = remaining > 0 ? `· ${remaining} remaining` : '· All credits allocated!';
+  // Update card borders and button states without full re-render
+  TOURNAMENTS.forEach(t => {
+    const card = document.getElementById('card-' + t.id);
+    if (!card) return;
+    const credits = localCredits[t.id] || 0;
+    credits > 0 ? card.classList.add('has-credits') : card.classList.remove('has-credits');
+    const inp = document.getElementById('credit-input-' + t.id);
+    if (inp) inp.value = credits;
+    const minus = document.getElementById('credit-minus-' + t.id);
+    if (minus) minus.disabled = credits <= 0;
+    const plus = document.getElementById('credit-plus-' + t.id);
+    if (plus) plus.disabled = (remaining <= 0 && credits < MAX_PER_TOURNAMENT) || credits >= MAX_PER_TOURNAMENT;
+    const pct = document.getElementById('credit-pct-' + t.id);
+    if (pct) pct.textContent = credits > 0 ? `${((credits/TOTAL_CREDITS)*100).toFixed(0)}% of budget` : '';
+  });
+}
+
+function handleCreditInput(tournId) {
+  const el = document.getElementById('credit-input-' + tournId);
+  if (!el) return;
+  let val = parseInt(el.value) || 0;
+  const currentForThis = localCredits[tournId] || 0;
+  const remaining = getRemainingCredits();
+  val = Math.max(0, Math.min(val, currentForThis + remaining, MAX_PER_TOURNAMENT));
+  el.value = val;
+  localCredits[tournId] = val;
+  updateCreditDisplay();
+  scheduleCreditSave(tournId);
+}
+
+function adjustCredits(tournId, delta) {
+  const currentForThis = localCredits[tournId] || 0;
+  const remaining = getRemainingCredits();
+  const newVal = Math.max(0, Math.min(currentForThis + delta, currentForThis + remaining, MAX_PER_TOURNAMENT));
+  localCredits[tournId] = newVal;
+  updateCreditDisplay();
+  scheduleCreditSave(tournId);
+}
+
+function scheduleCreditSave(tournId) {
+  pendingCreditSaves.add(tournId);
+  clearTimeout(creditSaveTimers[tournId]);
+  creditSaveTimers[tournId] = setTimeout(() => saveCreditAllocation(tournId), 700);
+}
+
+function saveCreditAllocation(tournId) {
+  const name = getVoterName();
+  if (!name) return;
+  const myVotes = {...(allVotes[name] || {})};
+  myVotes[tournId] = localCredits[tournId] || 0;
+  db.collection('votes').doc(name).set({
+    name, votes: myVotes,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge: true})
+  .then(() => pendingCreditSaves.delete(tournId))
+  .catch(e => showToast('Error saving: ' + e.message));
 }
 
 // ===================== TOP 3 TICKER =====================
 function renderTopTicker() {
   const tally = {};
-  TOURNAMENTS.forEach(t => tally[t.id] = {yes:0, id:t.id, name:t.name});
+  TOURNAMENTS.forEach(t => tally[t.id] = {credits:0, id:t.id, name:t.name});
   Object.values(allVotes).forEach(voterVotes => {
     Object.entries(voterVotes).forEach(([tid, v]) => {
       const id = parseInt(tid);
-      if (tally[id] && v === 'yes') tally[id].yes++;
+      if (tally[id] && typeof v === 'number' && v > 0) tally[id].credits += v;
     });
   });
-  const top3 = Object.values(tally).filter(t => t.yes > 0).sort((a,b) => b.yes - a.yes).slice(0,3);
+  const top3 = Object.values(tally).filter(t => t.credits > 0).sort((a,b) => b.credits - a.credits).slice(0,3);
   const ticker = document.getElementById('top3-ticker');
   if (!top3.length) { ticker.style.display = 'none'; return; }
   ticker.style.display = 'flex';
@@ -1139,7 +1216,7 @@ function renderTopTicker() {
       <span class="ticker-rank">${medals[i]}</span>
       <div>
         <div class="ticker-name">${t.name.length>38?t.name.slice(0,38)+'…':t.name}</div>
-        <div class="ticker-count">${t.yes} yes vote${t.yes!==1?'s':''}</div>
+        <div class="ticker-count">💰 ${t.credits} credits</div>
       </div>
     </div>`).join('');
 }
