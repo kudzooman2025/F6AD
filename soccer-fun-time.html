@@ -251,6 +251,15 @@ select.filter-select:focus{outline:none;border-color:var(--purple)}
 .credits-remaining-display.warn{background:#d97706}
 .credits-remaining-display.empty{background:#dc2626}
 
+/* HIDDEN TOURNAMENT BADGE & TOGGLE */
+.hidden-badge{display:inline-block;background:#dc2626;color:#fff;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:999px;margin-left:6px}
+.btn-hide{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;padding:4px 10px;border-radius:5px;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-hide:hover{background:#dc2626;color:#fff}
+.btn-show{background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:4px 10px;border-radius:5px;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s}
+.btn-show:hover{background:#16a34a;color:#fff}
+.vote-tally-table .hidden-row td{opacity:.5;text-decoration:line-through}
+.vote-tally-table .hidden-row .hide-col{opacity:1;text-decoration:none}
+
 /* FOOTER */
 footer{background:var(--black);color:#aaa;text-align:center;padding:22px 20px;font-size:.8rem}
 footer strong{color:#fff}
@@ -415,10 +424,14 @@ footer strong{color:#fff}
         <div id="tab-votes" class="tab-panel active">
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Votes update here in real time as team members submit them. Hover the 👤 icon to see who voted which way.</p>
           <table class="vote-tally-table" id="vote-tally-table">
-            <thead><tr><th>#</th><th>Tournament</th><th>Dates</th><th class="tally-yes">💰 Credits</th><th>Voters</th></tr></thead>
+            <thead><tr><th>#</th><th>Tournament</th><th>Dates</th><th class="tally-yes">💰 Credits</th><th>Voters</th><th>Visibility</th></tr></thead>
             <tbody id="vote-tally-body"></tbody>
           </table>
           <button class="btn-primary" onclick="exportVoteTally()">📊 Copy Tally to Clipboard</button>
+          <hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">
+          <p style="font-weight:800;font-size:.9rem;margin-bottom:6px">🚫 Manage Tournament Visibility</p>
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px">Hide unavailable tournaments. Hidden tournaments won't appear for voters, and any credits already allocated to them will be refunded automatically.</p>
+          <div id="visibility-list" style="display:flex;flex-direction:column;gap:6px"></div>
         </div>
 
         <!-- VOTER LINKS TAB -->
@@ -511,6 +524,7 @@ let allVotes = {};
 let allNotes = {};
 let scheduleItems = [];
 let announcementItems = [];
+let hiddenTournaments = new Set(); // tournament IDs hidden by admin
 
 // ===================== DATA =====================
 const TOURNAMENTS = [
@@ -579,6 +593,7 @@ function startListeners() {
     renderTournaments();
     renderVoteTally();
     renderTopTicker();
+    renderVisibilityList();
   });
   db.collection('schedule').onSnapshot(snap => {
     scheduleItems = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -589,6 +604,14 @@ function startListeners() {
     announcementItems = snap.docs.map(d => ({id: d.id, ...d.data()}));
     renderAnnouncements();
     if (document.getElementById('admin-panel').style.display !== 'none') renderAdminAnnouncements();
+  });
+  db.collection('settings').doc('hiddenTournaments').onSnapshot(doc => {
+    const data = doc.exists ? doc.data() : {};
+    hiddenTournaments = new Set((data.ids || []).map(Number));
+    renderTournaments();
+    renderTopTicker();
+    renderVoteTally();
+    renderVisibilityList();
   });
 }
 
@@ -673,6 +696,8 @@ function parseFee(feeStr) {
 function renderTournaments() {
   const voterName = getVoterName();
   let list = [...TOURNAMENTS];
+  // Hide tournaments hidden by admin (unless admin is viewing)
+  if (!isAdminUnlocked()) list = list.filter(t => !hiddenTournaments.has(t.id));
   // Filter
   if (currentFilter === 'nearby') list = list.filter(t => t.distance <= 50);
   if (currentFilter === 'grade') list = list.filter(t => t.ageMatrix === 'GRADE YEAR');
@@ -761,11 +786,14 @@ function renderTournaments() {
         </div>
       </div>` : '';
 
+    const isHidden = hiddenTournaments.has(t.id);
+    const hiddenCardBadge = (isHidden && isAdminUnlocked()) ? '<span class="hidden-badge" style="margin-left:6px">Hidden</span>' : '';
+
     return `
-    <div class="t-card ${cardClass}" id="card-${t.id}">
+    <div class="t-card ${cardClass}" id="card-${t.id}" ${isHidden?'style="opacity:.5;border-style:dashed"':''}>
       <div class="t-card-head">
         <div class="t-card-row1">
-          <span class="t-name">${t.name}</span>
+          <span class="t-name">${t.name}${hiddenCardBadge}</span>
           <span class="eligible-badge ${matrixClass}" title="${t.matrixDetails}">${matrixLabel}</span>
         </div>
         <div class="t-meta">
@@ -1029,22 +1057,29 @@ function renderVoteTally() {
   });
   const sorted = [...TOURNAMENTS].sort((a,b) => tally[b.id].credits - tally[a.id].credits);
   const body = document.getElementById('vote-tally-body');
-  const hasAny = Object.values(tally).some(t => t.credits > 0);
+  const hasAny = Object.values(tally).some(t => t.credits > 0) || hiddenTournaments.size > 0;
   if (!hasAny) {
-    body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No credits allocated yet — share personalized links with your team!</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No credits allocated yet — share personalized links with your team!</td></tr>`;
     return;
   }
   body.innerHTML = sorted.map(t => {
     const v = tally[t.id];
-    if (!v.credits) return '';
-    return `<tr>
+    const isHidden = hiddenTournaments.has(t.id);
+    if (!v.credits && !isHidden) return '';
+    const rowClass = isHidden ? 'hidden-row' : '';
+    const hiddenBadge = isHidden ? ' <span class="hidden-badge">Hidden</span>' : '';
+    const toggleBtn = isHidden
+      ? `<button class="btn-show" onclick="toggleTournamentVisibility(${t.id}, false)">👁️ Show</button>`
+      : `<button class="btn-hide" onclick="toggleTournamentVisibility(${t.id}, true)">🚫 Hide</button>`;
+    return `<tr class="${rowClass}">
       <td>${t.id}</td>
-      <td style="max-width:200px;font-weight:600">${t.name}</td>
+      <td style="max-width:200px;font-weight:600">${t.name}${hiddenBadge}</td>
       <td style="color:var(--muted);font-size:.75rem">${t.dates}</td>
       <td class="tally-yes" title="${v.voters.join(', ')}">💰 ${v.credits}${v.voters.length?' 👤':''}</td>
       <td style="font-size:.75rem;color:var(--muted)">${v.voters.length}</td>
+      <td class="hide-col">${toggleBtn}</td>
     </tr>`;
-  }).filter(Boolean).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No credits allocated yet.</td></tr>`;
+  }).filter(Boolean).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px">No credits allocated yet.</td></tr>`;
 }
 
 function exportVoteTally() {
@@ -1059,7 +1094,7 @@ function exportVoteTally() {
   const voterCount = Object.keys(allVotes).length;
   const sorted = [...TOURNAMENTS].sort((a,b) => tally[b.id].credits - tally[a.id].credits);
   let text = `F6AD TOURNAMENT CREDIT TALLY (${voterCount} voters)\n${'='.repeat(60)}\n`;
-  sorted.forEach(t => { if (tally[t.id].credits > 0) text += `\n${t.name}\n  💰 ${tally[t.id].credits} credits\n`; });
+  sorted.forEach(t => { if (tally[t.id].credits > 0 && !hiddenTournaments.has(t.id)) text += `\n${t.name}\n  💰 ${tally[t.id].credits} credits\n`; });
   navigator.clipboard.writeText(text).then(() => showToast('📊 Tally copied!'));
 }
 
@@ -1206,7 +1241,7 @@ function renderTopTicker() {
       if (tally[id] && typeof v === 'number' && v > 0) tally[id].credits += v;
     });
   });
-  const top3 = Object.values(tally).filter(t => t.credits > 0).sort((a,b) => b.credits - a.credits).slice(0,3);
+  const top3 = Object.values(tally).filter(t => t.credits > 0 && !hiddenTournaments.has(t.id)).sort((a,b) => b.credits - a.credits).slice(0,3);
   const ticker = document.getElementById('top3-ticker');
   if (!top3.length) { ticker.style.display = 'none'; return; }
   ticker.style.display = 'flex';
@@ -1242,6 +1277,97 @@ function togglePublicNotes(id) {
   const el = document.getElementById('pub-notes-' + id);
   if (!el) return;
   el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+// ===================== TOURNAMENT VISIBILITY =====================
+function renderVisibilityList() {
+  const container = document.getElementById('visibility-list');
+  if (!container) return;
+  const sorted = [...TOURNAMENTS].sort((a,b) => parseDate(a.dates) - parseDate(b.dates));
+  container.innerHTML = sorted.map(t => {
+    const isHidden = hiddenTournaments.has(t.id);
+    const toggleBtn = isHidden
+      ? `<button class="btn-show" onclick="toggleTournamentVisibility(${t.id}, false)">👁️ Show</button>`
+      : `<button class="btn-hide" onclick="toggleTournamentVisibility(${t.id}, true)">🚫 Hide</button>`;
+    const badge = isHidden ? '<span class="hidden-badge">Hidden</span>' : '';
+    const style = isHidden ? 'opacity:.55;' : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fafafa;border:1px solid var(--border);border-radius:7px;${style}">
+      <span style="flex:1;font-size:.85rem;font-weight:600">${t.name} ${badge}</span>
+      <span style="font-size:.73rem;color:var(--muted);white-space:nowrap">${t.dates}</span>
+      ${toggleBtn}
+    </div>`;
+  }).join('');
+}
+
+function toggleTournamentVisibility(tournId, hide) {
+  const action = hide ? 'hide' : 'show';
+  const t = TOURNAMENTS.find(t => t.id === tournId);
+  const name = t ? t.name : `Tournament #${tournId}`;
+  if (hide) {
+    // Check if any voters have credits allocated
+    let totalCredits = 0;
+    let affectedVoters = [];
+    Object.entries(allVotes).forEach(([voter, voterVotes]) => {
+      const credits = voterVotes[tournId];
+      if (typeof credits === 'number' && credits > 0) {
+        totalCredits += credits;
+        affectedVoters.push(`${voter} (${credits})`);
+      }
+    });
+    let msg = `Hide "${name}" from voters?`;
+    if (totalCredits > 0) {
+      msg += `\n\n⚠️ This will refund ${totalCredits} credits from ${affectedVoters.length} voter(s):\n${affectedVoters.join(', ')}\n\nTheir credits will be returned to their balance automatically.`;
+    }
+    if (!confirm(msg)) return;
+  } else {
+    if (!confirm(`Show "${name}" to voters again?`)) return;
+  }
+
+  // Update hidden list in Firestore
+  const newHidden = new Set(hiddenTournaments);
+  if (hide) {
+    newHidden.add(tournId);
+  } else {
+    newHidden.delete(tournId);
+  }
+  db.collection('settings').doc('hiddenTournaments').set({
+    ids: [...newHidden],
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    if (hide) {
+      // Refund credits: remove this tournament from every voter's votes
+      return refundCreditsForTournament(tournId);
+    }
+  }).then(() => {
+    showToast(hide ? `🚫 "${name}" hidden — credits refunded` : `👁️ "${name}" is now visible`);
+  }).catch(e => showToast('Error: ' + e.message));
+}
+
+function refundCreditsForTournament(tournId) {
+  // Batch update: remove this tournament's credits from all voters
+  const batch = db.batch();
+  let anyUpdates = false;
+  Object.entries(allVotes).forEach(([voter, voterVotes]) => {
+    const credits = voterVotes[tournId];
+    if (typeof credits === 'number' && credits > 0) {
+      const updatedVotes = {...voterVotes};
+      delete updatedVotes[tournId];
+      const ref = db.collection('votes').doc(voter);
+      batch.update(ref, {votes: updatedVotes});
+      anyUpdates = true;
+    }
+  });
+  // Also clean up notes for the hidden tournament
+  Object.entries(allNotes).forEach(([voter, voterNotes]) => {
+    if (voterNotes[tournId]) {
+      const updatedNotes = {...voterNotes};
+      delete updatedNotes[tournId];
+      const ref = db.collection('votes').doc(voter);
+      batch.update(ref, {notes: updatedNotes});
+      anyUpdates = true;
+    }
+  });
+  return anyUpdates ? batch.commit() : Promise.resolve();
 }
 
 // ===================== UTILS =====================
