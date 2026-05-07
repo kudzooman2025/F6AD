@@ -298,6 +298,10 @@ footer strong{color:#fff}
 .credits-remaining-display{background:var(--purple-light);color:var(--purple);border:1px solid #c4a8f0;border-radius:999px;padding:4px 14px;font-size:.82rem;font-weight:700;white-space:nowrap}
 .credits-remaining-display.warn{background:#fef3c7;color:#92400e;border-color:#fcd34d}
 .credits-remaining-display.empty{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+/* PAST EVENTS */
+.event-item.past{opacity:.55}
+.event-item.past .event-date{background:#888}
+.past-toggle{background:none;border:none;color:var(--purple);font-size:.82rem;font-weight:600;text-decoration:underline;cursor:pointer;margin-bottom:14px;display:block}
 
 </style>
 </head>
@@ -326,18 +330,19 @@ footer strong{color:#fff}
     <span class="chip">✅ 4 Summer Confirmed</span>
     <span class="chip">🗳️ Vote on Fall · Winter · Spring</span>
   </div>
+</div>
 
+<!-- MAIN -->
+<div class="container">
   <!-- CONFIRMED SUMMER -->
   <section class="confirmed-section" id="confirmed-summer">
     <div class="section-header">
-      <div class="section-title">✅ Summer '26 — We're In!</div>
+      <div class="section-title">&#x2705; Summer &#x27;26 &mdash; We&apos;re In!</div>
     </div>
     <div class="confirmed-banner">
-      <span class="cb-icon">🏆</span>
-      <div>
-        <h3>Summer 2026 Tournaments — Locked In</h3>
-        <p>These four tournaments have been selected and registration is confirmed. Let's go!</p>
-      </div>
+      <span class="cb-icon">&#x1F3C6;</span>
+      <div><h3>Summer 2026 Tournaments &mdash; Locked In</h3>
+      <p>These four tournaments have been selected and registration is confirmed. Let&apos;s go!</p></div>
     </div>
     <div class="t-grid" id="confirmed-grid"></div>
   </section>
@@ -345,9 +350,8 @@ footer strong{color:#fff}
   <!-- SEASONAL TOURNAMENT PLANNING -->
   <section id="tournaments" style="margin-bottom:48px">
     <div class="section-header">
-      <div class="section-title">🗳️ Tournament Planning</div>
+      <div class="section-title">&#x1F5F3;&#xFE0F; Tournament Planning</div>
     </div>
-    <!-- Shared Voter Bar -->
     <div class="voter-bar" id="voter-setup">
       <label>Your name:</label>
       <input type="text" id="voter-name-input" placeholder="Enter your name to vote" maxlength="40"/>
@@ -357,23 +361,22 @@ footer strong{color:#fff}
       <span class="voter-name-display">Voting as: <strong id="voter-display-name"></strong></span>
       <button class="btn-change-voter" onclick="changeVoter()">change</button>
       <div style="flex:1"></div>
-      <span id="credits-remaining-display" class="credits-remaining-display" style="display:none">💰 1000 credits remaining</span>
-      <button class="btn-share" onclick="shareVotes()" style="display:none">📋 Copy My Votes</button>
+      <span id="credits-remaining-display" class="credits-remaining-display" style="display:none">&#x1F4B0; 1000 credits remaining</span>
+      <button class="btn-share" onclick="shareVotes()" style="display:none">&#x1F4CB; Copy My Votes</button>
     </div>
-    <!-- Season Tabs -->
     <div class="season-tabs">
-      <button class="season-tab active" id="stab-summer" onclick="switchSeason('summer',this)">☀️ Summer '26</button>
-      <button class="season-tab" id="stab-fall" onclick="switchSeason('fall',this)">🍂 Fall '26</button>
-      <button class="season-tab" id="stab-winter" onclick="switchSeason('winter',this)">❄️ Winter '26</button>
-      <button class="season-tab" id="stab-spring" onclick="switchSeason('spring',this)">🌸 Spring '27</button>
+      <button class="season-tab active" id="stab-summer" onclick="switchSeason('summer',this)">&#x2600;&#xFE0F; Summer &#x27;26</button>
+      <button class="season-tab" id="stab-fall" onclick="switchSeason('fall',this)">&#x1F342; Fall &#x27;26</button>
+      <button class="season-tab" id="stab-winter" onclick="switchSeason('winter',this)">&#x2744;&#xFE0F; Winter &#x27;26</button>
+      <button class="season-tab" id="stab-spring" onclick="switchSeason('spring',this)">&#x1F338; Spring &#x27;27</button>
     </div>
-    <!-- SUMMER PANEL — display only -->
+    <!-- SUMMER PANEL -->
     <div id="season-panel-summer" class="season-panel active">
       <p class="vote-intro" style="margin-bottom:20px">Other summer tournaments that were researched but not selected. Shown here for reference.</p>
       <div class="filters">
         <span class="filter-label">Filter:</span>
         <button class="filter-btn active" onclick="filterSummer('all',this)">All</button>
-        <button class="filter-btn" onclick="filterSummer('nearby',this)">≤50 mi</button>
+        <button class="filter-btn" onclick="filterSummer('nearby',this)">&le;50 mi</button>
         <span class="filter-label" style="margin-left:8px">Sort:</span>
         <select class="filter-select" onchange="sortSummer(this.value)">
           <option value="date">By Date</option>
@@ -385,9 +388,9 @@ footer strong{color:#fff}
     </div>
     <!-- FALL PANEL -->
     <div id="season-panel-fall" class="season-panel">
-      <p class="vote-intro" style="margin-bottom:20px">Help choose which Fall 2026 tournaments F6AD registers for. Each family gets <strong>1,000 credits</strong> to spread across as many as they like — max 200 per tournament.</p>
+      <p class="vote-intro" style="margin-bottom:20px">Help choose which Fall 2026 tournaments F6AD registers for. Each family gets <strong>1,000 credits</strong> to spread across as many as they like &mdash; max 200 per tournament.</p>
       <div class="vote-summary-bar" id="vote-summary-bar-fall" style="display:none">
-        <div class="vote-counts"><span class="vc yes">💰 <span id="count-used-fall">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-fall"></span></div>
+        <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-fall">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-fall"></span></div>
       </div>
       <div class="filters">
         <span class="filter-label">Sort:</span>
@@ -399,9 +402,9 @@ footer strong{color:#fff}
     </div>
     <!-- WINTER PANEL -->
     <div id="season-panel-winter" class="season-panel">
-      <p class="vote-intro" style="margin-bottom:20px">One winter tournament option — December in Columbia, MD. Use your <strong>1,000 credits</strong> to show interest.</p>
+      <p class="vote-intro" style="margin-bottom:20px">One winter tournament option &mdash; December in Columbia, MD. Use your <strong>1,000 credits</strong> to show interest.</p>
       <div class="vote-summary-bar" id="vote-summary-bar-winter" style="display:none">
-        <div class="vote-counts"><span class="vc yes">💰 <span id="count-used-winter">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-winter"></span></div>
+        <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-winter">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-winter"></span></div>
       </div>
       <div class="t-grid" id="winter-grid"></div>
     </div>
@@ -409,7 +412,7 @@ footer strong{color:#fff}
     <div id="season-panel-spring" class="season-panel">
       <p class="vote-intro" style="margin-bottom:20px">Two Spring 2027 options in Maryland and Virginia. Use your <strong>1,000 credits</strong> to weigh in.</p>
       <div class="vote-summary-bar" id="vote-summary-bar-spring" style="display:none">
-        <div class="vote-counts"><span class="vc yes">💰 <span id="count-used-spring">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-spring"></span></div>
+        <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-spring">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-spring"></span></div>
       </div>
       <div class="t-grid" id="spring-grid"></div>
     </div>
@@ -480,7 +483,7 @@ footer strong{color:#fff}
         <div id="tab-votes" class="tab-panel active">
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Votes update here in real time as team members submit them. Hover the 👤 icon to see who voted which way.</p>
           <table class="vote-tally-table" id="vote-tally-table">
-            <thead><tr><th>#</th><th>Tournament</th><th>Dates</th><th class="tally-yes">💰 Credits</th><th>Voters</th><th>Visibility</th></tr></thead>
+            <thead><tr><th>Tournament</th><th>Dates</th><th class="tally-yes">Credits</th><th>Voters</th></tr></thead>
             <tbody id="vote-tally-body"></tbody>
           </table>
           <button class="btn-primary" onclick="exportVoteTally()">📊 Copy Tally to Clipboard</button>
@@ -563,26 +566,6 @@ footer strong{color:#fff}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-// ===================== FIREBASE =====================
-const firebaseConfig = {
-  apiKey: "AIzaSyBrvvXKGZwKX1VOU-C6WZvB98r1KO9I5HI",
-  authDomain: "f6ad-2913b.firebaseapp.com",
-  projectId: "f6ad-2913b",
-  storageBucket: "f6ad-2913b.firebasestorage.app",
-  messagingSenderId: "1000483275960",
-  appId: "1:1000483275960:web:f9f9974965854a5cbfa04d"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// Live data from Firestore
-let allVotes = {};
-let allNotes = {};
-let scheduleItems = [];
-let announcementItems = [];
-let hiddenTournaments = new Set(); // tournament IDs hidden by admin
-
-// ===================== DATA =====================
 
 // ===================== FIREBASE =====================
 const firebaseConfig = {
@@ -600,59 +583,59 @@ const db = firebase.firestore();
 const CONFIRMED_IDS = [8, 13, 20, 6];
 
 const SUMMER_TOURNAMENTS = [
-  {id:1,name:"CRUSA Invitational (17th Annual)",host:"FC Bucks",location:"Richboro, PA",distance:30,dates:"Aug 1–2, 2026",format:"11v11",fee:"$800",deadline:"Jul 10, 2026",website:"fcbucks.com/august-invitational-tournament/",notes:"Explicitly uses new Fall 2026 Aug–Jul age matrix. Premier preseason testing ground."},
-  {id:2,name:"Kearny Skyline Cup",host:"iSE",location:"Kearny/Harrison, NJ",distance:100,dates:"Jun 13–14, 2026",format:"11v11; 60-min games",fee:"$970",deadline:"May 29, 2026",website:"isportingevents.com/kearnyskylinecup",notes:"Multi-team discounts. Rich soccer history in Kearny/Harrison area."},
-  {id:3,name:"EDP Summer Sizzler",host:"EDP Soccer",location:"Hammonton, NJ",distance:70,dates:"Jul 25–26, 2026",format:"11v11",fee:"$1,295 early / $1,395 regular",deadline:"Jun 26, 2026",website:"edpsoccer.com/summer-sizzler",notes:"Capstone EDP Summer Series event. Stay-to-Play via Team Travel Source."},
-  {id:4,name:"Greystone Cup",host:"iSE",location:"Budd Lake, NJ",distance:90,dates:"Jul 25–26, 2026",format:"11v11",fee:"$970",deadline:"Jul 10, 2026",website:"isportingevents.com/greystonecup",notes:"Elite + Premier flights. Multi-team discounts."},
-  {id:5,name:"Philly Summer Shootout",host:"Philadelphia Union / S3",location:"Chester, PA",distance:30,dates:"Jul 25–26, 2026",format:"⚠️ Verify 11v11",fee:"$1,195",deadline:"Jun 24, 2026",website:"sidelinesoccersolutions.com/events-connecter/philly-summer-shootout",notes:"VERIFY 11v11 FORMAT before registering."},
-  {id:6,name:"Penn Fusion Summer Classic (38th Annual)",host:"Penn Fusion SA / S3",location:"West Chester, PA",distance:25,dates:"Aug 8–9, 2026",format:"11v11",fee:"TBD (~$700–$850)",deadline:"Via GotSport",website:"pennfusion.org/tournaments",notes:"38th annual. 1-day boys format for 2026. Excellent pre-fall tune-up."},
-  {id:7,name:"Philadelphia Union Summer Cooldown",host:"Philadelphia Union / S3",location:"Chester, PA",distance:20,dates:"Aug 8–9, 2026",format:"11v11 likely",fee:"TBD",deadline:"TBD",website:"philadelphiaunion.com/youth/tournaments/home",notes:"⚠️ May be U8–U12 only. Confirm U14 availability before registering."},
-  {id:8,name:"The Cup '26",host:"Philadelphia Union Youth",location:"Chester, PA",distance:20,dates:"Jun 6–7, 2026",format:"11v11; 2×30-min halves; turf",fee:"$1,300 early / $1,500 standard",deadline:"Standard: May 1, 2026",website:"philadelphiaunion.com/youth/tournaments/the_cup",notes:"MLS-affiliated facility. ~8 teams per division. Elite standards, scouting presence."},
-  {id:9,name:"Lehigh Valley YSL Tournament (46th Annual)",host:"Lehigh Valley YSL / S3",location:"Allentown, PA",distance:55,dates:"Jun 6–7, 2026",format:"11v11; 1-day per gender",fee:"TBD",deadline:"TBD",website:"sidelinesoccersolutions.com",notes:"46th annual. Awards for 1st and 2nd place."},
-  {id:10,name:"Lancaster Summer Classic",host:"Lancaster Elite + Manheim Township SC",location:"Lancaster, PA",distance:65,dates:"Jun 6–7, 2026",format:"11v11; max roster 22",fee:"$850",deadline:"May 13, 2026",website:"lancastersummerclassic.com",notes:"GotSport ranking points. College coaches for older brackets."},
-  {id:11,name:"Leon Grenko Soccer Tournament",host:"Berks County",location:"Reading, PA",distance:45,dates:"Jun 6–7, 2026",format:"11v11",fee:"TBD",deadline:"TBD",website:"GotSport: Leon Grenko",notes:"Long-standing community event. Lower-pressure, lower-cost option."},
-  {id:12,name:"PA Classics Mid-Atlantic Cup (19th Annual)",host:"Pennsylvania Classics AC",location:"Manheim, PA",distance:65,dates:"Jun 13–14, 2026",format:"11v11; max roster 22",fee:"$875",deadline:"Mid-May 2026",website:"paclassics.org/mid-atlantic-cup",notes:"Cornerstone EPYSA event. Discounted Hersheypark tickets."},
-  {id:13,name:"EDP Summer Classic",host:"EDP Soccer",location:"Hammonton, NJ",distance:80,dates:"Jun 20–21, 2026",format:"11v11",fee:"$1,295 early / $1,395 regular",deadline:"May 8, 2026",website:"edpsoccer.com/summer-classic",notes:"Flagship EDP summer event. Draws MLS Next, ECNL, NL teams. Up to 5 guest players."},
-  {id:14,name:"Hershey Summer Classic",host:"Hershey Soccer Club",location:"Hershey, PA",distance:95,dates:"Jun 20–21, 2026",format:"11v11",fee:"$1,075",deadline:"May 17, 2026",website:"hersheysoccer.org/summerclassic",notes:"Discounted Hersheypark tickets. ~200 teams expected."},
-  {id:15,name:"Liberty Summer Cup",host:"S3",location:"Downingtown/West Chester, PA",distance:25,dates:"Jun 27–28, 2026",format:"11v11",fee:"$800",deadline:"Via GotSport",website:"libertysummercup.com",notes:"Multiple Chester County venues. Excellent value."},
-  {id:16,name:"NSA Summer Kickoff (51st Annual)",host:"Neptune Soccer Assoc.",location:"Neptune, NJ",distance:85,dates:"Jun 27–28, 2026",format:"11v11; up to 3 flight levels",fee:"$870",deadline:"Via GotSport",website:"neptunesoccer.org/tournament/",notes:"Longest-running tournament in New Jersey. Jersey Shore setting."},
-  {id:17,name:"Pocono Mountain Cup",host:"Pocono Mountain Youth SC",location:"Swiftwater, PA",distance:100,dates:"Jun 27–28, 2026",format:"11v11; 3-referee system",fee:"$875",deadline:"Jun 12, 2026",website:"poconomountaincup.com",notes:"2nd annual. Cooler altitude. Resort/vacation setting."},
-  {id:18,name:"CenPenn Summer Cup",host:"UnitedGoals USA",location:"Manheim, PA",distance:80,dates:"Jun 27–28, 2026",format:"11v11; 2×24-min halves",fee:"$725",deadline:"Contact organizer",website:"unitedgoalsusa.com/cenpenn-youth-soccer-tournament-manheim/",notes:"8+ full-sized grass fields. Strong value."},
-  {id:19,name:"Steel United Summer Trophy (12th Annual)",host:"Steel Sports",location:"Montgomery Township, NJ",distance:35,dates:"Jul 11–12, 2026",format:"11v11",fee:"$1,045",deadline:"Jun 12, 2026",website:"steelsports.com/events/summer-trophy/",notes:"Certified athletic trainer on site."},
-  {id:20,name:"Lititz Summer Showcase",host:"Lititz Summer Showcase",location:"Lititz/Manheim, PA",distance:75,dates:"Jul 11–12, 2026",format:"11v11",fee:"$850",deadline:"App: Jun 14; Pay: Jun 7",website:"lititzsummershowcase.org",notes:"Date moved earlier in 2026. Halpern Travel required for all teams."},
-  {id:21,name:"Central Jersey Invitational",host:"EDP Soccer",location:"Somerset, NJ",distance:75,dates:"Jul 11–12, 2026",format:"11v11",fee:"$1,225 early / $1,325 regular",deadline:"Jun 12, 2026",website:"edpsoccer.com/central-jersey-invitational",notes:"PDA complex. Up to 5 guest players."},
-  {id:22,name:"Mid-Atlantic Cup at Maryland SoccerPlex",host:"Maryland SoccerPlex",location:"Boyds, MD",distance:140,dates:"Jun 13–14, 2026",format:"11v11",fee:"TBD",deadline:"Standard May 1; Late May 10",website:"midatlanticcupmd.com",notes:"Champions/finalists receive Washington Spirit match tickets."},
-  {id:23,name:"FSCI Summer Classic & Showcase",host:"Fredericksburg Soccer Club",location:"Fredericksburg, VA",distance:190,dates:"Jun 13–14, 2026",format:"11v11",fee:"$875",deadline:"May 10, 2026",website:"fredericksburgsoccer.org/tournaments/june/",notes:"Bermuda grass at VYSA training center. College coaches attend."},
-  {id:24,name:"Mason Dixon Cup",host:"Hagerstown SC / Elite Tournaments",location:"Hagerstown, MD",distance:160,dates:"Jun 20–21, 2026",format:"11v11",fee:"TBD + $200 bond",deadline:"Schedules posted Jun 3",website:"elitetournaments.com/tournaments/mason-dixon-cup/",notes:"Running since 1991. Father's Day weekend."},
-  {id:25,name:"Liberty Cup Long Island",host:"TSP / LIJSL",location:"Brentwood, NY",distance:130,dates:"Jul 25–26, 2026",format:"11v11; max 3 guest players",fee:"$795",deadline:"TBD",website:"GotSport: TSP Liberty Cup 2026",notes:"LIJSL ecosystem. Strict guest player rules."},
+  {id:1,name:"CRUSA Invitational (17th Annual)",host:"FC Bucks",location:"Richboro, PA",distance:30,dates:"Aug 1-2, 2026",format:"11v11",fee:"$800",deadline:"Jul 10, 2026",website:"fcbucks.com/august-invitational-tournament/",notes:"Uses new Fall 2026 Aug-Jul age matrix. Premier preseason testing ground."},
+  {id:2,name:"Kearny Skyline Cup",host:"iSE",location:"Kearny/Harrison, NJ",distance:100,dates:"Jun 13-14, 2026",format:"11v11",fee:"$970",deadline:"May 29, 2026",website:"isportingevents.com/kearnyskylinecup",notes:"Multi-team discounts. Rich soccer history."},
+  {id:3,name:"EDP Summer Sizzler",host:"EDP Soccer",location:"Hammonton, NJ",distance:70,dates:"Jul 25-26, 2026",format:"11v11",fee:"$1,295 early / $1,395 regular",deadline:"Jun 26, 2026",website:"edpsoccer.com/summer-sizzler",notes:"Capstone EDP Summer Series. Stay-to-Play via Team Travel Source."},
+  {id:4,name:"Greystone Cup",host:"iSE",location:"Budd Lake, NJ",distance:90,dates:"Jul 25-26, 2026",format:"11v11",fee:"$970",deadline:"Jul 10, 2026",website:"isportingevents.com/greystonecup",notes:"Elite + Premier flights. Multi-team discounts."},
+  {id:5,name:"Philly Summer Shootout",host:"Philadelphia Union / S3",location:"Chester, PA",distance:30,dates:"Jul 25-26, 2026",format:"Verify 11v11",fee:"$1,195",deadline:"Jun 24, 2026",website:"sidelinesoccersolutions.com/events-connecter/philly-summer-shootout",notes:"VERIFY 11v11 FORMAT before registering."},
+  {id:6,name:"Penn Fusion Summer Classic (38th Annual)",host:"Penn Fusion SA / S3",location:"West Chester, PA",distance:25,dates:"Aug 8-9, 2026",format:"11v11",fee:"TBD (~$700-$850)",deadline:"Via GotSport",website:"pennfusion.org/tournaments",notes:"38th annual. 1-day boys format for 2026. Excellent pre-fall tune-up."},
+  {id:7,name:"Philadelphia Union Summer Cooldown",host:"Philadelphia Union / S3",location:"Chester, PA",distance:20,dates:"Aug 8-9, 2026",format:"11v11 likely",fee:"TBD",deadline:"TBD",website:"philadelphiaunion.com/youth/tournaments/home",notes:"May be U8-U12 only. Confirm U14 availability before registering."},
+  {id:8,name:"The Cup 26",host:"Philadelphia Union Youth",location:"Chester, PA",distance:20,dates:"Jun 6-7, 2026",format:"11v11; 2x30-min halves; turf",fee:"$1,300 early / $1,500 standard",deadline:"Standard: May 1, 2026",website:"philadelphiaunion.com/youth/tournaments/the_cup",notes:"MLS-affiliated facility. ~8 teams per division. Elite standards, scouting presence."},
+  {id:9,name:"Lehigh Valley YSL Tournament (46th Annual)",host:"Lehigh Valley YSL / S3",location:"Allentown, PA",distance:55,dates:"Jun 6-7, 2026",format:"11v11",fee:"TBD",deadline:"TBD",website:"sidelinesoccersolutions.com",notes:"46th annual. Awards for 1st and 2nd place."},
+  {id:10,name:"Lancaster Summer Classic",host:"Lancaster Elite + Manheim Township SC",location:"Lancaster, PA",distance:65,dates:"Jun 6-7, 2026",format:"11v11",fee:"$850",deadline:"May 13, 2026",website:"lancastersummerclassic.com",notes:"GotSport ranking points. College coaches for older brackets."},
+  {id:11,name:"Leon Grenko Soccer Tournament",host:"Berks County",location:"Reading, PA",distance:45,dates:"Jun 6-7, 2026",format:"11v11",fee:"TBD",deadline:"TBD",website:"GotSport: Leon Grenko",notes:"Long-standing community event. Lower-pressure, lower-cost option."},
+  {id:12,name:"PA Classics Mid-Atlantic Cup (19th Annual)",host:"Pennsylvania Classics AC",location:"Manheim, PA",distance:65,dates:"Jun 13-14, 2026",format:"11v11",fee:"$875",deadline:"Mid-May 2026",website:"paclassics.org/mid-atlantic-cup",notes:"Cornerstone EPYSA event. Discounted Hersheypark tickets."},
+  {id:13,name:"EDP Summer Classic",host:"EDP Soccer",location:"Hammonton, NJ",distance:80,dates:"Jun 20-21, 2026",format:"11v11",fee:"$1,295 early / $1,395 regular",deadline:"May 8, 2026",website:"edpsoccer.com/summer-classic",notes:"Flagship EDP summer event. Draws MLS Next, ECNL, NL teams. Up to 5 guest players."},
+  {id:14,name:"Hershey Summer Classic",host:"Hershey Soccer Club",location:"Hershey, PA",distance:95,dates:"Jun 20-21, 2026",format:"11v11",fee:"$1,075",deadline:"May 17, 2026",website:"hersheysoccer.org/summerclassic",notes:"Discounted Hersheypark tickets. ~200 teams expected."},
+  {id:15,name:"Liberty Summer Cup",host:"S3",location:"Downingtown/West Chester, PA",distance:25,dates:"Jun 27-28, 2026",format:"11v11",fee:"$800",deadline:"Via GotSport",website:"libertysummercup.com",notes:"Multiple Chester County venues. Excellent value."},
+  {id:16,name:"NSA Summer Kickoff (51st Annual)",host:"Neptune Soccer Assoc.",location:"Neptune, NJ",distance:85,dates:"Jun 27-28, 2026",format:"11v11",fee:"$870",deadline:"Via GotSport",website:"neptunesoccer.org/tournament/",notes:"Longest-running NJ tournament. Jersey Shore setting."},
+  {id:17,name:"Pocono Mountain Cup",host:"Pocono Mountain Youth SC",location:"Swiftwater, PA",distance:100,dates:"Jun 27-28, 2026",format:"11v11",fee:"$875",deadline:"Jun 12, 2026",website:"poconomountaincup.com",notes:"2nd annual. Cooler altitude. Resort/vacation setting."},
+  {id:18,name:"CenPenn Summer Cup",host:"UnitedGoals USA",location:"Manheim, PA",distance:80,dates:"Jun 27-28, 2026",format:"11v11",fee:"$725",deadline:"Contact organizer",website:"unitedgoalsusa.com/cenpenn-youth-soccer-tournament-manheim/",notes:"8+ full-sized grass fields. Strong value."},
+  {id:19,name:"Steel United Summer Trophy (12th Annual)",host:"Steel Sports",location:"Montgomery Township, NJ",distance:35,dates:"Jul 11-12, 2026",format:"11v11",fee:"$1,045",deadline:"Jun 12, 2026",website:"steelsports.com/events/summer-trophy/",notes:"Certified athletic trainer on site."},
+  {id:20,name:"Lititz Summer Showcase",host:"Lititz Summer Showcase",location:"Lititz/Manheim, PA",distance:75,dates:"Jul 11-12, 2026",format:"11v11",fee:"$850",deadline:"App: Jun 14; Pay: Jun 7",website:"lititzsummershowcase.org",notes:"Date moved earlier in 2026. Halpern Travel required for all teams."},
+  {id:21,name:"Central Jersey Invitational",host:"EDP Soccer",location:"Somerset, NJ",distance:75,dates:"Jul 11-12, 2026",format:"11v11",fee:"$1,225 early / $1,325 regular",deadline:"Jun 12, 2026",website:"edpsoccer.com/central-jersey-invitational",notes:"PDA complex. Up to 5 guest players."},
+  {id:22,name:"Mid-Atlantic Cup at Maryland SoccerPlex",host:"Maryland SoccerPlex",location:"Boyds, MD",distance:140,dates:"Jun 13-14, 2026",format:"11v11",fee:"TBD",deadline:"Standard May 1; Late May 10",website:"midatlanticcupmd.com",notes:"Champions/finalists receive Washington Spirit match tickets."},
+  {id:23,name:"FSCI Summer Classic and Showcase",host:"Fredericksburg Soccer Club",location:"Fredericksburg, VA",distance:190,dates:"Jun 13-14, 2026",format:"11v11",fee:"$875",deadline:"May 10, 2026",website:"fredericksburgsoccer.org/tournaments/june/",notes:"Bermuda grass at VYSA training center. College coaches attend."},
+  {id:24,name:"Mason Dixon Cup",host:"Hagerstown SC / Elite Tournaments",location:"Hagerstown, MD",distance:160,dates:"Jun 20-21, 2026",format:"11v11",fee:"TBD + $200 bond",deadline:"Schedules posted Jun 3",website:"elitetournaments.com/tournaments/mason-dixon-cup/",notes:"Running since 1991. Fathers Day weekend."},
+  {id:25,name:"Liberty Cup Long Island",host:"TSP / LIJSL",location:"Brentwood, NY",distance:130,dates:"Jul 25-26, 2026",format:"11v11",fee:"$795",deadline:"TBD",website:"GotSport: TSP Liberty Cup 2026",notes:"LIJSL ecosystem. Strict guest player rules."},
   {id:26,name:"Kick-Off Classic",host:"Globall Competitions",location:"Uniondale, NY",distance:110,dates:"Aug 9, 2026",format:"11v11",fee:"TBD",deadline:"TBD",website:"kickoffli.com",notes:"Single-day pre-season primer."},
-  {id:27,name:"Maryland Invitational",host:"Bethesda SC & DeMatha Soccer Academy",location:"Boyds, MD",distance:130,dates:"Jun 5–7, 2026",format:"11v11 (verify)",fee:"TBD",deadline:"TBD",website:"USYS MD sanctioned listing",notes:"Premier facility. Verify U14 boys bracket."},
-  {id:28,name:"NRSA Father's Day Cup",host:"North Rockland Soccer Assoc.",location:"Thiells, NY",distance:110,dates:"Jun 20–21, 2026",format:"11v11; 50-min blocks",fee:"$720",deadline:"TBD",website:"nrsa.org/fdc",notes:"Single-day boys format."},
+  {id:27,name:"Maryland Invitational",host:"Bethesda SC and DeMatha Soccer Academy",location:"Boyds, MD",distance:130,dates:"Jun 5-7, 2026",format:"11v11 (verify)",fee:"TBD",deadline:"TBD",website:"USYS MD sanctioned listing",notes:"Premier facility. Verify U14 boys bracket."},
+  {id:28,name:"NRSA Fathers Day Cup",host:"North Rockland Soccer Assoc.",location:"Thiells, NY",distance:110,dates:"Jun 20-21, 2026",format:"11v11",fee:"$720",deadline:"TBD",website:"nrsa.org/fdc",notes:"Single-day boys format."},
   {id:29,name:"Independence Cup Long Island (19th Annual)",host:"Globall Competitions",location:"Uniondale, NY",distance:130,dates:"Jun 27, 2026",format:"11v11 for U13+",fee:"TBD",deadline:"TBD",website:"indycupli.com",notes:"Single-day format. 19th annual."}
 ];
 
 const FALL_TOURNAMENTS = [
-  {id:101,name:"Keystone Cup",host:"Pennsylvania Classics AC",location:"Lancaster County, PA",distance:58,dates:"Sep 5–6, 2026",format:"11v11 confirmed",fee:"$975",deadline:"Aug 7, 2026",website:"paclassics.org/keystone-cup",notes:"U14 explicitly 11v11. Multiple Lancaster-area venues incl. Spooky Nook Sports. Optional event cancellation insurance."},
-  {id:102,name:"S3 Super Cup",host:"Sideline Soccer Solutions (S3)",location:"Downingtown, PA",distance:22,dates:"Sep 5–6, 2026",format:"11v11 (verify)",fee:"TBD",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/s3-super-cup",notes:"Invitation-only elite event. Only 22 miles away at United Sports, Downingtown."},
-  {id:103,name:"EDP Cup Fall 2026",host:"EDP Soccer",location:"South Jersey / Hammonton, NJ",distance:40,dates:"Oct 10–11, 2026",format:"11v11 confirmed",fee:"Published by tier",deadline:"Sep 11, 2026",website:"edpsoccer.com/tournaments",notes:"Multi-venue South Jersey. 11v11 fee tier published. COVID-19 policy on event page."},
-  {id:104,name:"Columbus Day Explorer Cup",host:"Sideline Soccer Solutions (S3)",location:"Downingtown, PA",distance:22,dates:"Oct 10–11, 2026",format:"11v11 (U13–U16 confirmed)",fee:"Verify in registration",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/columbus-day-explorer-cup",notes:"HQ at United Sports, Downingtown. Max 22 for U13–U16, max 18 dressed. Up to 5 guest players."},
-  {id:105,name:"Western Lehigh Fall Fest",host:"Western Lehigh United SC",location:"Allentown area, PA",distance:38,dates:"Oct 10–11, 2026",format:"11v11 confirmed",fee:"Verify fees",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/31st-annual-western-lehigh-fall-fest",notes:"31st annual. U13+ is 11v11. Up to 5 guest players. 100% COVID refund if canceled."},
-  {id:106,name:"Dillsburg Dual Shootout",host:"Dillsburg Area Soccer Club",location:"Enola, PA",distance:87,dates:"Oct 10–11, 2026",format:"11v11 (implied)",fee:"Verify in application",deadline:"dillsburgdualshootout.com",website:"dillsburgdualshootout.com",notes:"EPYSA-approved. Level of Play choices: Premier/D1/D2/D3. 5 guest players max, roster cap 18."},
-  {id:107,name:"CRUSA / FC Bucks November Classic",host:"Council Rock United SA / FC Bucks",location:"Richboro, PA",distance:18,dates:"Nov 21–22, 2026",format:"11v11 confirmed",fee:"$750",deadline:"Nov 2, 2026",website:"fcbucks.com/nov-classic/",notes:"Only 18 miles away! U13–U14 fee $750. Premier/A/B divisions. Max 22 registered / 18 dress, up to 5 guest players."},
-  {id:108,name:"S3 Harvest Cup",host:"Sideline Soccer Solutions (S3)",location:"Wilmington, DE",distance:26,dates:"Nov 21–22, 2026",format:"11v11 (implied)",fee:"Verify current fees",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/s3-harvest-cup",notes:"HQ at Chase Fieldhouse, Wilmington. Roster cap 22, max 18 dressed. Up to 5 guest players."},
-  {id:109,name:"Hempfield Fall Classic (College Showcase)",host:"Penn Legacy / PA Classics AC",location:"Lancaster, PA",distance:53,dates:"Nov 21–22, 2026",format:"11v11 (verify 2026)",fee:"2026 fee not yet published",deadline:"Monitor registration",website:"pennlegacy.org/tournament",notes:"Boys weekend Nov 21–22. 2026 fee table not yet published — monitor. Optional event cancellation insurance."},
-  {id:110,name:"OBGC Capital Cup",host:"OBGC + Elite Tournaments",location:"Howard/Montgomery Co., MD",distance:114,dates:"Sep 5–7, 2026",format:"11v11 confirmed",fee:"$1,150",deadline:"Aug 7, 2026",website:"elitetournaments.com/tournaments/obgc-capital-cup/",notes:"U14 confirmed 11v11. Ranked GotSport — Region I Labor Day tournament. Check-in Aug 28, schedule release Aug 25."},
-  {id:111,name:"SAC Columbus Day Tournament",host:"SAC + Elite Tournaments",location:"Columbia, MD",distance:103,dates:"Oct 10–11, 2026",format:"11v11 confirmed",fee:"$1,150",deadline:"Sep 9, 2026",website:"elitetournaments.com/tournaments/sac-columbus-day-tournament/",notes:"U14 confirmed 11v11. Roster 22, check-in deadline Oct 2. Player pass required — no birth certificates."},
-  {id:112,name:"Columbia Fall Classic — Boys Weekend",host:"Elite Tournaments",location:"Columbia, MD",distance:103,dates:"Nov 14–15, 2026",format:"11v11 confirmed",fee:"$1,125",deadline:"Oct 5, 2026",website:"elitetournaments.com/tournaments/columbia-fall-classic-boys-weekend/",notes:"U14 confirmed 11v11. Max 18 dress for U13–U15. Performance bond required for U14–U19."}
+  {id:101,name:"Keystone Cup",host:"Pennsylvania Classics AC",location:"Lancaster County, PA",distance:58,dates:"Sep 5-6, 2026",format:"11v11 confirmed",fee:"$975",deadline:"Aug 7, 2026",website:"paclassics.org/keystone-cup",notes:"U14 explicitly 11v11. Multiple Lancaster-area venues incl. Spooky Nook Sports."},
+  {id:102,name:"S3 Super Cup",host:"Sideline Soccer Solutions (S3)",location:"Downingtown, PA",distance:22,dates:"Sep 5-6, 2026",format:"11v11 (verify)",fee:"TBD",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/s3-super-cup",notes:"Invitation-only elite event. Only 22 miles away at United Sports, Downingtown."},
+  {id:103,name:"EDP Cup Fall 2026",host:"EDP Soccer",location:"Hammonton, NJ",distance:40,dates:"Oct 10-11, 2026",format:"11v11 confirmed",fee:"Published by tier",deadline:"Sep 11, 2026",website:"edpsoccer.com/tournaments",notes:"Multi-venue South Jersey. 11v11 fee tier published."},
+  {id:104,name:"Columbus Day Explorer Cup",host:"Sideline Soccer Solutions (S3)",location:"Downingtown, PA",distance:22,dates:"Oct 10-11, 2026",format:"11v11 (U13-U16)",fee:"Verify in registration",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/columbus-day-explorer-cup",notes:"HQ at United Sports, Downingtown. Max 22 for U13-U16, max 18 dressed. Up to 5 guest players."},
+  {id:105,name:"Western Lehigh Fall Fest",host:"Western Lehigh United SC",location:"Allentown area, PA",distance:38,dates:"Oct 10-11, 2026",format:"11v11 confirmed",fee:"Verify fees",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/31st-annual-western-lehigh-fall-fest",notes:"31st annual. U13+ is 11v11. Up to 5 guest players. 100% COVID refund if canceled."},
+  {id:106,name:"Dillsburg Dual Shootout",host:"Dillsburg Area Soccer Club",location:"Enola, PA",distance:87,dates:"Oct 10-11, 2026",format:"11v11 (implied)",fee:"Verify in application",deadline:"dillsburgdualshootout.com",website:"dillsburgdualshootout.com",notes:"EPYSA-approved. Level of Play choices: Premier/D1/D2/D3. 5 guest players max, roster cap 18."},
+  {id:107,name:"CRUSA / FC Bucks November Classic",host:"Council Rock United SA / FC Bucks",location:"Richboro, PA",distance:18,dates:"Nov 21-22, 2026",format:"11v11 confirmed",fee:"$750",deadline:"Nov 2, 2026",website:"fcbucks.com/nov-classic/",notes:"Only 18 miles away! U13-U14 fee $750. Premier/A/B divisions. Max 22 registered / 18 dress, up to 5 guest players."},
+  {id:108,name:"S3 Harvest Cup",host:"Sideline Soccer Solutions (S3)",location:"Wilmington, DE",distance:26,dates:"Nov 21-22, 2026",format:"11v11 (implied)",fee:"Verify current fees",deadline:"Via registration portal",website:"sidelinesoccersolutions.com/events-connecter/s3-harvest-cup",notes:"HQ at Chase Fieldhouse, Wilmington. Roster cap 22, max 18 dressed. Up to 5 guest players."},
+  {id:109,name:"Hempfield Fall Classic (College Showcase)",host:"Penn Legacy / PA Classics AC",location:"Lancaster, PA",distance:53,dates:"Nov 21-22, 2026",format:"11v11 (verify 2026)",fee:"2026 fee not yet published",deadline:"Monitor registration",website:"pennlegacy.org/tournament",notes:"Boys weekend Nov 21-22. Fee table not yet published. Optional event cancellation insurance."},
+  {id:110,name:"OBGC Capital Cup",host:"OBGC + Elite Tournaments",location:"Howard/Montgomery Co., MD",distance:114,dates:"Sep 5-7, 2026",format:"11v11 confirmed",fee:"$1,150",deadline:"Aug 7, 2026",website:"elitetournaments.com/tournaments/obgc-capital-cup/",notes:"U14 confirmed 11v11. Ranked GotSport Region I Labor Day tournament. Check-in Aug 28, schedule release Aug 25."},
+  {id:111,name:"SAC Columbus Day Tournament",host:"SAC + Elite Tournaments",location:"Columbia, MD",distance:103,dates:"Oct 10-11, 2026",format:"11v11 confirmed",fee:"$1,150",deadline:"Sep 9, 2026",website:"elitetournaments.com/tournaments/sac-columbus-day-tournament/",notes:"U14 confirmed 11v11. Roster 22, check-in deadline Oct 2. Player pass required."},
+  {id:112,name:"Columbia Fall Classic Boys Weekend",host:"Elite Tournaments",location:"Columbia, MD",distance:103,dates:"Nov 14-15, 2026",format:"11v11 confirmed",fee:"$1,125",deadline:"Oct 5, 2026",website:"elitetournaments.com/tournaments/columbia-fall-classic-boys-weekend/",notes:"U14 confirmed 11v11. Max 18 dress for U13-U15. Performance bond required for U14-U19."}
 ];
 
 const WINTER_TOURNAMENTS = [
-  {id:201,name:"Celtic Soccer Academy Elite Cup",host:"Celtic Soccer Academy + Elite Tournaments",location:"Howard County (Columbia area), MD",distance:103,dates:"Dec 5–6, 2026",format:"11v11 confirmed",fee:"$1,350",deadline:"Nov 5, 2026",website:"elitetournaments.com/tournaments/celtic-soccer-academy-elite-cup/",notes:"U14 confirmed 11v11 — max roster 22. Schedule release Nov 20. Premium turf fields in Columbia, MD area. Only winter option on the list."}
+  {id:201,name:"Celtic Soccer Academy Elite Cup",host:"Celtic Soccer Academy + Elite Tournaments",location:"Howard County (Columbia area), MD",distance:103,dates:"Dec 5-6, 2026",format:"11v11 confirmed",fee:"$1,350",deadline:"Nov 5, 2026",website:"elitetournaments.com/tournaments/celtic-soccer-academy-elite-cup/",notes:"U14 confirmed 11v11, max roster 22. Schedule release Nov 20. Premium turf fields in Columbia MD area. Only winter option on the list."}
 ];
 
 const SPRING_TOURNAMENTS = [
-  {id:301,name:"McLean Premier Cup — Full Sided Weekend",host:"McLean Youth Soccer / Elite Tournaments",location:"McLean, VA",distance:127,dates:"Mar 13–14, 2027",format:"11v11 confirmed",fee:"$1,150",deadline:"Feb 12, 2027",website:"elitetournaments.com/tournaments/mclean-premier-cup-full-sided-weekend/",notes:"U14 confirmed 11v11. Teams may roster 22 but only 18 may dress per match. Application deadline Feb 12, 2027."},
-  {id:302,name:"Spring Shootout",host:"Elite Tournaments",location:"Edgewood / Howard County, MD",distance:70,dates:"Mar 27, 2027",format:"11v11 confirmed",fee:"$775",deadline:"Feb 26, 2027",website:"elitetournaments.com/tournaments/spring-shootout/",notes:"Best value of the spring options at $775. U14 explicitly 11v11. Venues: Coppermine CopperPlex and Cedar Lane Regional Park."}
+  {id:301,name:"McLean Premier Cup Full Sided Weekend",host:"McLean Youth Soccer / Elite Tournaments",location:"McLean, VA",distance:127,dates:"Mar 13-14, 2027",format:"11v11 confirmed",fee:"$1,150",deadline:"Feb 12, 2027",website:"elitetournaments.com/tournaments/mclean-premier-cup-full-sided-weekend/",notes:"U14 confirmed 11v11. Teams may roster 22 but only 18 may dress per match."},
+  {id:302,name:"Spring Shootout",host:"Elite Tournaments",location:"Edgewood / Howard County, MD",distance:70,dates:"Mar 27, 2027",format:"11v11 confirmed",fee:"$775",deadline:"Feb 26, 2027",website:"elitetournaments.com/tournaments/spring-shootout/",notes:"Best value at $775. U14 explicitly 11v11. Venues: Coppermine CopperPlex and Cedar Lane Regional Park."}
 ];
 
 // ===================== LIVE DATA =====================
@@ -673,21 +656,22 @@ const MAX_PER_TOURNAMENT = 200;
 let localCreditsFall = {}, localCreditsWinter = {}, localCreditsSpring = {};
 let creditSaveTimers = {};
 const pendingCreditSaves = new Set();
+let showPastEvents = false;
 
-function getSeasonVotes(s)   { return s==='fall'?allVotesFall : s==='winter'?allVotesWinter : allVotesSpring; }
-function getSeasonNotes(s)   { return s==='fall'?allNotesFall : s==='winter'?allNotesWinter : allNotesSpring; }
-function getSeasonCredits(s) { return s==='fall'?localCreditsFall : s==='winter'?localCreditsWinter : localCreditsSpring; }
+function getSeasonVotes(s)    { return s==='fall'?allVotesFall : s==='winter'?allVotesWinter : allVotesSpring; }
+function getSeasonNotes(s)    { return s==='fall'?allNotesFall : s==='winter'?allNotesWinter : allNotesSpring; }
+function getSeasonCredits(s)  { return s==='fall'?localCreditsFall : s==='winter'?localCreditsWinter : localCreditsSpring; }
 function setSeasonCredits(s,v){ if(s==='fall')localCreditsFall=v; else if(s==='winter')localCreditsWinter=v; else localCreditsSpring=v; }
 function getSeasonTournaments(s){ return s==='fall'?FALL_TOURNAMENTS : s==='winter'?WINTER_TOURNAMENTS : s==='spring'?SPRING_TOURNAMENTS : SUMMER_TOURNAMENTS; }
 function getSeasonCollection(s){ return 'votes_'+s; }
-function getVoterName()   { return localStorage.getItem('f6ad_voter') || ''; }
-function saveVoterName(n) { localStorage.setItem('f6ad_voter', n); }
-function getAdminPw()     { return localStorage.getItem('f6ad_pw') || 'FUNTIME'; }
-function saveAdminPw(p)   { localStorage.setItem('f6ad_pw', p); }
-function isAdminUnlocked(){ return sessionStorage.getItem('f6ad_admin') === '1'; }
+function getVoterName()    { return localStorage.getItem('f6ad_voter') || ''; }
+function saveVoterName(n)  { localStorage.setItem('f6ad_voter', n); }
+function getAdminPw()      { return localStorage.getItem('f6ad_pw') || 'FUNTIME'; }
+function saveAdminPw(p)    { localStorage.setItem('f6ad_pw', p); }
+function isAdminUnlocked() { return sessionStorage.getItem('f6ad_admin') === '1'; }
 function setAdminUnlocked(){ sessionStorage.setItem('f6ad_admin', '1'); }
 
-// ===================== REAL-TIME LISTENERS =====================
+// ===================== LISTENERS =====================
 function startListeners() {
   ['fall','winter','spring'].forEach(season => {
     db.collection(getSeasonCollection(season)).onSnapshot(snap => {
@@ -698,18 +682,18 @@ function startListeners() {
       else{allVotesSpring=v;allNotesSpring=n;}
       initSeasonCredits(season);
       if(activeSeason===season){ renderSeasonGrid(season); updateCreditDisplay(); }
-      if(document.getElementById('admin-panel')?.style.display!=='none') renderVoteTally();
+      if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVoteTally();
     });
   });
   db.collection('schedule').onSnapshot(snap => {
     scheduleItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderSchedule();
-    if(document.getElementById('admin-panel')?.style.display!=='none') renderAdminSchedule();
+    if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminSchedule();
   });
   db.collection('announcements').onSnapshot(snap => {
     announcementItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderAnnouncements();
-    if(document.getElementById('admin-panel')?.style.display!=='none') renderAdminAnnouncements();
+    if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminAnnouncements();
   });
 }
 
@@ -736,9 +720,9 @@ function renderVoterBar() {
   if(name) document.getElementById('voter-display-name').textContent=name;
   const cr=document.getElementById('credits-remaining-display');
   const sh=document.querySelector('.btn-share');
-  const isVotingSeason=activeSeason!=='summer';
-  if(cr) cr.style.display=(name&&isVotingSeason)?'':'none';
-  if(sh) sh.style.display=(name&&isVotingSeason)?'':'none';
+  const isVoting=activeSeason!=='summer';
+  if(cr) cr.style.display=(name&&isVoting)?'':'none';
+  if(sh) sh.style.display=(name&&isVoting)?'':'none';
 }
 
 // ===================== SEASON SWITCHING =====================
@@ -747,7 +731,7 @@ function switchSeason(season, btn) {
   document.querySelectorAll('.season-tab').forEach(t=>t.classList.remove('active'));
   if(btn) btn.classList.add('active');
   document.querySelectorAll('.season-panel').forEach(p=>p.classList.remove('active'));
-  const panel=document.getElementById('season-panel-'+season);
+  var panel=document.getElementById('season-panel-'+season);
   if(panel) panel.classList.add('active');
   renderVoterBar();
   updateCreditDisplay();
@@ -757,379 +741,361 @@ function switchSeason(season, btn) {
 
 // ===================== CONFIRMED SUMMER =====================
 function renderConfirmedSummer() {
-  const confirmed=SUMMER_TOURNAMENTS.filter(t=>CONFIRMED_IDS.includes(t.id));
-  document.getElementById('confirmed-grid').innerHTML=confirmed.map(t=>{
-    const feeDisplay=t.fee==='TBD'?'Fee TBD':t.fee.split('(')[0].trim();
-    return `<div class="confirmed-card">
-      <div class="cc-head">
-        <div class="cc-name">🏆 ${t.name}</div>
-        <div class="cc-meta"><span>📅 ${t.dates}</span><span>📍 ${t.location}</span><span>🚗 ${t.distance} mi</span></div>
-      </div>
-      <div class="cc-body">
-        <div class="cc-fee">${feeDisplay}</div>
-        <div style="font-size:.75rem;color:#444;margin-bottom:8px">Format: ${t.format}</div>
-        <button class="cc-notes-toggle" onclick="toggleCC(${t.id})">📋 Show details</button>
-        <div class="cc-notes" id="ccn-${t.id}">
-          <strong>Host:</strong> ${t.host}<br><strong>Deadline:</strong> ${t.deadline}<br><br>
-          <em>${t.notes}</em><br><br>
-          <strong>Website:</strong> <a href="https://${t.website}" target="_blank" style="color:#16a34a;word-break:break-all">${t.website}</a>
-        </div>
-      </div>
-      <div class="cc-footer">✅ CONFIRMED &nbsp;·&nbsp; Registration locked in</div>
-    </div>`;
+  var confirmed=SUMMER_TOURNAMENTS.filter(function(t){return CONFIRMED_IDS.indexOf(t.id)!==-1;});
+  var grid=document.getElementById('confirmed-grid');
+  if(!grid) return;
+  grid.innerHTML=confirmed.map(function(t){
+    var fd=t.fee==='TBD'?'Fee TBD':t.fee.split('(')[0].trim();
+    return '<div class="confirmed-card">'
+      +'<div class="cc-head"><div class="cc-name">'+t.name+'</div>'
+      +'<div class="cc-meta"><span>'+t.dates+'</span><span>'+t.location+'</span><span>'+t.distance+' mi</span></div></div>'
+      +'<div class="cc-body"><div class="cc-fee">'+fd+'</div>'
+      +'<div style="font-size:.75rem;color:#444;margin-bottom:8px">Format: '+t.format+'</div>'
+      +'<button class="cc-notes-toggle" onclick="toggleCC('+t.id+')">Show details</button>'
+      +'<div class="cc-notes" id="ccn-'+t.id+'">'
+      +'<strong>Host:</strong> '+t.host+'<br><strong>Deadline:</strong> '+t.deadline+'<br><br>'
+      +'<em>'+t.notes+'</em><br><br>'
+      +'<strong>Website:</strong> <a href="https://'+t.website+'" target="_blank" style="color:#16a34a;word-break:break-all">'+t.website+'</a>'
+      +'</div></div>'
+      +'<div class="cc-footer">CONFIRMED &nbsp;&#183;&nbsp; Registration locked in</div>'
+      +'</div>';
   }).join('');
 }
 function toggleCC(id) {
-  const el=document.getElementById('ccn-'+id), btn=el.previousElementSibling;
+  var el=document.getElementById('ccn-'+id), btn=el.previousElementSibling;
   el.classList.toggle('open');
-  btn.textContent=el.classList.contains('open')?'📋 Hide details':'📋 Show details';
+  btn.textContent=el.classList.contains('open')?'Hide details':'Show details';
 }
 
-// ===================== SUMMER GRID (browse, no voting) =====================
+// ===================== SUMMER GRID (browse only) =====================
 function filterSummer(f, btn) {
   _summerFilter=f;
-  document.querySelectorAll('#season-panel-summer .filter-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#season-panel-summer .filter-btn').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
   renderSummerGrid();
 }
 function sortSummer(s) { _summerSort=s; renderSummerGrid(); }
 function renderSummerGrid() {
-  let list=SUMMER_TOURNAMENTS.filter(t=>!CONFIRMED_IDS.includes(t.id));
-  if(_summerFilter==='nearby') list=list.filter(t=>t.distance<=50);
-  if(_summerSort==='date') list.sort((a,b)=>parseDate(a.dates)-parseDate(b.dates));
-  if(_summerSort==='distance') list.sort((a,b)=>a.distance-b.distance);
-  if(_summerSort==='fee') list.sort((a,b)=>parseFee(a.fee)-parseFee(b.fee));
-  document.getElementById('summer-grid').innerHTML=list.map(t=>{
-    const fd=t.fee==='TBD'?'<span style="color:var(--muted);font-size:.85rem">Fee TBD</span>':`<span class="t-fee">${t.fee.split('(')[0].trim()}</span>`;
-    return `<div class="t-card no-vote">
-      <div class="t-card-head">
-        <div class="t-card-row1"><span class="t-name">${t.name}</span></div>
-        <div class="t-meta"><span class="t-tag highlight">📅 ${t.dates}</span><span class="t-tag">📍 ${t.location}</span><span class="t-tag">🚗 ${t.distance} mi</span></div>
-      </div>
-      <div class="t-body">
-        <div class="t-fee-row">${fd}<span class="t-deadline">Deadline: ${t.deadline}</span></div>
-        <button class="t-notes-toggle" onclick="toggleBN(${t.id})">📋 Show details</button>
-        <div class="t-notes" id="bn-${t.id}">
-          <strong>Host:</strong> ${t.host}<br><strong>Format:</strong> ${t.format}<br><em>${t.notes}</em><br><br>
-          <strong>Website:</strong> <a href="https://${t.website}" target="_blank" class="t-website">${t.website}</a>
-        </div>
-      </div>
-    </div>`;
+  var list=SUMMER_TOURNAMENTS.filter(function(t){return CONFIRMED_IDS.indexOf(t.id)===-1;});
+  if(_summerFilter==='nearby') list=list.filter(function(t){return t.distance<=50;});
+  if(_summerSort==='date') list.sort(function(a,b){return parseDate(a.dates)-parseDate(b.dates);});
+  if(_summerSort==='distance') list.sort(function(a,b){return a.distance-b.distance;});
+  if(_summerSort==='fee') list.sort(function(a,b){return parseFee(a.fee)-parseFee(b.fee);});
+  var grid=document.getElementById('summer-grid');
+  if(!grid) return;
+  grid.innerHTML=list.map(function(t){
+    var fd=t.fee==='TBD'?'<span style="color:var(--muted);font-size:.85rem">Fee TBD</span>':'<span class="t-fee">'+t.fee.split('(')[0].trim()+'</span>';
+    return '<div class="t-card no-vote">'
+      +'<div class="t-card-head"><div class="t-card-row1"><span class="t-name">'+t.name+'</span></div>'
+      +'<div class="t-meta"><span class="t-tag highlight">'+t.dates+'</span>'
+      +'<span class="t-tag">'+t.location+'</span><span class="t-tag">'+t.distance+' mi</span></div></div>'
+      +'<div class="t-body"><div class="t-fee-row">'+fd+'<span class="t-deadline">Deadline: '+t.deadline+'</span></div>'
+      +'<button class="t-notes-toggle" onclick="toggleBN('+t.id+')">Show details</button>'
+      +'<div class="t-notes" id="bn-'+t.id+'">'
+      +'<strong>Host:</strong> '+t.host+'<br><strong>Format:</strong> '+t.format+'<br><em>'+t.notes+'</em><br><br>'
+      +'<strong>Website:</strong> <a href="https://'+t.website+'" target="_blank" class="t-website">'+t.website+'</a>'
+      +'</div></div></div>';
   }).join('');
 }
 function toggleBN(id) {
-  const el=document.getElementById('bn-'+id), btn=el.previousElementSibling;
-  el.classList.toggle('open');
-  btn.textContent=el.classList.contains('open')?'📋 Hide details':'📋 Show details';
+  var el=document.getElementById('bn-'+id), btn=el.previousElementSibling;
+  el.classList.toggle('open'); btn.textContent=el.classList.contains('open')?'Hide details':'Show details';
 }
 
 // ===================== SEASON GRID (voting) =====================
 function sortSeason(season, s) { seasonSorts[season]=s; renderSeasonGrid(season); }
-
 function renderSeasonGrid(season) {
-  const voterName=getVoterName();
-  const tournaments=getSeasonTournaments(season);
-  const allVotes=getSeasonVotes(season);
-  const allNotes=getSeasonNotes(season);
-  const lc=getSeasonCredits(season);
-  let list=[...tournaments];
-  const s=seasonSorts[season];
-  if(s==='date') list.sort((a,b)=>parseDate(a.dates)-parseDate(b.dates));
-  if(s==='distance') list.sort((a,b)=>a.distance-b.distance);
-  if(s==='fee') list.sort((a,b)=>parseFee(a.fee)-parseFee(b.fee));
+  var voterName=getVoterName();
+  var tournaments=getSeasonTournaments(season);
+  var allVotes=getSeasonVotes(season);
+  var allNotes=getSeasonNotes(season);
+  var lc=getSeasonCredits(season);
+  var list=tournaments.slice();
+  var s=seasonSorts[season];
+  if(s==='date') list.sort(function(a,b){return parseDate(a.dates)-parseDate(b.dates);});
+  if(s==='distance') list.sort(function(a,b){return a.distance-b.distance;});
+  if(s==='fee') list.sort(function(a,b){return parseFee(a.fee)-parseFee(b.fee);});
 
-  const tally={};
-  tournaments.forEach(t=>tally[t.id]={credits:0,voterCount:0});
-  Object.entries(allVotes).forEach(([voter,vv])=>{
-    Object.entries(vv).forEach(([tid,v])=>{
-      const id=parseInt(tid);
+  var tally={};
+  tournaments.forEach(function(t){tally[t.id]={credits:0,voterCount:0};});
+  Object.keys(allVotes).forEach(function(voter){
+    var vv=allVotes[voter];
+    Object.keys(vv).forEach(function(tid){
+      var id=parseInt(tid), v=vv[tid];
       if(tally[id]&&typeof v==='number'&&v>0){tally[id].credits+=v;tally[id].voterCount++;}
     });
   });
-  const pubNotes={};
-  tournaments.forEach(t=>pubNotes[t.id]=[]);
-  Object.entries(allNotes).forEach(([voter,vn])=>{
-    Object.entries(vn).forEach(([tid,note])=>{
-      const id=parseInt(tid);
+
+  var pubNotes={};
+  tournaments.forEach(function(t){pubNotes[t.id]=[];});
+  Object.keys(allNotes).forEach(function(voter){
+    var vn=allNotes[voter];
+    Object.keys(vn).forEach(function(tid){
+      var id=parseInt(tid), note=vn[tid];
       if(pubNotes[id]!==undefined&&note&&note.trim()){
-        const cr=(allVotes[voter]||{})[id];
-        pubNotes[id].push({voter,note:note.trim(),credits:typeof cr==='number'?cr:0});
+        var cr=(allVotes[voter]||{})[id];
+        pubNotes[id].push({voter:voter,note:note.trim(),credits:typeof cr==='number'?cr:0});
       }
     });
   });
 
-  const savedDrafts={};
-  document.querySelectorAll(`[id^="ni-${season}-"]`).forEach(el=>{ savedDrafts[el.id]=el.value; });
-
-  const remaining=getSeasonRemaining(season);
-  const grid=document.getElementById(season+'-grid');
+  var remaining=getSeasonRemaining(season);
+  var grid=document.getElementById(season+'-grid');
   if(!grid) return;
 
-  grid.innerHTML=list.map(t=>{
-    const myCredits=lc[t.id]||0;
-    const cardClass=myCredits>0?'has-credits':'';
-    const fd=t.fee==='TBD'?'<span class="t-fee tbd">Fee TBD</span>':`<span class="t-fee">${t.fee.split('(')[0].trim()}</span>`;
-    const tc=tally[t.id];
-    const myNote=voterName?((allNotes[voterName]||{})[t.id]||''):'';
-    const notes=pubNotes[t.id]||[];
-    const liveHtml=tc.credits>0
-      ?`<span style="color:var(--purple);font-weight:700">💰 ${tc.credits} credits</span> · <span style="font-size:.7rem;color:var(--muted)">${tc.voterCount} voter${tc.voterCount!==1?'s':''}</span>`
-      :`<span style="font-size:.72rem;color:var(--muted)">No credits yet — be first!</span>`;
-    const canAdd=remaining>0&&myCredits<MAX_PER_TOURNAMENT;
-    const allocHtml=voterName?`
-      <div class="credit-alloc-row">
-        <button class="credit-adj-btn" id="cm-${season}-${t.id}" onclick="adjustCredits('${season}',${t.id},-25)" ${myCredits<=0?'disabled':''}>−</button>
-        <input type="number" class="credit-input-field" id="ci-${season}-${t.id}" value="${myCredits}" min="0" max="${Math.min(myCredits+remaining,MAX_PER_TOURNAMENT)}" oninput="handleCreditInput('${season}',${t.id})" onblur="handleCreditInput('${season}',${t.id})"/>
-        <button class="credit-adj-btn" id="cp-${season}-${t.id}" onclick="adjustCredits('${season}',${t.id},25)" ${!canAdd?'disabled':''}>+</button>
-        <span class="credit-label">credits (max 200)</span>
-        <span class="credit-pct" id="cpct-${season}-${t.id}">${myCredits>0?((myCredits/TOTAL_CREDITS*100).toFixed(0))+'% of budget':''}</span>
-      </div>`:`<div style="padding:10px 18px;font-size:.8rem;color:var(--muted);font-style:italic">Enter your name above to allocate credits</div>`;
-    const noteHtml=(voterName&&myCredits>0)?`
-      <div class="vote-note-wrap">
-        <span class="vote-note-label">Your note (shared with all families)</span>
-        <textarea class="vote-note-textarea" id="ni-${season}-${t.id}" placeholder="Why are you putting credits here?">${myNote}</textarea>
-        <div class="vote-note-actions">
-          <button class="vote-note-save" onclick="saveNote('${season}',${t.id})">💾 Save Note</button>
-          <span class="vote-note-saved" id="ns-${season}-${t.id}">✅ Saved!</span>
-        </div>
-      </div>`:'';
-    const pubHtml=notes.length?`
-      <div class="public-notes-wrap">
-        <button class="public-notes-toggle" onclick="togglePN('${season}',${t.id})">💬 ${notes.length} note${notes.length>1?'s':''} — show/hide</button>
-        <div class="public-notes-list" id="pn-${season}-${t.id}" style="display:none">
-          ${notes.map(n=>`<div class="public-note-item"><div class="public-note-author">${n.voter}${n.credits>0?` <span style="font-size:.7rem;color:var(--muted)">(${n.credits} credits)</span>`:''}</div><div class="public-note-text">${n.note}</div></div>`).join('')}
-        </div>
-      </div>`:'';
-    return `<div class="t-card ${cardClass}" id="card-${season}-${t.id}">
-      <div class="t-card-head">
-        <div class="t-card-row1"><span class="t-name">${t.name}</span></div>
-        <div class="t-meta"><span class="t-tag highlight">📅 ${t.dates}</span><span class="t-tag">📍 ${t.location}</span><span class="t-tag">🚗 ${t.distance} mi</span></div>
-      </div>
-      <div class="t-body">
-        <div class="t-fee-row">${fd}<span class="t-deadline">Deadline: ${t.deadline}</span></div>
-        <div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">Format: ${t.format}</div>
-        <button class="t-notes-toggle" onclick="toggleSN('${season}',${t.id})">📋 Show notes &amp; details</button>
-        <div class="t-notes" id="sn-${season}-${t.id}">
-          <strong>Host:</strong> ${t.host}<br><em>${t.notes}</em><br><br>
-          <strong>Website:</strong> <a href="https://${t.website}" target="_blank" class="t-website">${t.website}</a>
-        </div>
-      </div>
-      <div class="t-footer">
-        <div style="margin-bottom:8px">${liveHtml}</div>
-        ${allocHtml}${noteHtml}${pubHtml}
-      </div>
-    </div>`;
+  grid.innerHTML=list.map(function(t){
+    var myCredits=lc[t.id]||0;
+    var cardClass=myCredits>0?'has-credits':'';
+    var fd=t.fee==='TBD'?'<span class="t-fee tbd">Fee TBD</span>':'<span class="t-fee">'+t.fee.split('(')[0].trim()+'</span>';
+    var tc=tally[t.id];
+    var myNote=voterName?((allNotes[voterName]||{})[t.id]||''):'';
+    var notes=pubNotes[t.id]||[];
+    var liveHtml=tc.credits>0
+      ?'<span style="color:var(--purple);font-weight:700">'+tc.credits+' credits</span> &middot; <span style="font-size:.7rem;color:var(--muted)">'+tc.voterCount+' voter'+(tc.voterCount!==1?'s':'')+'</span>'
+      :'<span style="font-size:.72rem;color:var(--muted)">No credits yet</span>';
+    var canAdd=remaining>0&&myCredits<MAX_PER_TOURNAMENT;
+    var allocHtml=voterName
+      ?'<div class="credit-alloc-row">'
+        +'<button class="credit-adj-btn" id="cm-'+season+'-'+t.id+'" onclick="adjustCredits(\''+season+'\','+t.id+',-25)" '+(myCredits<=0?'disabled':'')+'>&#8722;</button>'
+        +'<input type="number" class="credit-input-field" id="ci-'+season+'-'+t.id+'" value="'+myCredits+'" min="0" max="'+Math.min(myCredits+remaining,MAX_PER_TOURNAMENT)+'" oninput="handleCreditInput(\''+season+'\','+t.id+')" onblur="handleCreditInput(\''+season+'\','+t.id+')" />'
+        +'<button class="credit-adj-btn" id="cp-'+season+'-'+t.id+'" onclick="adjustCredits(\''+season+'\','+t.id+',25)" '+(!canAdd?'disabled':'')+'>+</button>'
+        +'<span class="credit-label">credits (max 200)</span>'
+        +'<span class="credit-pct" id="cpct-'+season+'-'+t.id+'">'+(myCredits>0?(Math.round(myCredits/TOTAL_CREDITS*100)+'% of budget'):'')+'</span>'
+        +'</div>'
+      :'<div style="padding:10px 18px;font-size:.8rem;color:var(--muted);font-style:italic">Enter your name above to allocate credits</div>';
+    var noteHtml=(voterName&&myCredits>0)
+      ?'<div class="vote-note-wrap">'
+        +'<span class="vote-note-label">Your note (shared with all families)</span>'
+        +'<textarea class="vote-note-textarea" id="ni-'+season+'-'+t.id+'" placeholder="Why are you putting credits here?">'+myNote+'</textarea>'
+        +'<div class="vote-note-actions">'
+          +'<button class="vote-note-save" onclick="saveNote(\''+season+'\','+t.id+')">Save Note</button>'
+          +'<span class="vote-note-saved" id="ns-'+season+'-'+t.id+'">Saved!</span>'
+        +'</div></div>'
+      :'';
+    var pubHtml=notes.length
+      ?'<div class="public-notes-wrap">'
+        +'<button class="public-notes-toggle" onclick="togglePN(\''+season+'\','+t.id+')">'+notes.length+' note'+(notes.length>1?'s':'')+' from families</button>'
+        +'<div class="public-notes-list" id="pn-'+season+'-'+t.id+'" style="display:none">'
+        +notes.map(function(n){return '<div class="public-note-item"><div class="public-note-author">'+n.voter+(n.credits>0?' ('+n.credits+' credits)':'')+'</div><div class="public-note-text">'+n.note+'</div></div>';}).join('')
+        +'</div></div>'
+      :'';
+    return '<div class="t-card '+cardClass+'" id="card-'+season+'-'+t.id+'">'
+      +'<div class="t-card-head"><div class="t-card-row1"><span class="t-name">'+t.name+'</span></div>'
+      +'<div class="t-meta"><span class="t-tag highlight">'+t.dates+'</span><span class="t-tag">'+t.location+'</span><span class="t-tag">'+t.distance+' mi</span></div></div>'
+      +'<div class="t-body"><div class="t-fee-row">'+fd+'<span class="t-deadline">Deadline: '+t.deadline+'</span></div>'
+      +'<div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">Format: '+t.format+'</div>'
+      +'<button class="t-notes-toggle" onclick="toggleSN(\''+season+'\','+t.id+')">Show notes &amp; details</button>'
+      +'<div class="t-notes" id="sn-'+season+'-'+t.id+'">'
+      +'<strong>Host:</strong> '+t.host+'<br><em>'+t.notes+'</em><br><br>'
+      +'<strong>Website:</strong> <a href="https://'+t.website+'" target="_blank" class="t-website">'+t.website+'</a>'
+      +'</div></div>'
+      +'<div class="t-footer"><div style="margin-bottom:8px">'+liveHtml+'</div>'+allocHtml+noteHtml+pubHtml+'</div>'
+      +'</div>';
   }).join('');
-
-  Object.entries(savedDrafts).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.value=val; });
 }
-
 function toggleSN(season, id) {
-  const el=document.getElementById(`sn-${season}-${id}`), btn=el.previousElementSibling;
-  el.classList.toggle('open');
-  btn.textContent=el.classList.contains('open')?'📋 Hide notes & details':'📋 Show notes & details';
+  var el=document.getElementById('sn-'+season+'-'+id), btn=el.previousElementSibling;
+  el.classList.toggle('open'); btn.textContent=el.classList.contains('open')?'Hide notes & details':'Show notes & details';
 }
 function togglePN(season, id) {
-  const el=document.getElementById(`pn-${season}-${id}`);
+  var el=document.getElementById('pn-'+season+'-'+id);
   if(el) el.style.display=el.style.display==='none'?'flex':'none';
 }
 
 // ===================== SHARE VOTES =====================
 function shareVotes() {
-  const name=getVoterName();
+  var name=getVoterName();
   if(!name){showToast('Set your name first.'); return;}
   if(activeSeason==='summer'){showToast('Use the Fall/Winter/Spring tabs to vote.'); return;}
-  const season=activeSeason;
-  const tournaments=getSeasonTournaments(season);
-  const lc=getSeasonCredits(season);
-  const allocated=[], unallocated=[];
-  tournaments.forEach(t=>{ const cr=lc[t.id]||0; if(cr>0) allocated.push({name:t.name,credits:cr}); else unallocated.push(t.name); });
-  allocated.sort((a,b)=>b.credits-a.credits);
-  const used=allocated.reduce((s,x)=>s+x.credits,0);
-  const label={'fall':'Fall 2026','winter':'Winter 2026','spring':'Spring 2027'}[season];
-  let text=`F6AD ${label.toUpperCase()} CREDITS — ${name}\n${'='.repeat(48)}\n${used}/${TOTAL_CREDITS} credits used\n`;
-  if(allocated.length) text+=`\n💰 ALLOCATED:\n`+allocated.map(x=>`  ${x.name} — ${x.credits}`).join('\n');
-  if(unallocated.length) text+=`\n\n⬜ NO CREDITS:\n`+unallocated.map(x=>`  ${x}`).join('\n');
-  navigator.clipboard.writeText(text).then(()=>showToast('✅ Credits summary copied!'));
+  var season=activeSeason;
+  var tournaments=getSeasonTournaments(season);
+  var lc=getSeasonCredits(season);
+  var allocated=[], unallocated=[];
+  tournaments.forEach(function(t){var cr=lc[t.id]||0; if(cr>0) allocated.push({name:t.name,credits:cr}); else unallocated.push(t.name);});
+  allocated.sort(function(a,b){return b.credits-a.credits;});
+  var used=allocated.reduce(function(s,x){return s+x.credits;},0);
+  var label={fall:'Fall 2026',winter:'Winter 2026',spring:'Spring 2027'}[season];
+  var text='F6AD '+label.toUpperCase()+' CREDITS -- '+name+'\n'+Array(49).join('=')+'\n'+used+'/'+TOTAL_CREDITS+' credits used\n';
+  if(allocated.length) text+='\nALLOCATED:\n'+allocated.map(function(x){return '  '+x.name+' -- '+x.credits;}).join('\n');
+  if(unallocated.length) text+='\n\nNO CREDITS:\n'+unallocated.map(function(x){return '  '+x;}).join('\n');
+  navigator.clipboard.writeText(text).then(function(){showToast('Credits summary copied!');});
+}
+
+// ===================== UTILS =====================
+function parseDate(dateStr) {
+  var m=dateStr.match(/(\w+)\s+(\d+)/);
+  if(!m) return new Date('2027-12-31');
+  var months={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  var mo=months[m[1]]||6;
+  var year=mo<=5?2027:2026;
+  return new Date(year,mo-1,parseInt(m[2]));
+}
+function parseFee(feeStr) {
+  var m=feeStr.replace(/,/g,'').match(/\$(\d+)/);
+  return m?parseInt(m[1]):99999;
 }
 
 // ===================== CREDIT SYSTEM =====================
 function initSeasonCredits(season) {
-  const name=getVoterName();
+  var name=getVoterName();
   if(!name){ setSeasonCredits(season,{}); return; }
-  const v=getSeasonVotes(season)[name]||{};
-  const cr={};
-  getSeasonTournaments(season).forEach(t=>{
-    if(!pendingCreditSaves.has(`${season}-${t.id}`)){
-      const val=v[t.id];
+  var v=getSeasonVotes(season)[name]||{};
+  var cr={};
+  getSeasonTournaments(season).forEach(function(t){
+    var key=season+'-'+t.id;
+    if(!pendingCreditSaves.has(key)){
+      var val=v[t.id];
       cr[t.id]=(typeof val==='number'&&val>=0)?Math.min(Math.round(val),MAX_PER_TOURNAMENT):0;
     }
   });
   setSeasonCredits(season,cr);
 }
-function getSeasonTotalUsed(season){ return Object.values(getSeasonCredits(season)).reduce((s,v)=>s+(parseInt(v)||0),0); }
+function getSeasonTotalUsed(season){ return Object.values(getSeasonCredits(season)).reduce(function(s,v){return s+(parseInt(v)||0);},0); }
 function getSeasonRemaining(season){ return TOTAL_CREDITS-getSeasonTotalUsed(season); }
 
 function updateCreditDisplay() {
-  const season=activeSeason, name=getVoterName();
-  const badge=document.getElementById('credits-remaining-display');
+  var season=activeSeason, name=getVoterName();
+  var badge=document.getElementById('credits-remaining-display');
   if(badge){
     if(!name||season==='summer'){badge.style.display='none'; return;}
-    const rem=getSeasonRemaining(season);
+    var rem=getSeasonRemaining(season);
     badge.style.display='';
-    badge.textContent=`💰 ${rem} credits remaining`;
+    badge.textContent=rem+' credits remaining';
     badge.className='credits-remaining-display'+(rem===0?' empty':rem<200?' warn':'');
   }
   if(season!=='summer'){
-    const bar=document.getElementById(`vote-summary-bar-${season}`);
+    var bar=document.getElementById('vote-summary-bar-'+season);
     if(bar){ bar.style.display=name?'flex':'none';
-      const used=TOTAL_CREDITS-getSeasonRemaining(season);
-      const cu=document.getElementById(`count-used-${season}`); if(cu) cu.textContent=used;
-      const cr=document.getElementById(`count-remaining-${season}`);
-      if(cr) cr.textContent=getSeasonRemaining(season)>0?`· ${getSeasonRemaining(season)} remaining`:'· All credits allocated!';
+      var used=TOTAL_CREDITS-getSeasonRemaining(season);
+      var cu=document.getElementById('count-used-'+season); if(cu) cu.textContent=used;
+      var cr=document.getElementById('count-remaining-'+season);
+      if(cr) cr.textContent=getSeasonRemaining(season)>0?'&#183; '+getSeasonRemaining(season)+' remaining':'&#183; All credits allocated!';
     }
-    getSeasonTournaments(season).forEach(t=>{
-      const lc=getSeasonCredits(season);
-      const card=document.getElementById(`card-${season}-${t.id}`); if(!card) return;
-      const credits=lc[t.id]||0;
-      credits>0?card.classList.add('has-credits'):card.classList.remove('has-credits');
-      const inp=document.getElementById(`ci-${season}-${t.id}`); if(inp) inp.value=credits;
-      const minus=document.getElementById(`cm-${season}-${t.id}`); if(minus) minus.disabled=credits<=0;
-      const plus=document.getElementById(`cp-${season}-${t.id}`); if(plus) plus.disabled=(getSeasonRemaining(season)<=0&&credits<MAX_PER_TOURNAMENT)||credits>=MAX_PER_TOURNAMENT;
-      const pct=document.getElementById(`cpct-${season}-${t.id}`); if(pct) pct.textContent=credits>0?((credits/TOTAL_CREDITS*100).toFixed(0))+'% of budget':'';
+    getSeasonTournaments(season).forEach(function(t){
+      var lc=getSeasonCredits(season);
+      var card=document.getElementById('card-'+season+'-'+t.id); if(!card) return;
+      var credits=lc[t.id]||0;
+      if(credits>0) card.classList.add('has-credits'); else card.classList.remove('has-credits');
+      var inp=document.getElementById('ci-'+season+'-'+t.id); if(inp) inp.value=credits;
+      var minus=document.getElementById('cm-'+season+'-'+t.id); if(minus) minus.disabled=credits<=0;
+      var plus=document.getElementById('cp-'+season+'-'+t.id); if(plus) plus.disabled=(getSeasonRemaining(season)<=0&&credits<MAX_PER_TOURNAMENT)||credits>=MAX_PER_TOURNAMENT;
+      var pct=document.getElementById('cpct-'+season+'-'+t.id); if(pct) pct.textContent=credits>0?(Math.round(credits/TOTAL_CREDITS*100)+'% of budget'):'';
     });
   }
 }
 function handleCreditInput(season, tournId) {
-  const el=document.getElementById(`ci-${season}-${tournId}`); if(!el) return;
-  const lc=getSeasonCredits(season);
-  let val=parseInt(el.value)||0;
+  var el=document.getElementById('ci-'+season+'-'+tournId); if(!el) return;
+  var lc=getSeasonCredits(season);
+  var val=parseInt(el.value)||0;
   val=Math.max(0,Math.min(val,(lc[tournId]||0)+getSeasonRemaining(season),MAX_PER_TOURNAMENT));
   el.value=val; lc[tournId]=val;
   updateCreditDisplay(); scheduleCreditSave(season,tournId);
 }
 function adjustCredits(season, tournId, delta) {
-  const lc=getSeasonCredits(season);
-  const cur=lc[tournId]||0;
+  var lc=getSeasonCredits(season);
+  var cur=lc[tournId]||0;
   lc[tournId]=Math.max(0,Math.min(cur+delta,cur+getSeasonRemaining(season),MAX_PER_TOURNAMENT));
   updateCreditDisplay(); scheduleCreditSave(season,tournId);
 }
 function scheduleCreditSave(season, tournId) {
-  const key=`${season}-${tournId}`;
+  var key=season+'-'+tournId;
   pendingCreditSaves.add(key);
   clearTimeout(creditSaveTimers[key]);
-  creditSaveTimers[key]=setTimeout(()=>saveCreditAllocation(season,tournId),700);
+  creditSaveTimers[key]=setTimeout(function(){saveCreditAllocation(season,tournId);},700);
 }
 function saveCreditAllocation(season, tournId) {
-  const name=getVoterName(); if(!name) return;
-  const key=`${season}-${tournId}`;
-  const lc=getSeasonCredits(season);
-  const myVotes={...(getSeasonVotes(season)[name]||{})};
+  var name=getVoterName(); if(!name) return;
+  var key=season+'-'+tournId;
+  var lc=getSeasonCredits(season);
+  var myVotes=Object.assign({},(getSeasonVotes(season)[name]||{}));
   myVotes[tournId]=lc[tournId]||0;
-  db.collection(getSeasonCollection(season)).doc(name).set({name,votes:myVotes,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
-    .then(()=>pendingCreditSaves.delete(key))
-    .catch(e=>showToast('Error saving: '+e.message));
+  db.collection(getSeasonCollection(season)).doc(name).set({name:name,votes:myVotes,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+    .then(function(){pendingCreditSaves.delete(key);})
+    .catch(function(e){showToast('Error saving: '+e.message);});
 }
 
 // ===================== NOTES =====================
 function saveNote(season, tournId) {
-  const name=getVoterName(); if(!name) return;
-  const el=document.getElementById(`ni-${season}-${tournId}`); if(!el) return;
-  const note=el.value.trim();
-  const myNotes={...(getSeasonNotes(season)[name]||{})};
+  var name=getVoterName(); if(!name) return;
+  var el=document.getElementById('ni-'+season+'-'+tournId); if(!el) return;
+  var note=el.value.trim();
+  var myNotes=Object.assign({},(getSeasonNotes(season)[name]||{}));
   myNotes[tournId]=note;
   db.collection(getSeasonCollection(season)).doc(name).set({notes:myNotes},{merge:true})
-    .then(()=>{ const s=document.getElementById(`ns-${season}-${tournId}`); if(s){s.style.display='inline';setTimeout(()=>s.style.display='none',2200);} })
-    .catch(e=>showToast('Error: '+e.message));
-}
-
-// ===================== UTILS =====================
-function parseDate(dateStr) {
-  const m=dateStr.match(/(\w+)\s+(\d+)/);
-  if(!m) return new Date('2027-12-31');
-  const months={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
-  const mo=months[m[1]]||6;
-  const year=mo<=5?2027:2026;
-  return new Date(year,mo-1,parseInt(m[2]));
-}
-function parseFee(feeStr) {
-  const m=feeStr.replace(/,/g,'').match(/\$(\d+)/);
-  return m?parseInt(m[1]):99999;
+    .then(function(){ var s=document.getElementById('ns-'+season+'-'+tournId); if(s){s.style.display='inline';setTimeout(function(){s.style.display='none';},2200);} })
+    .catch(function(e){showToast('Error: '+e.message);});
 }
 
 // ===================== VOTE TALLY (admin) =====================
 function renderVoteTally() {
-  const container=document.getElementById('vote-tally-body'); if(!container) return;
-  let html='';
-  ['fall','winter','spring'].forEach(season=>{
-    const label={'fall':'🍂 Fall 2026','winter':'❄️ Winter 2026','spring':'🌸 Spring 2027'}[season];
-    const tournaments=getSeasonTournaments(season);
-    const allVotes=getSeasonVotes(season);
-    const tally={};
-    tournaments.forEach(t=>tally[t.id]={credits:0,voters:[]});
-    Object.entries(allVotes).forEach(([voter,vv])=>{
-      Object.entries(vv).forEach(([tid,v])=>{
-        const id=parseInt(tid);
-        if(tally[id]&&typeof v==='number'&&v>0){tally[id].credits+=v;tally[id].voters.push(`${voter}(${v})`);}
+  var container=document.getElementById('vote-tally-body'); if(!container) return;
+  var html='';
+  ['fall','winter','spring'].forEach(function(season){
+    var label={fall:'Fall 2026',winter:'Winter 2026',spring:'Spring 2027'}[season];
+    var tournaments=getSeasonTournaments(season);
+    var allVotes=getSeasonVotes(season);
+    var tally={};
+    tournaments.forEach(function(t){tally[t.id]={credits:0,voters:[]};});
+    Object.keys(allVotes).forEach(function(voter){
+      var vv=allVotes[voter];
+      Object.keys(vv).forEach(function(tid){
+        var id=parseInt(tid), v=vv[tid];
+        if(tally[id]&&typeof v==='number'&&v>0){tally[id].credits+=v;tally[id].voters.push(voter+'('+v+')');}
       });
     });
-    const sorted=[...tournaments].sort((a,b)=>tally[b.id].credits-tally[a.id].credits);
-    const hasVotes=sorted.some(t=>tally[t.id].credits>0);
-    html+=`<tr><td colspan="4" style="background:var(--black);color:#fff;padding:8px 12px;font-weight:800;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px">${label}</td></tr>`;
+    var sorted=tournaments.slice().sort(function(a,b){return tally[b.id].credits-tally[a.id].credits;});
+    var hasVotes=sorted.some(function(t){return tally[t.id].credits>0;});
+    html+='<tr><td colspan="4" style="background:var(--black);color:#fff;padding:8px 12px;font-weight:800;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px">'+label+'</td></tr>';
     if(!hasVotes){
-      html+=`<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:12px;font-size:.82rem;font-style:italic">No credits allocated yet</td></tr>`;
+      html+='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:12px;font-size:.82rem;font-style:italic">No credits allocated yet</td></tr>';
     } else {
-      sorted.forEach(t=>{
-        const v=tally[t.id]; if(!v.credits) return;
-        html+=`<tr><td style="font-weight:600;font-size:.85rem">${t.name}</td><td style="color:var(--muted);font-size:.75rem">${t.dates}</td><td class="tally-yes">💰 ${v.credits}</td><td style="font-size:.75rem;color:var(--muted)">${v.voters.length} voter${v.voters.length!==1?'s':''}</td></tr>`;
+      sorted.forEach(function(t){
+        var v=tally[t.id]; if(!v.credits) return;
+        html+='<tr><td style="font-weight:600;font-size:.85rem">'+t.name+'</td><td style="color:var(--muted);font-size:.75rem">'+t.dates+'</td><td class="tally-yes">'+v.credits+' credits</td><td style="font-size:.75rem;color:var(--muted)">'+v.voters.length+' voter'+(v.voters.length!==1?'s':'')+'</td></tr>';
       });
     }
   });
-  container.innerHTML=html||`<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No votes yet.</td></tr>`;
+  container.innerHTML=html||'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No votes yet.</td></tr>';
 }
-
 function exportVoteTally() {
-  let text='F6AD TOURNAMENT CREDIT TALLY\n'+'='.repeat(60)+'\n';
-  ['fall','winter','spring'].forEach(season=>{
-    const label={'fall':'FALL 2026','winter':'WINTER 2026','spring':'SPRING 2027'}[season];
-    text+=`\n── ${label} ──\n`;
-    const tv=getSeasonTournaments(season);
-    const av=getSeasonVotes(season);
-    const tally={};
-    tv.forEach(t=>tally[t.id]=0);
-    Object.values(av).forEach(vv=>{Object.entries(vv).forEach(([tid,v])=>{const id=parseInt(tid);if(tally[id]!==undefined)tally[id]+=v;});});
-    [...tv].sort((a,b)=>tally[b.id]-tally[a.id]).forEach(t=>{if(tally[t.id]>0)text+=`  ${t.name}: 💰 ${tally[t.id]} credits\n`;});
+  var text='F6AD TOURNAMENT CREDIT TALLY\n'+Array(61).join('=')+'\n';
+  ['fall','winter','spring'].forEach(function(season){
+    var label={fall:'FALL 2026',winter:'WINTER 2026',spring:'SPRING 2027'}[season];
+    text+='\n-- '+label+' --\n';
+    var tv=getSeasonTournaments(season), av=getSeasonVotes(season), tally={};
+    tv.forEach(function(t){tally[t.id]=0;});
+    Object.values(av).forEach(function(vv){Object.keys(vv).forEach(function(tid){var id=parseInt(tid);if(tally[id]!==undefined)tally[id]+=vv[tid];});});
+    tv.slice().sort(function(a,b){return tally[b.id]-tally[a.id];}).forEach(function(t){if(tally[t.id]>0)text+='  '+t.name+': '+tally[t.id]+' credits\n';});
   });
-  navigator.clipboard.writeText(text).then(()=>showToast('📊 Tally copied!'));
+  navigator.clipboard.writeText(text).then(function(){showToast('Tally copied!');});
 }
-
 function clearAllVotes() {
   if(!confirm('Delete ALL votes (all seasons) from the database? This cannot be undone.')) return;
-  const del=col=>db.collection(col).get().then(snap=>{const b=db.batch();snap.forEach(d=>b.delete(d.ref));return b.commit();});
+  var del=function(col){return db.collection(col).get().then(function(snap){var b=db.batch();snap.forEach(function(d){b.delete(d.ref);});return b.commit();});};
   Promise.all(['votes_fall','votes_winter','votes_spring'].map(del))
-    .then(()=>showToast('All votes cleared.')).catch(e=>showToast('Error: '+e.message));
+    .then(function(){showToast('All votes cleared.');}).catch(function(e){showToast('Error: '+e.message);});
 }
-
 function generateLink() {
-  const name=document.getElementById('link-name-input').value.trim();
+  var name=document.getElementById('link-name-input').value.trim();
   if(!name){showToast('Enter a name first.'); return;}
-  const base=window.location.href.split('?')[0];
-  const url=`${base}?voter=${encodeURIComponent(name)}`;
-  const container=document.getElementById('generated-links-list');
-  if(document.getElementById('link-'+CSS.escape(name))){showToast('Link already generated.'); return;}
-  const div=document.createElement('div');
+  var base=window.location.href.split('?')[0];
+  var url=base+'?voter='+encodeURIComponent(name);
+  var container=document.getElementById('generated-links-list');
+  var escapedName=CSS.escape(name);
+  if(document.getElementById('link-'+escapedName)){showToast('Link already generated.'); return;}
+  var div=document.createElement('div');
   div.id='link-'+name;
   div.style.cssText='background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap';
-  div.innerHTML=`<span style="font-weight:700;font-size:.88rem;flex:0 0 auto">${name}</span>
-    <input readonly value="${url}" style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:.78rem;font-family:monospace;background:#fff;color:#444" onclick="this.select()"/>
-    <button class="btn-primary" style="padding:7px 14px;font-size:.78rem" onclick="copyLink('${url}',this)">Copy</button>
-    <button class="btn-danger" style="padding:7px 14px;font-size:.78rem" onclick="this.closest('div').remove()">✕</button>`;
+  div.innerHTML='<span style="font-weight:700;font-size:.88rem;flex:0 0 auto">'+name+'</span>'
+    +'<input readonly value="'+url+'" style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:.78rem;font-family:monospace;background:#fff;color:#444" onclick="this.select()"/>'
+    +'<button class="btn-primary" style="padding:7px 14px;font-size:.78rem" onclick="copyLink(\''+url+'\',this)">Copy</button>'
+    +'<button class="btn-danger" style="padding:7px 14px;font-size:.78rem" onclick="this.closest(\'div\').remove()">X</button>';
   container.prepend(div);
   document.getElementById('link-name-input').value='';
-  showToast(`✅ Link generated for ${name}`);
+  showToast('Link generated for '+name);
 }
 function copyLink(url,btn) {
-  navigator.clipboard.writeText(url).then(()=>{const o=btn.textContent;btn.textContent='Copied!';setTimeout(()=>btn.textContent=o,1800);});
+  navigator.clipboard.writeText(url).then(function(){var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1800);});
 }
 
 function renderSchedule() {
@@ -1335,14 +1301,14 @@ function changePassword() {
 
 
 function showToast(msg) {
-  const t=document.getElementById('toast');
+  var t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
+  setTimeout(function(){t.classList.remove('show');},2800);
 }
 
 // ===================== INIT =====================
-document.addEventListener('DOMContentLoaded', () => {
-  const urlVoter=new URLSearchParams(window.location.search).get('voter');
+document.addEventListener('DOMContentLoaded', function() {
+  var urlVoter=new URLSearchParams(window.location.search).get('voter');
   if(urlVoter&&urlVoter.trim()&&!getVoterName()) saveVoterName(urlVoter.trim());
   renderVoterBar();
   renderConfirmedSummer();
