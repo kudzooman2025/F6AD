@@ -581,6 +581,7 @@ const db = firebase.firestore();
 
 // ===================== DATA =====================
 const CONFIRMED_IDS = [8, 13, 20, 6];
+const POSSIBILITY_IDS = [6];
 
 const SUMMER_TOURNAMENTS = [
   {id:1,name:"CRUSA Invitational (17th Annual)",host:"FC Bucks",location:"Richboro, PA",distance:30,dates:"Aug 1-2, 2026",format:"11v11",fee:"$800",deadline:"Jul 10, 2026",website:"fcbucks.com/august-invitational-tournament/",notes:"Uses new Fall 2026 Aug-Jul age matrix. Premier preseason testing ground."},
@@ -757,7 +758,9 @@ function renderConfirmedSummer() {
       +'<em>'+t.notes+'</em><br><br>'
       +'<strong>Website:</strong> <a href="https://'+t.website+'" target="_blank" style="color:#16a34a;word-break:break-all">'+t.website+'</a>'
       +'</div></div>'
-      +'<div class="cc-footer">CONFIRMED &nbsp;&#183;&nbsp; Registration locked in</div>'
+      +(POSSIBILITY_IDS.indexOf(t.id)!==-1
+        ?'<div class="cc-footer" style="background:#d97706">POSSIBILITY &nbsp;&#183;&nbsp; Registration likely but not yet confirmed</div>'
+        :'<div class="cc-footer">CONFIRMED &nbsp;&#183;&nbsp; Registration locked in</div>')
       +'</div>';
   }).join('');
 }
