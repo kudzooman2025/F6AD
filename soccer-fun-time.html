@@ -369,14 +369,17 @@ footer strong{color:#fff}
       <button class="season-tab" id="stab-fall" onclick="switchSeason('fall',this)">&#x1F342; Fall &#x27;26</button>
       <button class="season-tab" id="stab-winter" onclick="switchSeason('winter',this)">&#x2744;&#xFE0F; Winter &#x27;26</button>
       <button class="season-tab" id="stab-spring" onclick="switchSeason('spring',this)">&#x1F338; Spring &#x27;27</button>
+      <button class="season-tab" id="stab-summer27" onclick="switchSeason('summer27',this)">&#x2600;&#xFE0F; Summer &#x27;27</button>
     </div>
     <!-- SUMMER PANEL -->
     <div id="season-panel-summer" class="season-panel active">
       <p class="vote-intro" style="margin-bottom:20px">Other summer tournaments that were researched but not selected. Shown here for reference.</p>
       <div class="filters">
-        <span class="filter-label">Filter:</span>
+        <span class="filter-label">Distance <span style="font-size:.7rem;color:#666">(from Conshy)</span>:</span>
         <button class="filter-btn active" onclick="filterSummer('all',this)">All</button>
         <button class="filter-btn" onclick="filterSummer('nearby',this)">&le;50 mi</button>
+        <button class="filter-btn" onclick="filterSummer('mid',this)">&le;100 mi</button>
+        <button class="filter-btn" onclick="filterSummer('far',this)">&le;150 mi</button>
         <span class="filter-label" style="margin-left:8px">Sort:</span>
         <select class="filter-select" onchange="sortSummer(this.value)">
           <option value="date">By Date</option>
@@ -397,6 +400,11 @@ footer strong{color:#fff}
         <select class="filter-select" onchange="sortSeason('fall',this.value)">
           <option value="date">By Date</option><option value="distance">By Distance</option><option value="fee">By Fee</option>
         </select>
+        <span class="filter-label" style="margin-left:10px">Distance <span style="font-size:.7rem;color:#666">(from Conshy)</span>:</span>
+        <button class="filter-btn active" onclick="filterSeasonDist('fall',999,this)">All</button>
+        <button class="filter-btn" onclick="filterSeasonDist('fall',50,this)">&le;50 mi</button>
+        <button class="filter-btn" onclick="filterSeasonDist('fall',100,this)">&le;100 mi</button>
+        <button class="filter-btn" onclick="filterSeasonDist('fall',150,this)">&le;150 mi</button>
       </div>
       <div class="t-grid" id="fall-grid"></div>
     </div>
@@ -410,11 +418,29 @@ footer strong{color:#fff}
     </div>
     <!-- SPRING PANEL -->
     <div id="season-panel-spring" class="season-panel">
-      <p class="vote-intro" style="margin-bottom:20px">Two Spring 2027 options in Maryland and Virginia. Use your <strong>1,000 credits</strong> to weigh in.</p>
+      <p class="vote-intro" style="margin-bottom:20px">Spring 2027 tournaments (March&ndash;May). Use your <strong>1,000 credits</strong> to spread across events &mdash; max 200 per tournament. <em>Dates marked ~ are projected from 2026 patterns.</em></p>
       <div class="vote-summary-bar" id="vote-summary-bar-spring" style="display:none">
         <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-spring">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-spring"></span></div>
       </div>
       <div class="t-grid" id="spring-grid"></div>
+    <!-- SUMMER 27 PANEL -->
+    <div id="season-panel-summer27" class="season-panel">
+      <p class="vote-intro" style="margin-bottom:20px">Vote on Summer 2027 tournaments (June&ndash;August). Each family gets <strong>1,000 credits</strong> to spread across as many as they like &mdash; max 200 per tournament. <em>All dates are projected from 2026 patterns &mdash; confirm before registering.</em></p>
+      <div class="vote-summary-bar" id="vote-summary-bar-summer27" style="display:none">
+        <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-summer27">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-summer27"></span></div>
+      </div>
+      <div class="filters">
+        <span class="filter-label">Sort:</span>
+        <select class="filter-select" onchange="sortSeason('summer27',this.value)">
+          <option value="date">By Date</option><option value="distance">By Distance</option><option value="fee">By Fee</option>
+        </select>
+        <span class="filter-label" style="margin-left:10px">Distance <span style="font-size:.7rem;color:#666">(from Conshy)</span>:</span>
+        <button class="filter-btn active" onclick="filterSeasonDist('summer27',999,this)">All</button>
+        <button class="filter-btn" onclick="filterSeasonDist('summer27',50,this)">&le;50 mi</button>
+        <button class="filter-btn" onclick="filterSeasonDist('summer27',100,this)">&le;100 mi</button>
+        <button class="filter-btn" onclick="filterSeasonDist('summer27',150,this)">&le;150 mi</button>
+      </div>
+      <div class="t-grid" id="summer27-grid"></div>
     </div>
   </section>
   <section id="schedule" class="schedule-section">
@@ -655,32 +681,68 @@ const SPRING_TOURNAMENTS = [
   {id:317,name:"Pittsburgh Riverhounds RDA Spring Invitational",host:"Pittsburgh Riverhounds SC / RDA",location:"Pittsburgh, PA",distance:295,dates:"~May 7-9, 2027",format:"11v11",fee:"TBD",deadline:"TBD (tournaments@riverhounds.com)",website:"riverhounds.com/riverhounds-sc-tournament-series/",notes:"Official tournament of the Pittsburgh Riverhounds SC Development Academy. U9-U19 boys and girls. Local teams may play a Friday night opener. Run by Riverhounds RDA directors and coaches, with PA Classics consulting. Quality fields and professional atmosphere. Contact: Justin Evans at tournaments@riverhounds.com."}
 ];
 
+
+// ===================== SUMMER 2027 TOURNAMENTS =====================
+const SUMMER27_TOURNAMENTS = [
+  {id:401,name:"The Cup '27",host:"Philadelphia Union / S3",location:"Conshohocken, PA",distance:5,dates:"~Jun 5-6, 2027",format:"11v11",fee:"~$950-1,050",deadline:"~Apr 2027",website:"philadelphiaunion.com/youth/tournaments/the_cup",notes:"Annual flagship event at WSFS Bank Sportsplex in Conshy. Elite showcase atmosphere. Our home tournament — can't get closer. Typically sells out early. Keep an eye on registration."},
+  {id:402,name:"Lehigh Valley YSL Tournament (47th Annual)",host:"Lehigh Valley YSL",location:"Allentown area, PA",distance:50,dates:"~Jun 5-6, 2027",format:"11v11",fee:"~$650-750",deadline:"~Apr 2027",website:"lehighvalleyysl.com",notes:"One of the longest-running tournaments in the region. 47th annual. Solid competition from PA and NJ. Weekend overlap with several other June openers."},
+  {id:403,name:"Lancaster Summer Classic",host:"Lancaster Mennonite / Sideline Soccer",location:"Lancaster, PA",distance:60,dates:"~Jun 5-6, 2027",format:"11v11",fee:"~$650-750",deadline:"~Apr 2027",website:"sidelinesoccersolutions.com/tournaments",notes:"Annual June opener in Lancaster County. Competitive mid-Atlantic field. Good weather window early June."},
+  {id:404,name:"Maryland Invitational",host:"Maryland Soccer Foundation",location:"Maryland (multiple sites)",distance:80,dates:"~Jun 4-6, 2027",format:"11v11",fee:"~$750-850",deadline:"~Apr 2027",website:"marylandinvitational.com",notes:"Multi-day June event with sites across Maryland. U14 boys compete Friday-Sunday format."},
+  {id:405,name:"PA Classics Mid-Atlantic Cup (20th Annual)",host:"PA Classics SC",location:"West Chester area, PA",distance:20,dates:"~Jun 12-13, 2027",format:"11v11",fee:"~$875-950",deadline:"~Apr 2027",website:"paclassics.org/mid-atlantic-cup",notes:"20th annual. Hosted by PA Classics near West Chester — minimal travel. Strong mid-Atlantic field. One of the top early-summer events in the region."},
+  {id:406,name:"Mid-Atlantic Cup at Maryland SoccerPlex",host:"Maryland SoccerPlex / MDSL",location:"Boyds, MD",distance:110,dates:"~Jun 12-13, 2027",format:"11v11",fee:"~$875-950",deadline:"~Apr 2027",website:"marylandsoccerplex.com",notes:"Premium facility at the Maryland SoccerPlex in Boyds MD. High-quality turf and grass fields. Competitive showcase atmosphere."},
+  {id:407,name:"Kearny Skyline Cup",host:"Kearny Soccer Association",location:"Kearny, NJ",distance:90,dates:"~Jun 12-13, 2027",format:"11v11",fee:"~$700-800",deadline:"~Apr 2027",website:"kearnysoccer.com",notes:"Historic tournament in Kearny NJ — the cradle of American soccer. Unique cultural experience. Strong NJ/NY/PA field."},
+  {id:408,name:"FSCI Summer Classic and Showcase",host:"FSCI",location:"South Jersey / NJ",distance:50,dates:"~Jun 12-13, 2027",format:"11v11",fee:"~$700-800",deadline:"~Apr 2027",website:"fscisoccer.com",notes:"South Jersey summer classic with showcase component for older age groups. Good competition from PA and NJ clubs."},
+  {id:409,name:"EDP Summer Classic",host:"EDP Soccer",location:"Hammonton, NJ (Tuckahoe Turf Farms)",distance:70,dates:"~Jun 19-20, 2027",format:"11v11",fee:"~$900-1,050",deadline:"~May 2027",website:"edpsoccer.com/summer-classic",notes:"One of the East Coast's premier summer tournaments. Tuckahoe Turf Farms — top-tier facility. Massive field of teams from up and down the East Coast. One of our confirmed 2026 picks — very likely a repeat."},
+  {id:410,name:"Hershey Summer Classic",host:"Hershey Soccer Club",location:"Hershey, PA",distance:80,dates:"~Jun 19-20, 2027",format:"11v11",fee:"~$800-900",deadline:"~Apr 2027",website:"hersheysoccer.org",notes:"Annual June classic near Hersheypark. Good PA-region competition. Quality fields and well-organized event."},
+  {id:411,name:"Mason Dixon Cup",host:"Mason Dixon Soccer",location:"York / Frederick area",distance:90,dates:"~Jun 19-20, 2027",format:"11v11",fee:"~$700-800",deadline:"~Apr 2027",website:"masondixonsoccer.com",notes:"Annual summer classic along the PA/MD border. Good mix of PA and MD teams. Comfortable June weekend event."},
+  {id:412,name:"NRSA Father's Day Cup",host:"NRSA / Local PA Club",location:"Chester County area, PA",distance:20,dates:"~Jun 19-20, 2027",format:"11v11",fee:"~$650-750",deadline:"~May 2027",website:"epysa.org/approved-tournaments/",notes:"Father's Day weekend tournament close to home. Check EPYSA listings for 2027 host confirmation. One of the lowest-travel summer options."},
+  {id:413,name:"Liberty Summer Cup",host:"Liberty SC",location:"Bethlehem, PA",distance:55,dates:"~Jun 26-27, 2027",format:"11v11",fee:"~$700-800",deadline:"~May 2027",website:"libertyscpa.com",notes:"Summer classic in the Lehigh Valley. Competitive field from PA and surrounding states."},
+  {id:414,name:"NSA Summer Kickoff (52nd Annual)",host:"Northern Soccer Association",location:"Central NJ",distance:75,dates:"~Jun 26-27, 2027",format:"11v11",fee:"~$800-900",deadline:"~May 2027",website:"nsasoccer.org",notes:"52nd annual — one of the oldest youth soccer tournaments in the US. NJ-based with strong PA/NY/MD participation. Excellent competitive field."},
+  {id:415,name:"Pocono Mountain Cup",host:"Pocono Mountain Soccer",location:"Pocono area, PA",distance:75,dates:"~Jun 26-27, 2027",format:"11v11",fee:"~$700-800",deadline:"~May 2027",website:"poconomountaincup.com",notes:"Summer tournament in the scenic Pocono Mountains. Good for teams wanting a getaway feel with quality competition."},
+  {id:416,name:"CenPenn Summer Cup",host:"Central PA Soccer",location:"Central PA",distance:90,dates:"~Jun 26-27, 2027",format:"11v11",fee:"~$650-750",deadline:"~May 2027",website:"epysa.org/approved-tournaments/",notes:"Late June Central PA tournament. Check EPYSA for 2027 host details. Regional competition, moderate travel."},
+  {id:417,name:"Independence Cup Long Island",host:"Globall Competitions",location:"Uniondale, NY (Nassau County)",distance:130,dates:"~Jun 26-27, 2027",format:"11v11",fee:"TBD",deadline:"~May 2027",website:"indycupli.com",notes:"Annual summer tournament on Long Island. Strong NY/NJ/CT/PA field. Nassau County Mitchel Athletic Complex."},
+  {id:418,name:"Steel United Summer Trophy (13th Annual)",host:"Steel United FC",location:"Pittsburgh area, PA",distance:290,dates:"~Jul 10-11, 2027",format:"11v11",fee:"~$750-850",deadline:"~May 2027",website:"steelunited.com",notes:"13th annual. Western PA summer tournament run by Steel United FC. Worth considering for teams open to the Pittsburgh trip."},
+  {id:419,name:"Lititz Summer Showcase",host:"Lititz Soccer Club",location:"Lititz, PA",distance:60,dates:"~Jul 10-11, 2027",format:"11v11",fee:"~$800-900",deadline:"~May 2027",website:"lititzsc.com",notes:"One of our confirmed Summer '26 picks — quality showcase event in Lancaster County. Expect to return. Top mid-summer option with competitive showcase field."},
+  {id:420,name:"Central Jersey Invitational",host:"EDP Soccer / Central NJ",location:"Central NJ",distance:70,dates:"~Jul 10-11, 2027",format:"11v11",fee:"~$850-950",deadline:"~May 2027",website:"edpsoccer.com/central-jersey-invitational",notes:"Mid-July EDP event in Central NJ. Strong regional draw from PA, NJ, NY, DE, MD. Good mid-summer competitive option."},
+  {id:421,name:"Leon Grenko Soccer Tournament",host:"Local PA Club",location:"PA",distance:50,dates:"~Jul 10-11, 2027",format:"11v11",fee:"~$650-750",deadline:"~May 2027",website:"epysa.org/approved-tournaments/",notes:"EPYSA-approved annual summer tournament. Check listings for 2027 host confirmation."},
+  {id:422,name:"EDP Summer Sizzler",host:"EDP Soccer",location:"NJ / PA region",distance:65,dates:"~Jul 24-25, 2027",format:"11v11",fee:"~$900-1,000",deadline:"~May 2027",website:"edpsoccer.com/summer-sizzler",notes:"Late July EDP event. Great follow-up to the EDP Summer Classic earlier in the summer. Completes a natural EDP double for the season."},
+  {id:423,name:"Greystone Cup",host:"Greystone FC",location:"NJ",distance:80,dates:"~Jul 24-25, 2027",format:"11v11",fee:"~$750-850",deadline:"~May 2027",website:"greystonesc.com",notes:"Annual late July NJ tournament. Competitive field from the tristate area. Good late-summer tune-up before August events."},
+  {id:424,name:"Philly Summer Shootout",host:"Local PA Host",location:"Philadelphia area, PA",distance:25,dates:"~Jul 24-25, 2027",format:"11v11",fee:"~$700-800",deadline:"~May 2027",website:"epysa.org/approved-tournaments/",notes:"Late July local event near Philadelphia. Minimal travel, good late-summer competition. Check EPYSA for 2027 host confirmation."},
+  {id:425,name:"Liberty Cup Long Island",host:"Liberty Bucks FC",location:"Long Island, NY",distance:130,dates:"~Jul 24-25, 2027",format:"11v11",fee:"~$800-900",deadline:"~May 2027",website:"libertybucksfc.com",notes:"Late July Long Island tournament. Strong NY/NJ/CT field for teams comfortable with the drive."},
+  {id:426,name:"CRUSA Invitational (18th Annual)",host:"CRUSA FC",location:"Ocean County, NJ",distance:80,dates:"~Jul 31-Aug 1, 2027",format:"11v11",fee:"~$900-1,000",deadline:"~May 2027",website:"crusasoccer.org",notes:"18th annual. Competitive elite field from NJ, PA, NY, DE, MD. Shore area venue — teams often combine with a family beach trip. One of the better late-summer events on the calendar."},
+  {id:427,name:"Penn Fusion Summer Classic (39th Annual)",host:"Penn Fusion SA / S3",location:"West Chester, PA",distance:25,dates:"~Aug 7-8, 2027",format:"11v11",fee:"~$700-850",deadline:"~Jun 2027",website:"pennfusion.org/tournaments",notes:"39th annual. Our Summer '26 confirmed (Possibility) pick — good bet to repeat. Home-area tournament near West Chester. Pre-fall tune-up. Boys 1-day format."},
+  {id:428,name:"Philadelphia Union Summer Cooldown",host:"Philadelphia Union / S3",location:"Conshohocken, PA",distance:5,dates:"~Aug 7-8, 2027",format:"11v11",fee:"~$800-900",deadline:"~Jun 2027",website:"philadelphiaunion.com",notes:"Late summer WSFS Bank Sportsplex event. Near-zero travel. Great pre-season tune-up before fall league play resumes. Strong local/regional field."},
+  {id:429,name:"Kick-Off Classic",host:"Local PA Club",location:"PA",distance:50,dates:"~Aug 8, 2027",format:"11v11",fee:"~$600-700",deadline:"~Jun 2027",website:"epysa.org/approved-tournaments/",notes:"Annual late-summer 1-day event. Good pre-fall kickoff. Check EPYSA for 2027 confirmation."},
+  {id:430,name:"Pittsburgh Riverhounds Classic",host:"Pittsburgh Riverhounds SC",location:"Pittsburgh, PA",distance:295,dates:"~Aug 28-30, 2027",format:"11v11",fee:"TBD",deadline:"TBD (tournaments@riverhounds.com)",website:"riverhounds.com/riverhounds-sc-tournament-series/",notes:"Annual Riverhounds SC flagship tournament. U9-U15 boys and girls. Professionally run by Riverhounds Development Academy staff. Great if the team is up for a Pittsburgh road trip to close out the summer."}
+];
+
 // ===================== LIVE DATA =====================
 let scheduleItems = [];
 let announcementItems = [];
 let allVotesFall = {}, allNotesFall = {};
 let allVotesWinter = {}, allNotesWinter = {};
 let allVotesSpring = {}, allNotesSpring = {};
+let allVotesSummer27 = {}, allNotesSummer27 = {};
 
 // ===================== STATE =====================
 let activeSeason = 'summer';
 let _summerFilter = 'all', _summerSort = 'date';
-let seasonSorts = {fall:'date', winter:'date', spring:'date'};
+let seasonSorts = {fall:'date', winter:'date', spring:'date', summer27:'date'};
 let editingEventId = null;
 let editingAnnId = null;
 const TOTAL_CREDITS = 1000;
 const MAX_PER_TOURNAMENT = 200;
-let localCreditsFall = {}, localCreditsWinter = {}, localCreditsSpring = {};
+let localCreditsFall = {}, localCreditsWinter = {}, localCreditsSpring = {}, localCreditsSummer27 = {};
 let creditSaveTimers = {};
 const pendingCreditSaves = new Set();
 let showPastEvents = false;
 
-function getSeasonVotes(s)    { return s==='fall'?allVotesFall : s==='winter'?allVotesWinter : allVotesSpring; }
-function getSeasonNotes(s)    { return s==='fall'?allNotesFall : s==='winter'?allNotesWinter : allNotesSpring; }
-function getSeasonCredits(s)  { return s==='fall'?localCreditsFall : s==='winter'?localCreditsWinter : localCreditsSpring; }
-function setSeasonCredits(s,v){ if(s==='fall')localCreditsFall=v; else if(s==='winter')localCreditsWinter=v; else localCreditsSpring=v; }
-function getSeasonTournaments(s){ return s==='fall'?FALL_TOURNAMENTS : s==='winter'?WINTER_TOURNAMENTS : s==='spring'?SPRING_TOURNAMENTS : SUMMER_TOURNAMENTS; }
-function getSeasonCollection(s){ return 'votes_'+s; }
+function getSeasonVotes(s)    { return s==='fall'?allVotesFall : s==='winter'?allVotesWinter : s==='spring'?allVotesSpring : allVotesSummer27; }
+function getSeasonNotes(s)    { return s==='fall'?allNotesFall : s==='winter'?allNotesWinter : s==='spring'?allNotesSpring : allNotesSummer27; }
+function getSeasonCredits(s)  { return s==='fall'?localCreditsFall : s==='winter'?localCreditsWinter : s==='spring'?localCreditsSpring : localCreditsSummer27; }
+function setSeasonCredits(s,v){ if(s==='fall')localCreditsFall=v; else if(s==='winter')localCreditsWinter=v; else if(s==='spring')localCreditsSpring=v; else localCreditsSummer27=v; }
+function getSeasonTournaments(s){ return s==='fall'?FALL_TOURNAMENTS : s==='winter'?WINTER_TOURNAMENTS : s==='spring'?SPRING_TOURNAMENTS : s==='summer27'?SUMMER27_TOURNAMENTS : SUMMER_TOURNAMENTS; }
+function getSeasonCollection(s){ return s==='summer27'?'votes_summer27':'votes_'+s; }
 function getVoterName()    { return localStorage.getItem('f6ad_voter') || ''; }
 function saveVoterName(n)  { localStorage.setItem('f6ad_voter', n); }
 function getAdminPw()      { return localStorage.getItem('f6ad_pw') || 'FUNTIME'; }
@@ -690,13 +752,14 @@ function setAdminUnlocked(){ sessionStorage.setItem('f6ad_admin', '1'); }
 
 // ===================== LISTENERS =====================
 function startListeners() {
-  ['fall','winter','spring'].forEach(season => {
+  ['fall','winter','spring','summer27'].forEach(season => {
     db.collection(getSeasonCollection(season)).onSnapshot(snap => {
       const v={}, n={};
       snap.forEach(doc=>{ v[doc.id]=doc.data().votes||{}; n[doc.id]=doc.data().notes||{}; });
       if(season==='fall'){allVotesFall=v;allNotesFall=n;}
       else if(season==='winter'){allVotesWinter=v;allNotesWinter=n;}
-      else{allVotesSpring=v;allNotesSpring=n;}
+      else if(season==='spring'){allVotesSpring=v;allNotesSpring=n;}
+      else{allVotesSummer27=v;allNotesSummer27=n;}
       initSeasonCredits(season);
       if(activeSeason===season){ renderSeasonGrid(season); updateCreditDisplay(); }
       if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVoteTally();
@@ -719,7 +782,7 @@ function setVoter() {
   const n=document.getElementById('voter-name-input').value.trim();
   if(!n){showToast('Please enter your name.'); return;}
   saveVoterName(n);
-  ['fall','winter','spring'].forEach(s=>initSeasonCredits(s));
+  ['fall','winter','spring','summer27'].forEach(s=>initSeasonCredits(s));
   renderVoterBar();
   if(activeSeason!=='summer') renderSeasonGrid(activeSeason);
   updateCreditDisplay();
@@ -737,7 +800,7 @@ function renderVoterBar() {
   if(name) document.getElementById('voter-display-name').textContent=name;
   const cr=document.getElementById('credits-remaining-display');
   const sh=document.querySelector('.btn-share');
-  const isVoting=activeSeason!=='summer';
+  const isVoting=(activeSeason!=='summer');
   if(cr) cr.style.display=(name&&isVoting)?'':'none';
   if(sh) sh.style.display=(name&&isVoting)?'':'none';
 }
@@ -754,6 +817,18 @@ function switchSeason(season, btn) {
   updateCreditDisplay();
   if(season==='summer') renderSummerGrid();
   else renderSeasonGrid(season);
+  // update credit display ids for summer27
+  if(season==='summer27') updateCreditDisplay();
+}
+
+// ===================== DISTANCE FILTER FOR VOTING SEASONS =====================
+var _seasonDistFilters = {fall:999, winter:999, spring:999, summer27:999};
+function filterSeasonDist(season, maxDist, btn) {
+  _seasonDistFilters[season] = maxDist;
+  var panel = document.getElementById('season-panel-'+season);
+  if(panel) panel.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  renderSeasonGrid(season);
 }
 
 // ===================== CONFIRMED SUMMER =====================
@@ -825,7 +900,8 @@ function toggleBN(id) {
 function sortSeason(season, s) { seasonSorts[season]=s; renderSeasonGrid(season); }
 function renderSeasonGrid(season) {
   var voterName=getVoterName();
-  var tournaments=getSeasonTournaments(season);
+  var maxDist=(_seasonDistFilters&&_seasonDistFilters[season])||999;
+  var tournaments=getSeasonTournaments(season).filter(function(t){return t.distance<=maxDist;});
   var allVotes=getSeasonVotes(season);
   var allNotes=getSeasonNotes(season);
   var lc=getSeasonCredits(season);
