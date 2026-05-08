@@ -422,7 +422,15 @@ footer strong{color:#fff}
       <div class="vote-summary-bar" id="vote-summary-bar-spring" style="display:none">
         <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-spring">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-spring"></span></div>
       </div>
+      <div class="filters" style="margin-top:10px">
+        <span class="filter-label">Distance <span style="font-size:.7rem;color:#666">(from Conshy)</span>:</span>
+        <button class="filter-btn active" onclick="filterSeasonDist('spring',999,this)">All</button>
+        <button class="filter-btn" onclick="filterSeasonDist('spring',50,this)">&le;50 mi</button>
+        <button class="filter-btn" onclick="filterSeasonDist('spring',100,this)">&le;100 mi</button>
+        <button class="filter-btn" onclick="filterSeasonDist('spring',150,this)">&le;150 mi</button>
+      </div>
       <div class="t-grid" id="spring-grid"></div>
+    </div>
     <!-- SUMMER 27 PANEL -->
     <div id="season-panel-summer27" class="season-panel">
       <p class="vote-intro" style="margin-bottom:20px">Vote on Summer 2027 tournaments (June&ndash;August). Each family gets <strong>1,000 credits</strong> to spread across as many as they like &mdash; max 200 per tournament. <em>All dates are projected from 2026 patterns &mdash; confirm before registering.</em></p>
