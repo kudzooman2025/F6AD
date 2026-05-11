@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // F6AD team site — allow read/write on all collections
+    // (votes_fall, votes_winter, votes_spring, votes_summer27, schedule, announcements)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

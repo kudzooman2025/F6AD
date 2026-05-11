@@ -12,5 +12,9 @@
         "destination": "/soccer-fun-time.html"
       }
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }
