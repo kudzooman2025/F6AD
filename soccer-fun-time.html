@@ -328,6 +328,18 @@ footer strong{color:#fff}
 .cond-signup-btn.leave:hover{background:#fecaca}
 .cond-count{font-size:.72rem;font-weight:700;color:var(--purple);margin-bottom:6px}
 
+.cond-minicamps{margin-top:32px;margin-bottom:8px}
+.cond-minicamps-title{font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--purple);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.cond-minicamps-title::before{content:'';flex:0 0 auto;height:2px;width:28px;background:var(--purple);border-radius:2px}
+.cond-camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.cond-camp-card{background:linear-gradient(135deg,#faf5ff,#ede9fe);border:2px solid var(--purple);border-radius:16px;padding:20px;position:relative}
+.cond-camp-badge{position:absolute;top:14px;right:14px;background:var(--purple);color:#fff;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:3px 10px;border-radius:20px}
+.cond-camp-name{font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:4px}
+.cond-camp-dates{font-size:.82rem;font-weight:700;color:var(--purple);margin-bottom:4px}
+.cond-camp-details{font-size:.78rem;color:#555;margin-bottom:12px;line-height:1.5}
+.cond-camp-attendees{margin-bottom:12px;min-height:24px}
+.cond-camp-count{font-size:.75rem;font-weight:700;color:var(--purple);margin-bottom:6px}
+
 </style>
 </head>
 <body>
@@ -393,6 +405,12 @@ footer strong{color:#fff}
       </span>
     </div>
     <div class="cond-grid" id="cond-grid"></div>
+
+    <!-- MINI CAMPS -->
+    <div class="cond-minicamps">
+      <div class="cond-minicamps-title">⚽ Mini Camps</div>
+      <div class="cond-camp-grid" id="camp-grid"></div>
+    </div>
   </section>
 
   <!-- CONFIRMED SUMMER -->
@@ -844,6 +862,7 @@ function setCondName() {
   if(!getVoterName()) saveVoterName(n);
   renderCondNameRow();
   renderCondGrid();
+  renderCampGrid();
 }
 function renderCondNameRow() {
   var name = getCondName();
@@ -862,6 +881,7 @@ function startCondListeners() {
     condData = {};
     snap.forEach(doc => { condData[doc.id] = doc.data().attendees || []; });
     renderCondGrid();
+    renderCampGrid();
   });
 }
 function renderCondGrid() {
@@ -907,6 +927,62 @@ function condLeave(sessionId, name) {
     {merge: true}
   ).then(function(){showToast('Removed from '+sessionId.slice(5));})
   .catch(function(e){showToast('Error: '+e.message);});
+}
+
+// ===================== MINI CAMPS =====================
+const MINI_CAMPS = [
+  {
+    id:'minicamp-jul14',
+    name:'Mini Camp 1',
+    dates:'July 14 & 15, 2026',
+    days:'Tuesday & Wednesday',
+    time:'6:00 – 8:30 PM',
+    location:'GA Field 11',
+    note:'2-day camp · Bring water & cleats'
+  },
+  {
+    id:'minicamp-jul30',
+    name:'Mini Camp 2',
+    dates:'July 30 & 31, 2026',
+    days:'Thursday & Friday',
+    time:'6:00 – 8:00 PM',
+    location:'GA Field 1 (Sisters)',
+    note:'2-day camp · Bring water & cleats'
+  }
+];
+
+function renderCampGrid() {
+  var grid = document.getElementById('camp-grid');
+  if(!grid) return;
+  var myName = getCondName();
+  grid.innerHTML = MINI_CAMPS.map(function(camp) {
+    var attendees = condData[camp.id] || [];
+    var isMine = myName && attendees.indexOf(myName) !== -1;
+    var chipsHtml = attendees.map(function(n) {
+      var mine = myName && n === myName;
+      return '<span class="cond-attendee-chip' + (mine?' mine':'') + '">'
+        + n
+        + (mine ? ' <button onclick="condLeave(\''+camp.id+'\',\''+n.replace(/\'/g,'')+'\')" title="Remove me">✕</button>' : '')
+        + '</span>';
+    }).join('');
+    return '<div class="cond-camp-card">'
+      + '<span class="cond-camp-badge">Mini Camp</span>'
+      + '<div class="cond-camp-name">'+camp.name+'</div>'
+      + '<div class="cond-camp-dates">📅 '+camp.dates+'</div>'
+      + '<div class="cond-camp-details">'
+        + '🕕 '+camp.time+'<br>'
+        + '📍 Germantown Academy &mdash; '+camp.location+'<br>'
+        + '📋 '+camp.note
+      + '</div>'
+      + '<div class="cond-camp-count">'+(attendees.length > 0 ? attendees.length+' player'+(attendees.length!==1?'s':'')+ ' signed up' : 'No sign-ups yet — be first!')+'</div>'
+      + '<div class="cond-camp-attendees">'+(chipsHtml||'<span style="color:#aaa;font-style:italic;font-size:.75rem">None yet</span>')+'</div>'
+      + (myName
+          ? '<button class="cond-signup-btn '+(isMine?'leave':'join')+'" onclick="cond'+(isMine?'Leave':'Join')+'(\''+camp.id+'\',\''+myName.replace(/\'/g,'')+'\')">'
+            + (isMine ? '✓ Remove Me' : '+ Sign Me Up')
+            + '</button>'
+          : '<div style="font-size:.72rem;color:#aaa;font-style:italic;text-align:center;padding:6px 0">Set your name above to sign up</div>')
+      + '</div>';
+  }).join('');
 }
 
 // ===================== LISTENERS =====================
@@ -1567,6 +1643,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderVoterBar();
   renderCondNameRow();
   renderCondGrid();
+  renderCampGrid();
   startCondListeners();
   renderConfirmedSummer();
   renderSummerGrid();
