@@ -303,6 +303,31 @@ footer strong{color:#fff}
 .event-item.past .event-date{background:#888}
 .past-toggle{background:none;border:none;color:var(--purple);font-size:.82rem;font-weight:600;text-decoration:underline;cursor:pointer;margin-bottom:14px;display:block}
 
+/* ── CONDITIONING ─────────────────────────── */
+.conditioning-section{margin-bottom:40px}
+.conditioning-info{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px}
+.conditioning-info span{background:#f0f0f0;border-radius:20px;padding:5px 14px;font-size:.82rem;font-weight:600;color:#333}
+.conditioning-sub{font-size:.85rem;color:#666;margin-bottom:18px}
+.cond-name-row{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.cond-name-input{border:2px solid var(--border);border-radius:8px;padding:7px 12px;font-size:.85rem;width:200px}
+.cond-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.cond-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .2s,box-shadow .2s;position:relative}
+.cond-card:hover{border-color:var(--purple);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.cond-card.signed-up{border-color:#16a34a;background:#f0fdf4}
+.cond-day{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:2px}
+.cond-date{font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:6px}
+.cond-time{font-size:.75rem;color:#555;margin-bottom:10px}
+.cond-attendees{font-size:.75rem;color:#555;min-height:20px;margin-bottom:10px;line-height:1.4}
+.cond-attendee-chip{display:inline-flex;align-items:center;gap:4px;background:#ede9fe;color:#5b21b6;border-radius:12px;padding:2px 8px;font-size:.7rem;font-weight:600;margin:2px}
+.cond-attendee-chip.mine{background:#dcfce7;color:#166534}
+.cond-attendee-chip button{background:none;border:none;cursor:pointer;color:#888;font-size:.75rem;padding:0;line-height:1}
+.cond-signup-btn{width:100%;padding:7px;border-radius:8px;border:none;cursor:pointer;font-size:.8rem;font-weight:700;transition:background .2s}
+.cond-signup-btn.join{background:var(--purple);color:#fff}
+.cond-signup-btn.join:hover{background:#5b21b6}
+.cond-signup-btn.leave{background:#fee2e2;color:#991b1b}
+.cond-signup-btn.leave:hover{background:#fecaca}
+.cond-count{font-size:.72rem;font-weight:700;color:var(--purple);margin-bottom:6px}
+
 </style>
 </head>
 <body>
@@ -314,6 +339,7 @@ footer strong{color:#fff}
     <nav>
       <a href="#tournaments">Tournaments</a>
       <a href="#schedule">Schedule</a>
+      <a href="#conditioning">Conditioning</a>
       <a href="#announcements">News</a>
       <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
     </nav>
@@ -329,11 +355,46 @@ footer strong{color:#fff}
     <span class="chip">⚽ U14 Boys</span>
     <span class="chip">✅ 4 Summer Confirmed</span>
     <span class="chip">🗳️ Vote on Fall · Winter · Spring</span>
+    <span class="chip">🏃 Summer Conditioning Sign-Up</span>
   </div>
 </div>
 
 <!-- MAIN -->
 <div class="container">
+  <!-- SCHEDULE (top of page) -->
+  <section id="schedule" class="schedule-section">
+    <div class="section-header">
+      <div class="section-title">📅 Team Schedule</div>
+    </div>
+    <div class="event-list" id="schedule-list"></div>
+    <div class="empty-state" id="schedule-empty">
+      <span>📅</span>
+      <strong>No events yet.</strong><br>Use the Admin panel to add games, practices, and events.
+    </div>
+  </section>
+
+  <!-- SUMMER CONDITIONING SIGNUP -->
+  <section id="conditioning" class="conditioning-section">
+    <div class="section-header">
+      <div class="section-title">🏃 Summer Conditioning Sign-Up</div>
+    </div>
+    <div class="conditioning-info">
+      <span>📍 Germantown Academy</span>
+      <span>⏰ Tuesdays &amp; Thursdays &nbsp;·&nbsp; 5:00–6:00 PM</span>
+      <span>📆 June 9 – July 30, 2026</span>
+    </div>
+    <p class="conditioning-sub">Click any session to sign up. Your name will be visible to the whole team.</p>
+    <div class="cond-name-row" id="cond-name-row">
+      <span style="font-size:.85rem;color:#555">Signing up as:</span>
+      <span id="cond-voter-display" style="font-weight:700;color:var(--purple)"></span>
+      <span id="cond-name-input-wrap">
+        <input type="text" id="cond-name-input" class="cond-name-input" placeholder="Enter your name first…" />
+        <button class="btn-primary" style="padding:6px 14px;font-size:.8rem" onclick="setCondName()">Set Name</button>
+      </span>
+    </div>
+    <div class="cond-grid" id="cond-grid"></div>
+  </section>
+
   <!-- CONFIRMED SUMMER -->
   <section class="confirmed-section" id="confirmed-summer">
     <div class="section-header">
@@ -451,17 +512,6 @@ footer strong{color:#fff}
       <div class="t-grid" id="summer27-grid"></div>
     </div>
   </section>
-  <section id="schedule" class="schedule-section">
-    <div class="section-header">
-      <div class="section-title">📅 Team Schedule</div>
-    </div>
-    <div class="event-list" id="schedule-list"></div>
-    <div class="empty-state" id="schedule-empty">
-      <span>📅</span>
-      <strong>No events yet.</strong><br>Use the Admin panel to add games, practices, and events.
-    </div>
-  </section>
-
   <!-- ANNOUNCEMENTS -->
   <section id="announcements" class="ann-section">
     <div class="section-header">
@@ -762,6 +812,102 @@ function getAdminPw()      { return localStorage.getItem('f6ad_pw') || 'FUNTIME'
 function saveAdminPw(p)    { localStorage.setItem('f6ad_pw', p); }
 function isAdminUnlocked() { return sessionStorage.getItem('f6ad_admin') === '1'; }
 function setAdminUnlocked(){ sessionStorage.setItem('f6ad_admin', '1'); }
+
+// ===================== SUMMER CONDITIONING =====================
+const COND_SESSIONS = [
+  {id:'2026-06-09',day:'Tuesday',date:'Jun 9, 2026'},
+  {id:'2026-06-11',day:'Thursday',date:'Jun 11, 2026'},
+  {id:'2026-06-16',day:'Tuesday',date:'Jun 16, 2026'},
+  {id:'2026-06-18',day:'Thursday',date:'Jun 18, 2026'},
+  {id:'2026-06-23',day:'Tuesday',date:'Jun 23, 2026'},
+  {id:'2026-06-25',day:'Thursday',date:'Jun 25, 2026'},
+  {id:'2026-06-30',day:'Tuesday',date:'Jun 30, 2026'},
+  {id:'2026-07-02',day:'Thursday',date:'Jul 2, 2026'},
+  {id:'2026-07-07',day:'Tuesday',date:'Jul 7, 2026'},
+  {id:'2026-07-09',day:'Thursday',date:'Jul 9, 2026'},
+  {id:'2026-07-14',day:'Tuesday',date:'Jul 14, 2026'},
+  {id:'2026-07-16',day:'Thursday',date:'Jul 16, 2026'},
+  {id:'2026-07-21',day:'Tuesday',date:'Jul 21, 2026'},
+  {id:'2026-07-23',day:'Thursday',date:'Jul 23, 2026'},
+  {id:'2026-07-28',day:'Tuesday',date:'Jul 28, 2026'},
+  {id:'2026-07-30',day:'Thursday',date:'Jul 30, 2026'}
+];
+let condData = {}; // id -> [names]
+
+function getCondName() {
+  return getVoterName() || localStorage.getItem('f6ad_cond_name') || '';
+}
+function setCondName() {
+  var n = document.getElementById('cond-name-input').value.trim();
+  if(!n){showToast('Please enter your name.'); return;}
+  localStorage.setItem('f6ad_cond_name', n);
+  if(!getVoterName()) saveVoterName(n);
+  renderCondNameRow();
+  renderCondGrid();
+}
+function renderCondNameRow() {
+  var name = getCondName();
+  var display = document.getElementById('cond-voter-display');
+  var wrap = document.getElementById('cond-name-input-wrap');
+  if(name) {
+    if(display) display.textContent = name;
+    if(wrap) wrap.style.display = 'none';
+  } else {
+    if(display) display.textContent = '';
+    if(wrap) wrap.style.display = '';
+  }
+}
+function startCondListeners() {
+  db.collection('conditioning').onSnapshot(snap => {
+    condData = {};
+    snap.forEach(doc => { condData[doc.id] = doc.data().attendees || []; });
+    renderCondGrid();
+  });
+}
+function renderCondGrid() {
+  var grid = document.getElementById('cond-grid');
+  if(!grid) return;
+  var myName = getCondName();
+  grid.innerHTML = COND_SESSIONS.map(function(s) {
+    var attendees = condData[s.id] || [];
+    var isMine = myName && attendees.indexOf(myName) !== -1;
+    var chipsHtml = attendees.map(function(n) {
+      var mine = myName && n === myName;
+      return '<span class="cond-attendee-chip' + (mine?' mine':'') + '">'
+        + n
+        + (mine ? ' <button onclick="condLeave(\''+s.id+'\',\''+n.replace(/\'/g,'')+'\')" title="Remove me">✕</button>' : '')
+        + '</span>';
+    }).join('');
+    return '<div class="cond-card' + (isMine?' signed-up':'') + '">'
+      + '<div class="cond-day">'+s.day+'</div>'
+      + '<div class="cond-date">'+s.date+'</div>'
+      + '<div class="cond-time">5:00 – 6:00 PM &nbsp;·&nbsp; GA</div>'
+      + '<div class="cond-count">'+(attendees.length > 0 ? attendees.length+' player'+(attendees.length!==1?'s':'') : 'Be the first!')+'</div>'
+      + '<div class="cond-attendees">'+(chipsHtml||'<span style="color:#aaa;font-style:italic">No sign-ups yet</span>')+'</div>'
+      + (myName
+          ? '<button class="cond-signup-btn '+(isMine?'leave':'join')+'" onclick="cond'+(isMine?'Leave':'Join')+'(\''+s.id+'\',\''+myName.replace(/\'/g,'')+'\')">'
+            + (isMine ? '✓ I\'m Out' : '+ I\'m In')
+            + '</button>'
+          : '<div style="font-size:.72rem;color:#aaa;font-style:italic;text-align:center">Set your name above to sign up</div>')
+      + '</div>';
+  }).join('');
+}
+function condJoin(sessionId, name) {
+  if(!name){showToast('Set your name first.'); return;}
+  db.collection('conditioning').doc(sessionId).set(
+    {attendees: firebase.firestore.FieldValue.arrayUnion(name)},
+    {merge: true}
+  ).then(function(){showToast('Signed up for '+sessionId.slice(5)+' ✓');})
+  .catch(function(e){showToast('Error: '+e.message);});
+}
+function condLeave(sessionId, name) {
+  if(!name) return;
+  db.collection('conditioning').doc(sessionId).set(
+    {attendees: firebase.firestore.FieldValue.arrayRemove(name)},
+    {merge: true}
+  ).then(function(){showToast('Removed from '+sessionId.slice(5));})
+  .catch(function(e){showToast('Error: '+e.message);});
+}
 
 // ===================== LISTENERS =====================
 function startListeners() {
@@ -1419,6 +1565,9 @@ document.addEventListener('DOMContentLoaded', function() {
   var urlVoter=new URLSearchParams(window.location.search).get('voter');
   if(urlVoter&&urlVoter.trim()&&!getVoterName()) saveVoterName(urlVoter.trim());
   renderVoterBar();
+  renderCondNameRow();
+  renderCondGrid();
+  startCondListeners();
   renderConfirmedSummer();
   renderSummerGrid();
   startListeners();
