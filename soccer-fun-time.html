@@ -340,6 +340,14 @@ footer strong{color:#fff}
 .cond-camp-attendees{margin-bottom:12px;min-height:24px}
 .cond-camp-count{font-size:.75rem;font-weight:700;color:var(--purple);margin-bottom:6px}
 
+.schedule-archive-toggle{display:flex;align-items:center;gap:10px;margin-top:18px;cursor:pointer;color:var(--muted);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;user-select:none;border:none;background:none;padding:0}
+.schedule-archive-toggle:hover{color:var(--text)}
+.archive-chevron{transition:transform .25s;display:inline-block;font-size:.7rem}
+.archive-chevron.open{transform:rotate(180deg)}
+.schedule-archive-list{margin-top:10px;border-top:2px dashed var(--border);padding-top:14px}
+.event-item.past{opacity:.6}
+.event-item.past .event-date{background:#f3f4f6}
+
 </style>
 </head>
 <body>
@@ -383,6 +391,11 @@ footer strong{color:#fff}
       <span>📅</span>
       <strong>No events yet.</strong><br>Use the Admin panel to add games, practices, and events.
     </div>
+    <button class="schedule-archive-toggle" id="archive-toggle" onclick="toggleArchive()" style="display:none">
+      <span class="archive-chevron" id="archive-chevron">▼</span>
+      <span id="archive-toggle-label">Show Past Events</span>
+    </button>
+    <div class="schedule-archive-list" id="archive-list" style="display:none"></div>
   </section>
 
   <!-- SUMMER CONDITIONING SIGNUP -->
@@ -1429,17 +1442,22 @@ function copyLink(url,btn) {
 }
 
 function renderSchedule() {
-  const items = [...scheduleItems].sort((a,b) => new Date(a.date) - new Date(b.date));
-  const list = document.getElementById('schedule-list');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const sorted = [...scheduleItems].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const upcoming = sorted.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
+  const past     = sorted.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
+
+  const list  = document.getElementById('schedule-list');
   const empty = document.getElementById('schedule-empty');
-  if (!items.length) { list.innerHTML=''; empty.style.display='block'; return; }
-  empty.style.display = 'none';
-  list.innerHTML = items.map(ev => {
+  const toggle = document.getElementById('archive-toggle');
+  const archiveList = document.getElementById('archive-list');
+
+  function evHTML(ev, isPast) {
     const d = new Date(ev.date + 'T00:00:00');
     const month = d.toLocaleString('en-US',{month:'short'});
     const day = d.getDate();
     const time = ev.time ? (() => { const [h,m]=ev.time.split(':'); const hr=+h; return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; })() : '';
-    return `<div class="event-item">
+    return `<div class="event-item${isPast?' past':''}">
       <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
       <div class="event-info">
         <div class="event-name">${ev.name}</div>
@@ -1447,7 +1465,33 @@ function renderSchedule() {
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  if (!sorted.length) { list.innerHTML=''; empty.style.display='block'; if(toggle)toggle.style.display='none'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = upcoming.length ? upcoming.map(ev=>evHTML(ev,false)).join('') : '<p style="font-size:.85rem;color:var(--muted);padding:10px 0">No upcoming events scheduled.</p>';
+
+  // Archive (past events)
+  if (toggle) {
+    if (past.length) {
+      toggle.style.display = 'flex';
+      const label = document.getElementById('archive-toggle-label');
+      if(label) label.textContent = showPastEvents ? 'Hide Past Events (' + past.length + ')' : 'Show Past Events (' + past.length + ')';
+      const chevron = document.getElementById('archive-chevron');
+      if(chevron) chevron.className = 'archive-chevron' + (showPastEvents?' open':'');
+    } else {
+      toggle.style.display = 'none';
+    }
+  }
+  if (archiveList) {
+    archiveList.style.display = showPastEvents ? 'block' : 'none';
+    archiveList.innerHTML = [...past].reverse().map(ev=>evHTML(ev,true)).join('');
+  }
+}
+
+function toggleArchive() {
+  showPastEvents = !showPastEvents;
+  renderSchedule();
 }
 
 function renderAdminSchedule() {
