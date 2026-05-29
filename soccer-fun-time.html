@@ -1636,23 +1636,49 @@ function renderAdminCamps() {
   if(!el) return;
   el.innerHTML = MINI_CAMPS.map(function(camp) {
     var attendees = condData[camp.id] || [];
-    var rows = attendees.map(function(name) {
+    var rows = attendees.map(function(name, idx) {
+      var safe = name.replace(/"/g,'&quot;');
       return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
-        + '<span style="flex:1;font-size:.88rem">'+name+'</span>'
-        + '<button class="btn-danger" style="padding:3px 10px;font-size:.75rem" onclick="adminRemoveFromCamp(''+camp.id+'',''+name.replace(/'/g,'')+'')">Remove</button>'
+        + '<span style="flex:1;font-size:.88rem">' + name + '</span>'
+        + '<button class="btn-danger" style="padding:3px 10px;font-size:.75rem" '
+          + 'onclick="adminRemoveFromCamp(this)" data-camp="' + camp.id + '" data-name="' + safe + '">Remove</button>'
         + '</div>';
     }).join('');
     return '<div style="background:#fafafa;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:18px">'
-      + '<p style="font-weight:800;font-size:.92rem;margin-bottom:2px">'+camp.name+'</p>'
-      + '<p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">'+camp.dates+' &nbsp;·&nbsp; '+camp.time+' &nbsp;·&nbsp; '+camp.location+'</p>'
+      + '<p style="font-weight:800;font-size:.92rem;margin-bottom:2px">' + camp.name + '</p>'
+      + '<p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">' + camp.dates + ' &nbsp;&middot;&nbsp; ' + camp.time + ' &nbsp;&middot;&nbsp; ' + camp.location + '</p>'
       + (rows || '<p style="font-size:.82rem;color:var(--muted);font-style:italic">No sign-ups yet.</p>')
       + '<div style="display:flex;gap:8px;margin-top:12px;align-items:center">'
-        + '<input type="text" id="camp-add-'+camp.id+'" placeholder="Player name" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.85rem" onkeydown="if(event.key==='Enter')adminAddToCamp(''+camp.id+'')" />'
-        + '<button class="btn-primary" style="padding:6px 14px;font-size:.82rem" onclick="adminAddToCamp(''+camp.id+'')">Add</button>'
+        + '<input type="text" id="camp-add-' + camp.id + '" placeholder="Player name" '
+          + 'style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.85rem" '
+          + 'onkeydown="if(event.key==='Enter')adminAddToCamp('' + camp.id + '')" />'
+        + '<button class="btn-primary" style="padding:6px 14px;font-size:.82rem" '
+          + 'onclick="adminAddToCamp('' + camp.id + '')">Add</button>'
       + '</div>'
       + '</div>';
   }).join('');
 }
+function adminAddToCamp(campId) {
+  var input = document.getElementById('camp-add-' + campId);
+  var name = input ? input.value.trim() : '';
+  if(!name){ showToast('Enter a player name.'); return; }
+  db.collection('conditioning').doc(campId).set(
+    {attendees: firebase.firestore.FieldValue.arrayUnion(name)},
+    {merge: true}
+  ).then(function(){ input.value = ''; showToast(name + ' added ✓'); })
+   .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function adminRemoveFromCamp(btn) {
+  var campId = btn.getAttribute('data-camp');
+  var name   = btn.getAttribute('data-name');
+  if(!campId || !name) return;
+  db.collection('conditioning').doc(campId).set(
+    {attendees: firebase.firestore.FieldValue.arrayRemove(name)},
+    {merge: true}
+  ).then(function(){ showToast(name + ' removed'); })
+   .catch(function(e){ showToast('Error: ' + e.message); });
+}
+
 function adminAddToCamp(campId) {
   var input = document.getElementById('camp-add-'+campId);
   var name = input ? input.value.trim() : '';
