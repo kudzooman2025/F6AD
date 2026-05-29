@@ -664,7 +664,28 @@ footer strong{color:#fff}
         <!-- CAMPS TAB -->
         <div id="tab-camps" class="tab-panel">
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:20px">Add or remove player names from each mini camp roster. Changes are live immediately.</p>
-          <div id="admin-camps-list"></div>
+
+          <!-- Mini Camp 1 -->
+          <div style="background:#fafafa;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:18px">
+            <p style="font-weight:800;font-size:.92rem;margin-bottom:2px">Mini Camp 1</p>
+            <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">July 14 &amp; 15, 2026 &middot; 6:00&ndash;8:30 PM &middot; GA Field 11</p>
+            <div id="admin-camp1-attendees" style="margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" id="camp1-name-input" placeholder="Player name" onkeydown="if(event.key==='Enter')adminCampAdd('minicamp-jul14','camp1-name-input')" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:.85rem" />
+              <button class="btn-primary" style="padding:7px 16px;font-size:.85rem" onclick="adminCampAdd('minicamp-jul14','camp1-name-input')">Add</button>
+            </div>
+          </div>
+
+          <!-- Mini Camp 2 -->
+          <div style="background:#fafafa;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:18px">
+            <p style="font-weight:800;font-size:.92rem;margin-bottom:2px">Mini Camp 2</p>
+            <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">July 30 &amp; 31, 2026 &middot; 6:00&ndash;8:00 PM &middot; GA Field 1 (Sisters)</p>
+            <div id="admin-camp2-attendees" style="margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" id="camp2-name-input" placeholder="Player name" onkeydown="if(event.key==='Enter')adminCampAdd('minicamp-jul30','camp2-name-input')" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:.85rem" />
+              <button class="btn-primary" style="padding:7px 16px;font-size:.85rem" onclick="adminCampAdd('minicamp-jul30','camp2-name-input')">Add</button>
+            </div>
+          </div>
         </div>
 
         <!-- SETTINGS TAB -->
@@ -904,7 +925,7 @@ function startCondListeners() {
     snap.forEach(doc => { condData[doc.id] = doc.data().attendees || []; });
     renderCondGrid();
     renderCampGrid();
-    if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminCamps();
+    if(document.getElementById('tab-camps')&&document.getElementById('tab-camps').classList.contains('active')) renderAdminCamps();
   });
 }
 function renderCondGrid() {
@@ -1632,60 +1653,43 @@ function deleteAnn(id) {
 
 // ===================== ADMIN CAMPS =====================
 function renderAdminCamps() {
-  var el = document.getElementById('admin-camps-list');
+  renderCampAdminList('minicamp-jul14', 'admin-camp1-attendees');
+  renderCampAdminList('minicamp-jul30', 'admin-camp2-attendees');
+}
+function renderCampAdminList(campId, elId) {
+  var el = document.getElementById(elId);
   if(!el) return;
-  var out = '';
-  MINI_CAMPS.forEach(function(camp) {
-    var attendees = condData[camp.id] || [];
-    var rows = '';
-    attendees.forEach(function(name) {
-      var safe = name.replace(/"/g, '&quot;');
-      rows += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">'
-            + '<span style="flex:1;font-size:.88rem">' + name + '</span>'
-            + '<button class="btn-danger" style="padding:3px 10px;font-size:.75rem" '
-            +   'onclick="adminRemoveFromCamp(this)" data-camp="' + camp.id + '" data-name="' + safe + '">Remove</button>'
-            + '</div>';
-    });
-    out += '<div style="background:#fafafa;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:18px">'
-         + '<p style="font-weight:800;font-size:.92rem;margin-bottom:2px">' + camp.name + '</p>'
-         + '<p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">' + camp.dates + ' &middot; ' + camp.time + ' &middot; ' + camp.location + '</p>'
-         + (rows || '<p style="font-size:.82rem;color:var(--muted);font-style:italic">No sign-ups yet.</p>')
-         + '<div style="display:flex;gap:8px;margin-top:12px;align-items:center">'
-         + '<input type="text" class="camp-add-input" data-campid="' + camp.id + '" placeholder="Player name" '
-         +   'style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.85rem" />'
-         + '<button class="btn-primary" style="padding:6px 14px;font-size:.82rem" '
-         +   'onclick="adminAddToCamp(this)" data-campid="' + camp.id + '">Add</button>'
-         + '</div>'
-         + '</div>';
-  });
-  el.innerHTML = out;
-  // wire up Enter key on inputs after render
-  el.querySelectorAll('.camp-add-input').forEach(function(inp) {
-    inp.addEventListener('keydown', function(e) {
-      if(e.key === 'Enter') adminAddToCamp(inp.nextElementSibling);
-    });
-  });
+  var attendees = condData[campId] || [];
+  if(!attendees.length) { el.innerHTML = '<p style="font-size:.82rem;color:var(--muted);font-style:italic">No sign-ups yet.</p>'; return; }
+  el.innerHTML = attendees.map(function(name) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eee">'
+      + '<span style="flex:1;font-size:.88rem">' + name + '</span>'
+      + '<button class="btn-danger" style="padding:3px 10px;font-size:.75rem" '
+      + 'data-cid="' + campId + '" data-n="' + name.replace(/"/g,'') + '" '
+      + 'onclick="adminCampRemove(this)">Remove</button>'
+      + '</div>';
+  }).join('');
 }
-function adminAddToCamp(btn) {
-  var campId = btn.getAttribute('data-campid');
-  var input = btn.previousElementSibling;
+function adminCampAdd(campId, inputId) {
+  var input = document.getElementById(inputId);
   var name = input ? input.value.trim() : '';
-  if(!name){ showToast('Enter a player name.'); return; }
+  if(!name) { showToast('Enter a name first.'); return; }
   db.collection('conditioning').doc(campId).set(
-    {attendees: firebase.firestore.FieldValue.arrayUnion(name)},
-    {merge: true}
-  ).then(function(){ if(input) input.value = ''; showToast(name + ' added ✓'); })
-   .catch(function(e){ showToast('Error: ' + e.message); });
+    { attendees: firebase.firestore.FieldValue.arrayUnion(name) },
+    { merge: true }
+  ).then(function() {
+    input.value = '';
+    showToast(name + ' added ✓');
+  }).catch(function(e) { showToast('Error: ' + e.message); });
 }
-function adminRemoveFromCamp(btn) {
-  var campId = btn.getAttribute('data-camp');
-  var name   = btn.getAttribute('data-name');
-  if(!campId || !name) return;
+function adminCampRemove(btn) {
+  var campId = btn.getAttribute('data-cid');
+  var name   = btn.getAttribute('data-n');
   db.collection('conditioning').doc(campId).set(
-    {attendees: firebase.firestore.FieldValue.arrayRemove(name)},
-    {merge: true}
-  ).then(function(){ showToast(name + ' removed'); })
-   .catch(function(e){ showToast('Error: ' + e.message); });
+    { attendees: firebase.firestore.FieldValue.arrayRemove(name) },
+    { merge: true }
+  ).then(function() { showToast(name + ' removed'); })
+  .catch(function(e) { showToast('Error: ' + e.message); });
 }
 
 function adminAddToCamp(campId) {
