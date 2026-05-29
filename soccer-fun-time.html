@@ -348,6 +348,8 @@ footer strong{color:#fff}
 .schedule-archive-list{margin-top:10px;border-top:2px dashed var(--border);padding-top:14px}
 .event-item.past{opacity:.6}
 .event-item.past .event-date{background:#f3f4f6}
+.btn-signout{background:none;border:1px solid rgba(255,255,255,.35);color:rgba(255,255,255,.85);padding:6px 14px;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;display:none}
+.btn-signout:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.6)}
 
 </style>
 </head>
@@ -362,6 +364,7 @@ footer strong{color:#fff}
       <a href="#schedule">Schedule</a>
       <a href="#conditioning">Conditioning</a>
       <a href="#announcements">News</a>
+      <button class="btn-signout" id="btn-signout" onclick="signOut()">Sign Out</button>
       <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
     </nav>
   </div>
@@ -1082,6 +1085,7 @@ function renderVoterBar() {
   const cr=document.getElementById('credits-remaining-display');
   const sh=document.querySelector('.btn-share');
   const isVoting=(activeSeason!=='summer');
+  var soBtn=document.getElementById('btn-signout'); if(soBtn) soBtn.style.display=name?'block':'none';
   if(cr) cr.style.display=(name&&isVoting)?'':'none';
   if(sh) sh.style.display=(name&&isVoting)?'':'none';
 }
@@ -1765,6 +1769,18 @@ function adminRemoveFromCamp(campId, name) {
     {merge: true}
   ).then(function(){showToast(name+' removed');})
   .catch(function(e){showToast('Error: '+e.message);});
+}
+function signOut() {
+  saveVoterName('');
+  localStorage.removeItem('f6ad_cond_name');
+  ['fall','winter','spring','summer27'].forEach(s => setSeasonCredits(s, {}));
+  renderVoterBar();
+  renderCondNameRow();
+  renderCondGrid();
+  renderCampGrid();
+  if(activeSeason !== 'summer') renderSeasonGrid(activeSeason);
+  updateCreditDisplay();
+  showToast('Signed out.');
 }
 
 // ===================== ADMIN =====================
