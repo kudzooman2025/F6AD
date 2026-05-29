@@ -1660,15 +1660,59 @@ function renderCampAdminList(campId, elId) {
   var el = document.getElementById(elId);
   if(!el) return;
   var attendees = condData[campId] || [];
-  if(!attendees.length) { el.innerHTML = '<p style="font-size:.82rem;color:var(--muted);font-style:italic">No sign-ups yet.</p>'; return; }
+  if(!attendees.length) {
+    el.innerHTML = '<p style="font-size:.82rem;color:var(--muted);font-style:italic">No sign-ups yet.</p>';
+    return;
+  }
   el.innerHTML = attendees.map(function(name) {
-    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #eee">'
+    var safe = name.replace(/"/g,'');
+    return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #eee" id="camprow-' + campId + '-' + safe + '">'
       + '<span style="flex:1;font-size:.88rem">' + name + '</span>'
+      + '<button class="btn-edit" style="padding:3px 10px;font-size:.75rem" '
+      +   'data-cid="' + campId + '" data-n="' + safe + '" data-elid="' + elId + '" '
+      +   'onclick="adminCampEditStart(this)">Edit</button>'
       + '<button class="btn-danger" style="padding:3px 10px;font-size:.75rem" '
-      + 'data-cid="' + campId + '" data-n="' + name.replace(/"/g,'') + '" '
-      + 'onclick="adminCampRemove(this)">Remove</button>'
+      +   'data-cid="' + campId + '" data-n="' + safe + '" '
+      +   'onclick="adminCampRemove(this)">Remove</button>'
       + '</div>';
   }).join('');
+}
+function adminCampEditStart(btn) {
+  var campId  = btn.getAttribute('data-cid');
+  var oldName = btn.getAttribute('data-n');
+  var elId    = btn.getAttribute('data-elid');
+  var row = document.getElementById('camprow-' + campId + '-' + oldName);
+  if(!row) return;
+  // Build edit row entirely via DOM — no inline onclick strings needed
+  row.innerHTML = '';
+  var inp = document.createElement('input');
+  inp.type = 'text'; inp.value = oldName;
+  inp.style.cssText = 'flex:1;border:1.5px solid var(--purple);border-radius:6px;padding:4px 8px;font-size:.85rem';
+  var saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Save';
+  saveBtn.style.cssText = 'padding:3px 10px;font-size:.75rem';
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn-edit'; cancelBtn.textContent = 'Cancel';
+  cancelBtn.style.cssText = 'padding:3px 10px;font-size:.75rem';
+  saveBtn.addEventListener('click', function() {
+    var newName = inp.value.trim();
+    if(!newName) { showToast('Name cannot be empty.'); return; }
+    if(newName === oldName) { renderCampAdminList(campId, elId); return; }
+    var ref = db.collection('conditioning').doc(campId);
+    ref.set({ attendees: firebase.firestore.FieldValue.arrayRemove(oldName) }, { merge: true })
+      .then(function() {
+        return ref.set({ attendees: firebase.firestore.FieldValue.arrayUnion(newName) }, { merge: true });
+      })
+      .then(function() { showToast(oldName + ' → ' + newName + ' ✓'); })
+      .catch(function(e) { showToast('Error: ' + e.message); });
+  });
+  cancelBtn.addEventListener('click', function() { renderCampAdminList(campId, elId); });
+  inp.addEventListener('keydown', function(e) {
+    if(e.key === 'Enter') saveBtn.click();
+    if(e.key === 'Escape') cancelBtn.click();
+  });
+  row.appendChild(inp); row.appendChild(saveBtn); row.appendChild(cancelBtn);
+  inp.focus(); inp.select();
 }
 function adminCampAdd(campId, inputId) {
   var input = document.getElementById(inputId);
