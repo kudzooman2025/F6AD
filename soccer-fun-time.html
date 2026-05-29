@@ -382,6 +382,18 @@ footer strong{color:#fff}
 
 <!-- MAIN -->
 <div class="container">
+  <!-- ANNOUNCEMENTS -->
+  <section id="announcements" class="ann-section">
+    <div class="section-header">
+      <div class="section-title">📢 Announcements</div>
+    </div>
+    <div class="ann-list" id="announcements-list"></div>
+    <div class="empty-state" id="ann-empty">
+      <span>📢</span>
+      <strong>No announcements yet.</strong><br>Use the Admin panel to post updates for the team.
+    </div>
+  </section>
+
   <!-- SCHEDULE (top of page) -->
   <section id="schedule" class="schedule-section">
     <div class="section-header">
@@ -545,17 +557,7 @@ footer strong{color:#fff}
       <div class="t-grid" id="summer27-grid"></div>
     </div>
   </section>
-  <!-- ANNOUNCEMENTS -->
-  <section id="announcements" class="ann-section">
-    <div class="section-header">
-      <div class="section-title">📢 Announcements</div>
-    </div>
-    <div class="ann-list" id="announcements-list"></div>
-    <div class="empty-state" id="ann-empty">
-      <span>📢</span>
-      <strong>No announcements yet.</strong><br>Use the Admin panel to post updates for the team.
-    </div>
-  </section>
+
 
 </div><!-- /container -->
 
@@ -1587,12 +1589,14 @@ function deleteEvent(id) {
 
 // ===================== ANNOUNCEMENTS =====================
 function renderAnnouncements() {
-  const items = [...announcementItems].sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+  const active = [...announcementItems]
+    .filter(a => !a.archived)
+    .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
   const list = document.getElementById('announcements-list');
   const empty = document.getElementById('ann-empty');
-  if (!items.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  if (!active.length) { list.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display = 'none';
-  list.innerHTML = items.map(a => `
+  list.innerHTML = active.map(a => `
     <div class="ann-item">
       <div class="ann-date">${a.date}</div>
       <div class="ann-title">${a.title}</div>
@@ -1605,13 +1609,22 @@ function renderAdminAnnouncements() {
   const el = document.getElementById('admin-ann-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No announcements yet.</p>'; return; }
   el.innerHTML = items.map(a => `
-    <div class="admin-item">
-      <div class="admin-item-info"><strong>${a.title}</strong><span>${a.date}</span></div>
+    <div class="admin-item" style="${a.archived ? 'opacity:.55;background:#f9f9f9' : ''}">
+      <div class="admin-item-info">
+        <strong>${a.title}</strong>
+        <span>${a.date}${a.archived ? ' &nbsp;·&nbsp; <em style=\'color:#888\'>Archived</em>' : ''}</span>
+      </div>
       <div class="admin-item-actions">
-        <button class="btn-edit" onclick="editAnn('${a.id}')">Edit</button>
+        ${!a.archived ? `<button class="btn-edit" onclick="editAnn('${a.id}')">Edit</button>` : ''}
+        <button class="btn-edit" style="background:#f3f4f6;color:#555" onclick="toggleArchiveAnn('${a.id}',${!!a.archived})">${a.archived ? '↩ Unarchive' : '📦 Archive'}</button>
         <button class="btn-danger" onclick="deleteAnn('${a.id}')">Delete</button>
       </div>
     </div>`).join('');
+}
+function toggleArchiveAnn(id, isArchived) {
+  db.collection('announcements').doc(id).update({ archived: !isArchived })
+    .then(() => showToast(isArchived ? 'Announcement restored.' : 'Announcement archived.'))
+    .catch(e => showToast('Error: ' + e.message));
 }
 
 function saveAnnouncement() {
