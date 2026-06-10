@@ -2951,12 +2951,26 @@ function savePlayerEdit(playerName) {
     }
   }
 
-  var data = {group: group, testTime: testTime, testSecs: testSecs};
+  // Update in-memory PLAYERS immediately so the UI reflects the change
+  // without waiting for the Firestore onSnapshot callback
+  var pMem = PLAYERS.find(function(x){ return x.name === playerName; });
+  if(pMem) {
+    pMem.group = group;
+    if(testTime !== null) pMem.testTime = testTime;
+    if(testSecs !== null) pMem.testSecs = testSecs;
+  }
+
+  // Only include non-null fields to avoid overwriting good data with nulls
+  var data = {group: group};
+  if(testTime !== null)  data.testTime  = testTime;
+  if(testSecs !== null)  data.testSecs  = testSecs;
+
   db.collection('players').doc(playerName).set(data, {merge: true})
     .then(function() {
       showToast(playerName + ' updated ✓');
       var er = document.getElementById('player-edit-row'); if(er) er.remove();
       renderAdminPlayers();
+      renderSummerOverview();
     })
     .catch(function(e) { showToast('Error: ' + e.message); });
 }
