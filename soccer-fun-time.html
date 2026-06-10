@@ -417,6 +417,22 @@ footer strong{color:#fff}
 .att-overview-table td{padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;white-space:nowrap}
 .att-overview-table td.name-col{text-align:left;font-weight:700;font-size:.8rem}
 .att-overview-table tr.group-row-hdr td{background:#f5f5f5;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:4px 10px;text-align:left}
+.att-overview-table tr.week-hdr-row th{background:#2a0d5e;color:rgba(255,255,255,.9);font-size:.65rem;letter-spacing:.6px;border-right:2px solid var(--black)}
+.att-overview-table tr.day-type-row td{background:#f0f0f0;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#555;padding:3px 6px}
+.att-overview-table tr.stat-row td{background:#fafbff;font-size:.73rem;color:var(--text)}
+.att-overview-table tr.stat-row td.name-col{font-weight:700;color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.4px;text-align:left}
+.att-overview-table tr.stat-row td.logged{color:#5b21b6;font-weight:700}
+.att-overview-table tr.stat-row td.unlogged{color:#ccc}
+.att-overview-table tr.yards-row td{font-size:.72rem;font-weight:700}
+.att-overview-table tr.yards-row td.name-col{font-weight:700;color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.4px;text-align:left}
+.att-overview-table tr.yards-g1 td{background:#f0fdf4;color:#15803d}
+.att-overview-table tr.yards-g2 td{background:#eff6ff;color:#1e40af}
+.att-overview-table tr.yards-g3 td{background:#fdf4ff;color:#7e22ce}
+.att-overview-table tr.yards-g4 td{background:#fff7ed;color:#c2410c}
+.att-overview-table tr.yards-row td.name-col{background:#fff}
+.att-overview-table tr.stat-divider td{height:2px;background:var(--border);padding:0}
+.att-overview-table th.week-sep{border-left:2px solid #555}
+.att-overview-table td.week-sep{border-left:2px solid #e8e8e8}
 .att-cell-yes{color:#15803d;font-size:.85rem}
 .att-cell-no{color:#dc2626;font-size:.85rem;opacity:.7}
 .att-cell-blank{color:#ccc;font-size:.8rem}
@@ -1733,26 +1749,127 @@ function renderSummerOverview() {
   }
   container.appendChild(chipsRow);
 
-  // Attendance table
+  // Session details + attendance table
   var tableWrap = document.createElement('div'); tableWrap.className = 'attendance-table-wrap';
   var tbl = document.createElement('table'); tbl.className = 'att-overview-table';
 
-  // Header row
+  // ── THEAD: Week header row + session date row ──
   var thead = document.createElement('thead');
+  var weekRow = document.createElement('tr'); weekRow.className = 'week-hdr-row';
+  var thBlank = document.createElement('th'); thBlank.className = 'name-col'; thBlank.textContent = '';
+  weekRow.appendChild(thBlank);
+  for(var w=0; w<8; w++) {
+    var thW = document.createElement('th'); thW.colSpan = 2;
+    thW.textContent = 'Week ' + (w+1);
+    if(w>0) thW.className = 'week-sep';
+    weekRow.appendChild(thW);
+  }
+  thead.appendChild(weekRow);
+
   var hrow = document.createElement('tr');
   var th0 = document.createElement('th'); th0.className = 'name-col'; th0.textContent = 'Player';
   hrow.appendChild(th0);
-  COND_SESSIONS.forEach(function(s) {
+  COND_SESSIONS.forEach(function(s, idx) {
     var th = document.createElement('th');
-    var parts = s.date.split(', ')[0]; // "Jun 9"
-    var abbr = parts.replace(' ', ' '); // non-breaking space
-    th.textContent = abbr;
-    th.title = s.date + ' (' + s.day + ')';
+    th.textContent = s.date.split(', ')[0];
+    th.title = s.date + ' · ' + s.day + (s.day==='Tuesday' ? ' (2-min run)' : ' (1-min run)');
+    if(idx % 2 === 0 && idx > 0) th.className = 'week-sep';
     hrow.appendChild(th);
   });
   thead.appendChild(hrow);
   tbl.appendChild(thead);
 
+  // ── TBODY 1: Workout stats ──
+  var statBody = document.createElement('tbody');
+
+  // Day type row
+  var dayRow = document.createElement('tr'); dayRow.className = 'day-type-row';
+  var dayLbl = document.createElement('td'); dayLbl.className = 'name-col'; dayLbl.textContent = 'Day Type';
+  dayRow.appendChild(dayLbl);
+  COND_SESSIONS.forEach(function(s, idx) {
+    var td = document.createElement('td');
+    td.textContent = s.day === 'Tuesday' ? 'Tue · 2 min' : 'Thu · 1 min';
+    if(idx % 2 === 0 && idx > 0) td.className = 'week-sep';
+    dayRow.appendChild(td);
+  });
+  statBody.appendChild(dayRow);
+
+  // Blocks row
+  var blkRow = document.createElement('tr'); blkRow.className = 'stat-row';
+  var blkLbl = document.createElement('td'); blkLbl.className = 'name-col'; blkLbl.textContent = 'Blocks';
+  blkRow.appendChild(blkLbl);
+  COND_SESSIONS.forEach(function(s, idx) {
+    var log = sessionLogData[s.id];
+    var td = document.createElement('td');
+    td.className = (idx % 2 === 0 && idx > 0 ? 'week-sep ' : '') + (log && log.blocks ? 'logged' : 'unlogged');
+    td.textContent = (log && log.blocks) ? log.blocks : '—';
+    blkRow.appendChild(td);
+  });
+  statBody.appendChild(blkRow);
+
+  // Reps/block row
+  var repRow = document.createElement('tr'); repRow.className = 'stat-row';
+  var repLbl = document.createElement('td'); repLbl.className = 'name-col'; repLbl.textContent = 'Reps / Block';
+  repRow.appendChild(repLbl);
+  COND_SESSIONS.forEach(function(s, idx) {
+    var log = sessionLogData[s.id];
+    var td = document.createElement('td');
+    td.className = (idx % 2 === 0 && idx > 0 ? 'week-sep ' : '') + (log && log.reps_per_block ? 'logged' : 'unlogged');
+    td.textContent = (log && log.reps_per_block) ? log.reps_per_block : '—';
+    repRow.appendChild(td);
+  });
+  statBody.appendChild(repRow);
+
+  // Total reps row
+  var totRow = document.createElement('tr'); totRow.className = 'stat-row';
+  var totLbl = document.createElement('td'); totLbl.className = 'name-col'; totLbl.textContent = 'Total Reps';
+  totRow.appendChild(totLbl);
+  COND_SESSIONS.forEach(function(s, idx) {
+    var log = sessionLogData[s.id];
+    var total = log ? (log.total_reps || (log.blocks && log.reps_per_block ? log.blocks * log.reps_per_block : null)) : null;
+    var td = document.createElement('td');
+    td.className = (idx % 2 === 0 && idx > 0 ? 'week-sep ' : '') + (total ? 'logged' : 'unlogged');
+    td.textContent = total ? total : '—';
+    totRow.appendChild(td);
+  });
+  statBody.appendChild(totRow);
+
+  // Divider
+  var div1 = document.createElement('tr'); div1.className = 'stat-divider';
+  var div1td = document.createElement('td'); div1td.colSpan = COND_SESSIONS.length + 1;
+  div1.appendChild(div1td); statBody.appendChild(div1);
+
+  // Yards rows per group (G1–G4, skip groups with no members)
+  var grpColorClass = {1:'yards-g1',2:'yards-g2',3:'yards-g3',4:'yards-g4'};
+  [1,2,3,4].forEach(function(g) {
+    if(!PLAYERS.some(function(p){ return p.group===g; })) return;
+    var targets = GROUP_TARGETS[g];
+    var yRow = document.createElement('tr'); yRow.className = 'yards-row ' + grpColorClass[g];
+    var yLbl = document.createElement('td'); yLbl.className = 'name-col';
+    yLbl.textContent = 'G' + g + (g===1?' ⚡':'') + ' Yards';
+    yRow.appendChild(yLbl);
+    COND_SESSIONS.forEach(function(s, idx) {
+      var yards = s.day === 'Tuesday' ? targets.tue : targets.thu;
+      var td = document.createElement('td');
+      td.textContent = yards + 'yd';
+      td.title = 'Group ' + g + ' · ' + (s.day==='Tuesday' ? '2-min run' : '1-min run');
+      if(idx % 2 === 0 && idx > 0) td.classList.add('week-sep');
+      yRow.appendChild(td);
+    });
+    statBody.appendChild(yRow);
+  });
+
+  tbl.appendChild(statBody);
+
+  // Bold separator between stats and attendance
+  var sepBody = document.createElement('tbody');
+  var sepRow = document.createElement('tr');
+  var sepTd = document.createElement('td'); sepTd.colSpan = COND_SESSIONS.length + 1;
+  sepTd.style.cssText = 'height:6px;background:var(--black);padding:0';
+  sepRow.appendChild(sepTd); sepBody.appendChild(sepRow);
+  tbl.appendChild(sepBody);
+
+  // ── TBODY 2: Player attendance ──
   var tbody = document.createElement('tbody');
   var sortedByGroup = PLAYERS.slice().sort(function(a,b) {
     var ga = a.group || 99, gb = b.group || 99;
@@ -1774,18 +1891,19 @@ function renderSummerOverview() {
     var nameTd = document.createElement('td'); nameTd.className = 'name-col';
     nameTd.textContent = p.name + (p.isGuest ? '*' : '');
     row.appendChild(nameTd);
-    COND_SESSIONS.forEach(function(s) {
+    COND_SESSIONS.forEach(function(s, idx) {
       var td = document.createElement('td');
+      if(idx % 2 === 0 && idx > 0) td.classList.add('week-sep');
       var log = sessionLogData[s.id];
       if(log && log.attendance && log.attendance[p.name] !== undefined) {
         var ent2 = getAttEntry(log.attendance, p.name);
         var present = ent2.present;
-        td.className = present ? 'att-cell-yes' : 'att-cell-no';
+        td.classList.add(present ? 'att-cell-yes' : 'att-cell-no');
         td.textContent = present ? '✓' : '✗';
         if(ent2.note) td.title = ent2.note;
         else if(ent2.groupOverride && ent2.groupOverride !== p.group) td.title = 'G' + ent2.groupOverride + ' this session';
       } else {
-        td.className = 'att-cell-blank';
+        td.classList.add('att-cell-blank');
         td.textContent = '—';
       }
       row.appendChild(td);
