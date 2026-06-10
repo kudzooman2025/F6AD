@@ -1058,7 +1058,7 @@ function getSeasonTournaments(s){ return s==='fall'?FALL_TOURNAMENTS : s==='wint
 function getSeasonCollection(s){ return s==='summer27'?'votes_summer27':'votes_'+s; }
 function getVoterName()    { return localStorage.getItem('f6ad_voter') || ''; }
 function saveVoterName(n)  { localStorage.setItem('f6ad_voter', n); }
-function getAdminPw()      { return localStorage.getItem('f6ad_pw') || 'FUNTIME'; }
+function getAdminPw()      { return localStorage.getItem('f6ad_pw') || ''; }
 function saveAdminPw(p)    { localStorage.setItem('f6ad_pw', p); }
 function isAdminUnlocked() { return sessionStorage.getItem('f6ad_admin') === '1'; }
 function setAdminUnlocked(){ sessionStorage.setItem('f6ad_admin', '1'); }
@@ -2709,8 +2709,15 @@ function overlayClick(e) {
 }
 
 function tryLogin() {
+  const stored = getAdminPw();
+  if (!stored) {
+    // No password set — redirect to setup
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-setup').style.display = '';
+    return;
+  }
   const pw = document.getElementById('admin-pw-input').value;
-  if (pw === getAdminPw()) {
+  if (pw === stored) {
     setAdminUnlocked();
     document.getElementById('login-error').style.display = 'none';
     document.getElementById('admin-pw-input').value = '';
@@ -2718,6 +2725,30 @@ function tryLogin() {
   } else {
     document.getElementById('login-error').style.display = 'block';
   }
+}
+
+function setupAdminPassword() {
+  var np = document.getElementById('setup-pw-new').value.trim();
+  var cp = document.getElementById('setup-pw-confirm').value.trim();
+  var errEl = document.getElementById('setup-error');
+  errEl.style.display = 'none';
+  if (np.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (np !== cp) {
+    errEl.textContent = 'Passwords do not match. Try again.';
+    errEl.style.display = 'block';
+    return;
+  }
+  localStorage.setItem('f6ad_pw', np);
+  document.getElementById('setup-pw-new').value = '';
+  document.getElementById('setup-pw-confirm').value = '';
+  document.getElementById('admin-setup').style.display = 'none';
+  document.getElementById('admin-login').style.display = '';
+  setAdminUnlocked();
+  showAdminPanel();
 }
 
 function showAdminPanel() {
@@ -3178,4 +3209,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html>                                                                                
+</html>                                                                                       
