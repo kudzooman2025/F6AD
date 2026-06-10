@@ -2868,7 +2868,7 @@ function openPlayerEdit(playerName, row) {
   var autoDiv = document.createElement('div');
   autoDiv.style.cssText = 'display:flex;align-items:center;gap:6px;padding-bottom:6px';
   var autoCb = document.createElement('input'); autoCb.type = 'checkbox';
-  autoCb.id = 'pe-auto'; autoCb.checked = true;
+  autoCb.id = 'pe-auto'; autoCb.checked = false;
   var autoLbl = document.createElement('label'); autoLbl.htmlFor = 'pe-auto';
   autoLbl.textContent = 'Auto-assign group from time';
   autoLbl.style.fontSize = '.82rem';
@@ -2911,10 +2911,11 @@ function savePlayerEdit(playerName) {
     if(parts.length === 2) {
       testSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
       if(autoAssign) {
-        if(testSecs < 360) group = 4;
-        else if(testSecs <= 390) group = 1;
-        else if(testSecs <= 410) group = 2;
-        else group = 3;
+        // G1=fastest, G4=slowest
+        if(testSecs < 360) group = 1;
+        else if(testSecs <= 390) group = 2;
+        else if(testSecs <= 410) group = 3;
+        else group = 4;
       }
     }
   }
@@ -3177,4 +3178,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html>                                                                                                                   
+</html>                                                                                
