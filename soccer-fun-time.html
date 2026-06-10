@@ -362,7 +362,7 @@ footer strong{color:#fff}
 .session-targets-table th{background:#f5f5f5;padding:7px 12px;text-align:left;font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
 .session-targets-table td{padding:7px 12px;border-bottom:1px solid var(--border)}
 .group-badge{display:inline-flex;align-items:center;gap:4px;background:var(--purple-light);color:var(--purple);border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:800}
-.group-badge.g4{background:#fef3c7;color:#92400e}
+.group-badge.g1{background:#e8f4fd;color:#1e40af}
 .attendance-grid{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
 .att-row{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:6px;background:#fafafa;border:1px solid var(--border)}
 .att-row.present{background:#dcfce7;border-color:#86efac}
@@ -409,7 +409,7 @@ footer strong{color:#fff}
 .group-chip{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 16px;font-size:.82rem;font-weight:700;line-height:1.5}
 .group-chip .gc-title{color:var(--purple);font-size:.88rem;margin-bottom:2px;display:flex;align-items:center;gap:6px}
 .group-chip .gc-sub{font-size:.75rem;color:var(--muted);font-weight:600}
-.group-chip.g4 .gc-title{color:#92400e}
+.group-chip.g1 .gc-title{color:#1e40af}
 .attendance-table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:20px}
 .att-overview-table{border-collapse:collapse;font-size:.75rem;min-width:600px;width:100%}
 .att-overview-table th{background:var(--black);color:#fff;padding:7px 10px;text-align:center;font-weight:700;white-space:nowrap;font-size:.68rem;text-transform:uppercase;letter-spacing:.4px}
@@ -1439,13 +1439,13 @@ function renderSessionModalContent(sessionId) {
   thead.innerHTML = '<tr><th>Group</th><th>Target Yards</th><th>Players</th></tr>';
   tbl.appendChild(thead);
   var tbody = document.createElement('tbody');
-  [4,1,2,3].forEach(function(g) {
+  [1,2,3,4].forEach(function(g) {
     var targets = GROUP_TARGETS[g];
     var yds = targets ? targets[dayKey] : '—';
     var members = PLAYERS.filter(function(p){ return p.group === g; });
     var tr = document.createElement('tr');
-    var label = 'Group ' + g + (g === 4 ? ' ⚡' : '');
-    tr.innerHTML = '<td><span class="group-badge' + (g===4?' g4':'') + '">' + label + '</span></td>'
+    var label = 'Group ' + g + (g === 1 ? ' ⚡' : '');
+    tr.innerHTML = '<td><span class="group-badge' + (g===1?' g1':'') + '">' + label + '</span></td>'
       + '<td style="font-weight:700;color:var(--purple)">' + yds + ' yd</td>'
       + '<td style="font-size:.78rem;color:var(--muted)">' + members.map(function(p){return p.name;}).join(', ') + '</td>';
     tbody.appendChild(tr);
@@ -1749,7 +1749,7 @@ function renderSummerOverview() {
     if(!members.length) return;
     var targets = GROUP_TARGETS[g];
     var chip = document.createElement('div');
-    chip.className = 'group-chip' + (g===4?' g4':'');
+    chip.className = 'group-chip' + (g===1?' g1':'');
     var titleDiv = document.createElement('div'); titleDiv.className = 'gc-title';
     titleDiv.innerHTML = 'Group ' + g + (g===1?' ⚡':'') + ' <span style="font-size:.72rem;font-weight:600;color:var(--muted)">' + members.length + ' players</span>';
     var subDiv = document.createElement('div'); subDiv.className = 'gc-sub';
