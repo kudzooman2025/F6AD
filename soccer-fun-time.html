@@ -448,6 +448,25 @@ footer strong{color:#fff}
 .players-table .pgb-3{background:#fee2e2;color:#b91c1c}
 .players-table .pgb-4{background:#fef9c3;color:#78350f}
 .players-table .pgb-none{background:#f0f0f0;color:#666}
+.group-kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:4px}
+@media(max-width:700px){.group-kanban{grid-template-columns:repeat(2,1fr)}}
+.kanban-col{background:#f7f7f9;border-radius:10px;padding:10px 8px;min-height:160px;transition:background .15s,box-shadow .15s;border:2px solid transparent}
+.kanban-col.drag-over{background:#ede9fb;border-color:var(--purple);box-shadow:0 0 0 2px rgba(124,58,237,.15)}
+.kanban-col-hdr{font-size:.72rem;font-weight:800;text-align:center;padding:5px 6px;border-radius:6px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.kanban-col-hdr.pgb-1{background:#e8f4fd;color:#1e40af}
+.kanban-col-hdr.pgb-2{background:#fef3c7;color:#92400e}
+.kanban-col-hdr.pgb-3{background:#fee2e2;color:#b91c1c}
+.kanban-col-hdr.pgb-4{background:#fef9c3;color:#78350f}
+.kanban-col-hdr.pgb-none{background:#f0f0f0;color:#555}
+.kanban-col-sub{font-size:.68rem;font-weight:400;text-transform:none;letter-spacing:0;margin-top:1px;opacity:.8}
+.kanban-card{display:flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--border);border-radius:7px;padding:7px 9px;margin-bottom:6px;cursor:grab;user-select:none;font-size:.82rem;transition:box-shadow .12s,opacity .12s}
+.kanban-card:hover{box-shadow:0 2px 6px rgba(0,0,0,.1);border-color:#bbb}
+.kanban-card.dragging{opacity:.35;cursor:grabbing}
+.drag-handle{color:#bbb;font-size:.9rem;line-height:1;flex-shrink:0;cursor:grab;letter-spacing:-1px}
+.drag-handle:hover{color:#888}
+.kanban-card-name{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kanban-card-time{font-size:.72rem;color:var(--muted);flex-shrink:0}
+.kanban-done-btn{margin-bottom:12px}
 .sessions-admin-list{display:flex;flex-direction:column;gap:6px}
 .session-admin-row{background:#fafafa;border:1px solid var(--border);border-radius:7px;padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s}
 .session-admin-row:hover{background:var(--purple-light)}
@@ -1314,6 +1333,7 @@ const GROUP_TARGETS = {
 // ─── Global vars for new features ───
 let sessionLogData = {};
 let coachesData = {};
+let playerGroupEditMode = false;
 let openSessionId = null;
 let coachName = sessionStorage.getItem('f6ad_coach') || '';
 
@@ -2791,6 +2811,31 @@ function renderAdminPlayers() {
   if(!container) return;
   container.innerHTML = '';
 
+  // ── Toggle button bar ──
+  var bar = document.createElement('div');
+  bar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:14px';
+  var toggleBtn = document.createElement('button');
+  toggleBtn.className = playerGroupEditMode ? 'btn-primary kanban-done-btn' : 'btn-edit';
+  toggleBtn.style.cssText = 'padding:6px 14px;font-size:.82rem';
+  toggleBtn.textContent = playerGroupEditMode ? '✓ Done Editing Groups' : '🔀 Rearrange Groups';
+  toggleBtn.onclick = function() { playerGroupEditMode = !playerGroupEditMode; renderAdminPlayers(); };
+  bar.appendChild(toggleBtn);
+  if(playerGroupEditMode) {
+    var hint = document.createElement('span');
+    hint.style.cssText = 'font-size:.78rem;color:var(--muted)';
+    hint.textContent = 'Drag players between groups to reassign them';
+    bar.appendChild(hint);
+  }
+  container.appendChild(bar);
+
+  if(playerGroupEditMode) {
+    renderPlayerKanban(container);
+  } else {
+    renderPlayersTable(container);
+  }
+}
+
+function renderPlayersTable(container) {
   var tbl = document.createElement('table'); tbl.className = 'players-table';
   var thead = document.createElement('thead');
   thead.innerHTML = '<tr><th>Name</th><th>Group</th><th>Test Time</th><th>Tue Target</th><th>Thu Target</th><th>Status</th><th></th></tr>';
@@ -2800,7 +2845,7 @@ function renderAdminPlayers() {
   var sorted = PLAYERS.slice().sort(function(a,b) {
     var ga = a.group||99, gb = b.group||99;
     if(ga !== gb) return ga - gb;
-    return a.name.localeCompare(b.name);
+    return (a.testSecs||999)-(b.testSecs||999);
   });
 
   sorted.forEach(function(p) {
@@ -2843,7 +2888,7 @@ function renderAdminPlayers() {
     var actTd = document.createElement('td');
     var editBtn = document.createElement('button'); editBtn.className = 'btn-edit';
     editBtn.style.cssText = 'padding:4px 10px;font-size:.72rem';
-    editBtn.textContent = 'Edit';
+    editBtn.textContent = 'Edit Time';
     editBtn.setAttribute('data-pname', p.name);
     editBtn.addEventListener('click', function() { openPlayerEdit(this.getAttribute('data-pname'), row); });
     actTd.appendChild(editBtn);
@@ -2855,10 +2900,108 @@ function renderAdminPlayers() {
   container.appendChild(tbl);
 }
 
+function renderPlayerKanban(container) {
+  var board = document.createElement('div');
+  board.className = 'group-kanban';
+
+  var COLS = [
+    {group:1,    label:'G1 ⚡ Fastest', sub:'550yd Tue · 260yd Thu', cls:'pgb-1'},
+    {group:2,    label:'Group 2',        sub:'510yd Tue · 242yd Thu', cls:'pgb-2'},
+    {group:3,    label:'Group 3',        sub:'475yd Tue · 225yd Thu', cls:'pgb-3'},
+    {group:4,    label:'G4 Slowest',     sub:'440yd Tue · 210yd Thu', cls:'pgb-4'},
+    {group:null, label:'Untested',       sub:'No test time yet',       cls:'pgb-none'}
+  ];
+
+  COLS.forEach(function(col) {
+    var colEl = document.createElement('div');
+    colEl.className = 'kanban-col';
+    colEl.dataset.group = col.group !== null ? col.group : '';
+
+    var hdr = document.createElement('div');
+    hdr.className = 'kanban-col-hdr ' + col.cls;
+    hdr.innerHTML = col.label + '<div class="kanban-col-sub">' + col.sub + '</div>';
+    colEl.appendChild(hdr);
+
+    var members = PLAYERS.filter(function(p){ return p.group === col.group; });
+    members.sort(function(a,b){ return (a.testSecs||9999)-(b.testSecs||9999); });
+    members.forEach(function(p){ colEl.appendChild(makePlayerDragCard(p)); });
+
+    // Drop zone events
+    colEl.addEventListener('dragover', function(e){
+      e.preventDefault();
+      colEl.classList.add('drag-over');
+    });
+    colEl.addEventListener('dragleave', function(e){
+      if(!colEl.contains(e.relatedTarget)) colEl.classList.remove('drag-over');
+    });
+    colEl.addEventListener('drop', function(e){
+      e.preventDefault();
+      colEl.classList.remove('drag-over');
+      var pName = e.dataTransfer.getData('text/plain');
+      var newGroup = col.group;
+      if(pName) savePlayerGroup(pName, newGroup);
+    });
+
+    board.appendChild(colEl);
+  });
+
+  container.appendChild(board);
+}
+
+function makePlayerDragCard(p) {
+  var card = document.createElement('div');
+  card.className = 'kanban-card';
+  card.draggable = true;
+  card.title = 'Drag to reassign group';
+
+  var handle = document.createElement('span');
+  handle.className = 'drag-handle';
+  handle.innerHTML = '&#8942;&#8942;';  // ⋮⋮
+
+  var name = document.createElement('span');
+  name.className = 'kanban-card-name';
+  name.textContent = p.name + (p.isGuest ? ' *' : '');
+
+  var time = document.createElement('span');
+  time.className = 'kanban-card-time';
+  time.textContent = p.testTime || '—';
+
+  card.appendChild(handle);
+  card.appendChild(name);
+  card.appendChild(time);
+
+  card.addEventListener('dragstart', function(e){
+    e.dataTransfer.setData('text/plain', p.name);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(function(){ card.classList.add('dragging'); }, 0);
+  });
+  card.addEventListener('dragend', function(){
+    card.classList.remove('dragging');
+  });
+
+  return card;
+}
+
+function savePlayerGroup(playerName, newGroup) {
+  var pMem = PLAYERS.find(function(x){ return x.name === playerName; });
+  if(!pMem) return;
+  if(pMem.group === newGroup) return;  // no change
+  pMem.group = newGroup;
+
+  var data = {group: newGroup};
+  db.collection('players').doc(playerName).set(data, {merge: true})
+    .then(function() {
+      var label = newGroup ? 'Group ' + newGroup + (newGroup===1?' ⚡':'') : 'Untested';
+      showToast(playerName + ' → ' + label + ' ✓');
+      renderAdminPlayers();
+      renderSummerOverview();
+    })
+    .catch(function(e) { showToast('Error saving: ' + e.message); });
+}
+
 function openPlayerEdit(playerName, row) {
   var p = PLAYERS.find(function(x){ return x.name === playerName; });
   if(!p) return;
-  // Insert edit row after this row
   var existingEdit = document.getElementById('player-edit-row');
   if(existingEdit) existingEdit.remove();
 
@@ -2870,21 +3013,7 @@ function openPlayerEdit(playerName, row) {
   var editDiv = document.createElement('div');
   editDiv.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end';
 
-  // Group select
-  var grpDiv = document.createElement('div');
-  var grpLbl = document.createElement('label'); grpLbl.textContent = 'Group';
-  grpLbl.style.cssText = 'display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:3px';
-  var grpSel = document.createElement('select'); grpSel.id = 'pe-group';
-  grpSel.style.cssText = 'border:2px solid var(--purple);border-radius:6px;padding:6px 10px;font-size:.85rem;font-family:inherit';
-  [['','Untested'],['1','Group 1 ⚡'],['2','Group 2'],['3','Group 3'],['4','Group 4']].forEach(function(opt) {
-    var o = document.createElement('option'); o.value = opt[0]; o.textContent = opt[1];
-    if((p.group||'').toString() === opt[0]) o.selected = true;
-    grpSel.appendChild(o);
-  });
-  grpDiv.appendChild(grpLbl); grpDiv.appendChild(grpSel);
-  editDiv.appendChild(grpDiv);
-
-  // Test time input
+  // Test time input only (group is managed via drag-and-drop)
   var timeDiv = document.createElement('div');
   var timeLbl = document.createElement('label'); timeLbl.textContent = 'Test Time (mm:ss)';
   timeLbl.style.cssText = 'display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:3px';
@@ -2895,32 +3024,23 @@ function openPlayerEdit(playerName, row) {
   timeDiv.appendChild(timeLbl); timeDiv.appendChild(timeInp);
   editDiv.appendChild(timeDiv);
 
-  // Auto-assign checkbox
-  var autoDiv = document.createElement('div');
-  autoDiv.style.cssText = 'display:flex;align-items:center;gap:6px;padding-bottom:6px';
-  var autoCb = document.createElement('input'); autoCb.type = 'checkbox';
-  autoCb.id = 'pe-auto'; autoCb.checked = false;
-  var autoLbl = document.createElement('label'); autoLbl.htmlFor = 'pe-auto';
-  autoLbl.textContent = 'Auto-assign group from time';
-  autoLbl.style.fontSize = '.82rem';
-  autoDiv.appendChild(autoCb); autoDiv.appendChild(autoLbl);
-  editDiv.appendChild(autoDiv);
+  var hint = document.createElement('p');
+  hint.style.cssText = 'font-size:.76rem;color:var(--muted);margin:0;padding-bottom:6px;align-self:flex-end';
+  hint.textContent = 'Use "Rearrange Groups" to change group assignment';
+  editDiv.appendChild(hint);
 
-  // Buttons
+  // Save / Cancel
   var savePBtn = document.createElement('button'); savePBtn.className = 'btn-primary';
   savePBtn.style.cssText = 'padding:7px 16px;font-size:.82rem';
-  savePBtn.textContent = 'Save';
+  savePBtn.textContent = 'Save Time';
   savePBtn.setAttribute('data-pname', playerName);
-  savePBtn.addEventListener('click', function() {
-    savePlayerEdit(this.getAttribute('data-pname'));
-  });
+  savePBtn.addEventListener('click', function() { savePlayerEdit(this.getAttribute('data-pname')); });
 
   var cancelPBtn = document.createElement('button'); cancelPBtn.className = 'btn-edit';
   cancelPBtn.style.cssText = 'padding:7px 14px;font-size:.82rem';
   cancelPBtn.textContent = 'Cancel';
   cancelPBtn.addEventListener('click', function() {
-    var er = document.getElementById('player-edit-row');
-    if(er) er.remove();
+    var er = document.getElementById('player-edit-row'); if(er) er.remove();
   });
   editDiv.appendChild(savePBtn); editDiv.appendChild(cancelPBtn);
   editTd.appendChild(editDiv);
@@ -2929,11 +3049,7 @@ function openPlayerEdit(playerName, row) {
 }
 
 function savePlayerEdit(playerName) {
-  var grpVal = document.getElementById('pe-group').value;
   var timeVal = document.getElementById('pe-time').value.trim();
-  var autoAssign = document.getElementById('pe-auto').checked;
-
-  var group = grpVal ? parseInt(grpVal) : null;
   var testTime = timeVal || null;
   var testSecs = null;
 
@@ -2941,33 +3057,27 @@ function savePlayerEdit(playerName) {
     var parts = timeVal.split(':');
     if(parts.length === 2) {
       testSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-      if(autoAssign) {
-        // G1=fastest, G4=slowest
-        if(testSecs < 360) group = 1;
-        else if(testSecs <= 390) group = 2;
-        else if(testSecs <= 410) group = 3;
-        else group = 4;
-      }
     }
   }
 
-  // Update in-memory PLAYERS immediately so the UI reflects the change
-  // without waiting for the Firestore onSnapshot callback
   var pMem = PLAYERS.find(function(x){ return x.name === playerName; });
   if(pMem) {
-    pMem.group = group;
     if(testTime !== null) pMem.testTime = testTime;
     if(testSecs !== null) pMem.testSecs = testSecs;
   }
 
-  // Only include non-null fields to avoid overwriting good data with nulls
-  var data = {group: group};
-  if(testTime !== null)  data.testTime  = testTime;
-  if(testSecs !== null)  data.testSecs  = testSecs;
+  var data = {};
+  if(testTime !== null) data.testTime = testTime;
+  if(testSecs !== null) data.testSecs  = testSecs;
+
+  if(!Object.keys(data).length) {
+    var er = document.getElementById('player-edit-row'); if(er) er.remove();
+    return;
+  }
 
   db.collection('players').doc(playerName).set(data, {merge: true})
     .then(function() {
-      showToast(playerName + ' updated ✓');
+      showToast(playerName + ' time updated ✓');
       var er = document.getElementById('player-edit-row'); if(er) er.remove();
       renderAdminPlayers();
       renderSummerOverview();
