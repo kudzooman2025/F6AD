@@ -446,6 +446,16 @@ footer strong{color:#fff}
 .admin-att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-top:8px}
 .admin-att-item{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.8rem}
 .admin-att-item input[type=checkbox]{accent-color:var(--purple);width:14px;height:14px}
+/* Extended att edit row (with group override + note) */
+.admin-att-grid-ext{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.admin-att-item-ext{display:grid;grid-template-columns:20px 1fr auto auto;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.8rem}
+.admin-att-item-ext input[type=checkbox]{accent-color:var(--purple);width:14px;height:14px}
+.att-grp-sel{border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.75rem;font-family:inherit;max-width:100px;cursor:pointer}
+.att-note-inp{border:1px solid var(--border);border-radius:5px;padding:3px 7px;font-size:.72rem;font-family:inherit;width:120px;color:#444}
+.att-grp-sel:focus,.att-note-inp:focus{outline:none;border-color:var(--purple)}
+.att-grp-badge{display:inline-block;font-size:.65rem;font-weight:800;padding:1px 6px;border-radius:999px;margin-left:5px;background:#fef3c7;color:#92400e;vertical-align:middle}
+.att-note-disp{font-size:.72rem;color:#666;font-style:italic;margin-left:4px}
+
 
 </style>
 </head>
@@ -1254,14 +1264,14 @@ function renderCampGrid() {
 
 // ===================== PLAYER ROSTER =====================
 const PLAYERS = [
-  {name:'John',   testTime:'5:32', testSecs:332, group:4},
-  {name:'Liam',   testTime:'5:35', testSecs:335, group:4},
-  {name:'Tucker', testTime:'5:40', testSecs:340, group:4},
-  {name:'Cullen', testTime:'5:54', testSecs:354, group:4},
-  {name:'Grayson',testTime:'6:00', testSecs:360, group:1},
-  {name:'Oliver', testTime:'6:03', testSecs:363, group:1, isGuest:true},
-  {name:'Miles',  testTime:'6:18', testSecs:378, group:1},
-  {name:'Tyler',  testTime:'6:33', testSecs:393, group:2},
+  {name:'John',   testTime:'5:32', testSecs:332, group:1},
+  {name:'Liam',   testTime:'5:35', testSecs:335, group:1},
+  {name:'Tucker', testTime:'5:40', testSecs:340, group:1},
+  {name:'Cullen', testTime:'5:54', testSecs:354, group:1},
+  {name:'Grayson',testTime:'6:00', testSecs:360, group:2},
+  {name:'Oliver', testTime:'6:03', testSecs:363, group:2, isGuest:true},
+  {name:'Miles',  testTime:'6:18', testSecs:378, group:2},
+  {name:'Tyler',  testTime:'6:33', testSecs:393, group:3},
   {name:'Dylan',  testTime:null, testSecs:null, group:null},
   {name:'Nathan', testTime:null, testSecs:null, group:null},
   {name:'Evan',   testTime:null, testSecs:null, group:null},
@@ -1278,11 +1288,12 @@ const PLAYERS = [
   {name:'Ishy',   testTime:null, testSecs:null, group:null}
 ];
 
+// G1 = fastest, G4 = slowest
 const GROUP_TARGETS = {
-  1: {tue:510, thu:242},
-  2: {tue:475, thu:225},
-  3: {tue:440, thu:210},
-  4: {tue:550, thu:260}
+  1: {tue:550, thu:260},
+  2: {tue:510, thu:242},
+  3: {tue:475, thu:225},
+  4: {tue:440, thu:210}
 };
 
 // ─── Global vars for new features ───
@@ -1290,6 +1301,22 @@ let sessionLogData = {};
 let coachesData = {};
 let openSessionId = null;
 let coachName = sessionStorage.getItem('f6ad_coach') || '';
+
+// ─── Attendance entry helper (backward-compat: old format=bool, new=object) ───
+function getAttEntry(att, name) {
+  if(!att || att[name] === undefined || att[name] === null) return {present:undefined, groupOverride:null, note:''};
+  var v = att[name];
+  if(typeof v === 'boolean') return {present:v, groupOverride:null, note:''};
+  return {present:!!v.present, groupOverride:v.groupOverride||null, note:v.note||''};
+}
+function effectiveGroup(player, sessionId) {
+  var log = sessionLogData[sessionId];
+  if(log && log.attendance) {
+    var entry = getAttEntry(log.attendance, player.name);
+    if(entry.groupOverride) return entry.groupOverride;
+  }
+  return player.group;
+}
 
 // ===================== COACH LOGIN =====================
 function coachLogin() {
@@ -1447,15 +1474,24 @@ function renderSessionModalContent(sessionId) {
       currentGroup = g;
       var hdr = document.createElement('div');
       hdr.className = 'att-group-hdr';
-      hdr.textContent = g ? ('Group ' + g + (g===4?' ⚡':'')) : 'Untested';
+      hdr.textContent = g ? ('Group ' + g + (g===1?' ⚡':'')) : 'Untested';
       attGrid.appendChild(hdr);
     }
     var row = document.createElement('div');
-    var present = attendance[p.name];
+    var entry = getAttEntry(attendance, p.name);
+    var present = entry.present;
     row.className = 'att-row' + (present === true ? ' present' : present === false ? ' absent' : '');
     var nameSpan = document.createElement('span');
     nameSpan.className = 'att-name';
     nameSpan.textContent = p.name + (p.isGuest ? ' (guest)' : '');
+    if(entry.groupOverride && entry.groupOverride !== p.group) {
+      var badge = document.createElement('span'); badge.className = 'att-grp-badge';
+      badge.textContent = 'G' + entry.groupOverride; nameSpan.appendChild(badge);
+    }
+    if(entry.note) {
+      var noteSpan = document.createElement('span'); noteSpan.className = 'att-note-disp';
+      noteSpan.textContent = entry.note; nameSpan.appendChild(noteSpan);
+    }
     row.appendChild(nameSpan);
     var statusSpan = document.createElement('span');
     statusSpan.className = 'att-status';
@@ -1543,23 +1579,44 @@ function renderSessionEditForm(sessionId) {
   formDiv.appendChild(attHdr);
 
   var attWrapper = document.createElement('div');
-  attWrapper.className = 'admin-att-grid';
-
+  attWrapper.className = 'admin-att-grid-ext';
   var sortedPlayers = PLAYERS.slice().sort(function(a,b) {
     var ga = a.group || 99, gb = b.group || 99;
     if(ga !== gb) return ga - gb;
     return a.name.localeCompare(b.name);
   });
-
+  var lastGrp = null;
   sortedPlayers.forEach(function(p) {
-    var item = document.createElement('div'); item.className = 'admin-att-item';
+    var g = p.group || 0;
+    if(g !== lastGrp) {
+      lastGrp = g;
+      var ghdr = document.createElement('p');
+      ghdr.style.cssText = 'font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:8px 0 2px';
+      ghdr.textContent = g ? ('Group ' + g + (g===1?' ⚡':'')) : 'Untested';
+      attWrapper.appendChild(ghdr);
+    }
+    var ent = getAttEntry(attendance, p.name);
+    var item = document.createElement('div'); item.className = 'admin-att-item-ext';
     var cb = document.createElement('input'); cb.type = 'checkbox';
     cb.id = 'att-cb-' + p.name.replace(/\s/g,'_');
-    cb.checked = attendance[p.name] === true;
+    cb.checked = ent.present === true;
     var lbl = document.createElement('label'); lbl.htmlFor = cb.id;
     lbl.textContent = p.name + (p.isGuest ? '*' : '');
-    lbl.style.cssText = 'flex:1;cursor:pointer';
-    item.appendChild(cb); item.appendChild(lbl);
+    lbl.style.cssText = 'cursor:pointer;font-weight:600';
+    var grpSel = document.createElement('select'); grpSel.className = 'att-grp-sel';
+    grpSel.id = 'att-grp-' + p.name.replace(/\s/g,'_');
+    grpSel.title = 'Group for this session';
+    [['','— default'],['1','G1 ⚡'],['2','G2'],['3','G3'],['4','G4']].forEach(function(opt) {
+      var o = document.createElement('option'); o.value = opt[0]; o.textContent = opt[1];
+      if(ent.groupOverride && String(ent.groupOverride) === opt[0]) o.selected = true;
+      grpSel.appendChild(o);
+    });
+    var noteInp = document.createElement('input'); noteInp.type = 'text';
+    noteInp.className = 'att-note-inp';
+    noteInp.id = 'att-note-' + p.name.replace(/\s/g,'_');
+    noteInp.placeholder = 'e.g. 2@G2, 3@G1';
+    noteInp.value = ent.note || '';
+    item.appendChild(cb); item.appendChild(lbl); item.appendChild(grpSel); item.appendChild(noteInp);
     attWrapper.appendChild(item);
   });
   formDiv.appendChild(attWrapper);
@@ -1594,7 +1651,13 @@ function saveSessionLog(sessionId) {
   var attendance = {};
   PLAYERS.forEach(function(p) {
     var cb = document.getElementById('att-cb-' + p.name.replace(/\s/g,'_'));
-    if(cb) attendance[p.name] = cb.checked;
+    var gSel = document.getElementById('att-grp-' + p.name.replace(/\s/g,'_'));
+    var nInp = document.getElementById('att-note-' + p.name.replace(/\s/g,'_'));
+    if(cb) attendance[p.name] = {
+      present: cb.checked,
+      groupOverride: gSel && gSel.value ? parseInt(gSel.value) : null,
+      note: nInp ? nInp.value.trim() : ''
+    };
   });
 
   var logger = isAdminUnlocked() ? 'Admin' : coachName;
@@ -1653,7 +1716,7 @@ function renderSummerOverview() {
     var chip = document.createElement('div');
     chip.className = 'group-chip' + (g===4?' g4':'');
     var titleDiv = document.createElement('div'); titleDiv.className = 'gc-title';
-    titleDiv.innerHTML = 'Group ' + g + (g===4?' ⚡':'') + ' <span style="font-size:.72rem;font-weight:600;color:var(--muted)">' + members.length + ' players</span>';
+    titleDiv.innerHTML = 'Group ' + g + (g===1?' ⚡':'') + ' <span style="font-size:.72rem;font-weight:600;color:var(--muted)">' + members.length + ' players</span>';
     var subDiv = document.createElement('div'); subDiv.className = 'gc-sub';
     subDiv.textContent = targets.tue + 'yd Tue · ' + targets.thu + 'yd Thu';
     chip.appendChild(titleDiv); chip.appendChild(subDiv);
@@ -1703,7 +1766,7 @@ function renderSummerOverview() {
       lastGroup = g;
       var hdrRow = document.createElement('tr'); hdrRow.className = 'group-row-hdr';
       var hdrTd = document.createElement('td'); hdrTd.colSpan = COND_SESSIONS.length + 1;
-      hdrTd.textContent = g ? ('Group ' + g + (g===4?' ⚡':'')) : 'Untested';
+      hdrTd.textContent = g ? ('Group ' + g + (g===1?' ⚡':'')) : 'Untested';
       hdrRow.appendChild(hdrTd);
       tbody.appendChild(hdrRow);
     }
@@ -1715,9 +1778,12 @@ function renderSummerOverview() {
       var td = document.createElement('td');
       var log = sessionLogData[s.id];
       if(log && log.attendance && log.attendance[p.name] !== undefined) {
-        var present = log.attendance[p.name];
+        var ent2 = getAttEntry(log.attendance, p.name);
+        var present = ent2.present;
         td.className = present ? 'att-cell-yes' : 'att-cell-no';
         td.textContent = present ? '✓' : '✗';
+        if(ent2.note) td.title = ent2.note;
+        else if(ent2.groupOverride && ent2.groupOverride !== p.group) td.title = 'G' + ent2.groupOverride + ' this session';
       } else {
         td.className = 'att-cell-blank';
         td.textContent = '—';
@@ -2603,7 +2669,7 @@ function renderAdminPlayers() {
     if(g) {
       var badge = document.createElement('span');
       badge.className = 'player-group-badge pgb-' + g;
-      badge.textContent = 'Group ' + g + (g===4?' ⚡':'');
+      badge.textContent = 'Group ' + g + (g===1?' ⚡':'');
       grpTd.appendChild(badge);
     } else {
       grpTd.innerHTML = '<span class="player-group-badge pgb-none">Untested</span>';
@@ -2662,7 +2728,7 @@ function openPlayerEdit(playerName, row) {
   grpLbl.style.cssText = 'display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:3px';
   var grpSel = document.createElement('select'); grpSel.id = 'pe-group';
   grpSel.style.cssText = 'border:2px solid var(--purple);border-radius:6px;padding:6px 10px;font-size:.85rem;font-family:inherit';
-  [['','Untested'],['1','Group 1'],['2','Group 2'],['3','Group 3'],['4','Group 4 ⚡']].forEach(function(opt) {
+  [['','Untested'],['1','Group 1 ⚡'],['2','Group 2'],['3','Group 3'],['4','Group 4']].forEach(function(opt) {
     var o = document.createElement('option'); o.value = opt[0]; o.textContent = opt[1];
     if((p.group||'').toString() === opt[0]) o.selected = true;
     grpSel.appendChild(o);
@@ -2843,19 +2909,42 @@ function buildAdminSessionDetail(container, sessionId, log) {
   attHdr.textContent = 'Attendance (check = present)';
   container.appendChild(attHdr);
 
-  var attWrap = document.createElement('div'); attWrap.className = 'admin-att-grid';
+  var attWrap = document.createElement('div'); attWrap.className = 'admin-att-grid-ext';
   var sorted = PLAYERS.slice().sort(function(a,b) {
     var ga = a.group||99, gb = b.group||99;
     return ga !== gb ? ga-gb : a.name.localeCompare(b.name);
   });
+  var lastG2 = null;
   sorted.forEach(function(p) {
-    var item = document.createElement('div'); item.className = 'admin-att-item';
+    var g = p.group || 0;
+    if(g !== lastG2) {
+      lastG2 = g;
+      var ghdr2 = document.createElement('p');
+      ghdr2.style.cssText = 'font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:8px 0 2px';
+      ghdr2.textContent = g ? ('Group ' + g + (g===1?' ⚡':'')) : 'Untested';
+      attWrap.appendChild(ghdr2);
+    }
+    var ent3 = getAttEntry(attendance, p.name);
+    var item = document.createElement('div'); item.className = 'admin-att-item-ext';
     var cb = document.createElement('input'); cb.type = 'checkbox';
     cb.id = 'satt-'+sessionId+'-'+p.name.replace(/\s/g,'_');
-    cb.checked = attendance[p.name] === true;
+    cb.checked = ent3.present === true;
     var lbl = document.createElement('label'); lbl.htmlFor = cb.id;
-    lbl.textContent = p.name; lbl.style.cssText = 'flex:1;cursor:pointer;font-size:.8rem';
-    item.appendChild(cb); item.appendChild(lbl);
+    lbl.textContent = p.name; lbl.style.cssText = 'cursor:pointer;font-weight:600;font-size:.8rem';
+    var gSel2 = document.createElement('select'); gSel2.className = 'att-grp-sel';
+    gSel2.id = 'satt-grp-'+sessionId+'-'+p.name.replace(/\s/g,'_');
+    gSel2.title = 'Group override for this session';
+    [['','— default'],['1','G1 ⚡'],['2','G2'],['3','G3'],['4','G4']].forEach(function(opt) {
+      var o = document.createElement('option'); o.value = opt[0]; o.textContent = opt[1];
+      if(ent3.groupOverride && String(ent3.groupOverride) === opt[0]) o.selected = true;
+      gSel2.appendChild(o);
+    });
+    var nInp2 = document.createElement('input'); nInp2.type = 'text';
+    nInp2.className = 'att-note-inp';
+    nInp2.id = 'satt-note-'+sessionId+'-'+p.name.replace(/\s/g,'_');
+    nInp2.placeholder = 'e.g. 2@G2, 3@G1';
+    nInp2.value = ent3.note || '';
+    item.appendChild(cb); item.appendChild(lbl); item.appendChild(gSel2); item.appendChild(nInp2);
     attWrap.appendChild(item);
   });
   container.appendChild(attWrap);
@@ -2874,7 +2963,13 @@ function buildAdminSessionDetail(container, sessionId, log) {
     var att = {};
     PLAYERS.forEach(function(p) {
       var cb2 = document.getElementById('satt-'+sid+'-'+p.name.replace(/\s/g,'_'));
-      if(cb2) att[p.name] = cb2.checked;
+      var gSel3 = document.getElementById('satt-grp-'+sid+'-'+p.name.replace(/\s/g,'_'));
+      var nInp3 = document.getElementById('satt-note-'+sid+'-'+p.name.replace(/\s/g,'_'));
+      if(cb2) att[p.name] = {
+        present: cb2.checked,
+        groupOverride: gSel3 && gSel3.value ? parseInt(gSel3.value) : null,
+        note: nInp3 ? nInp3.value.trim() : ''
+      };
     });
     var data = {completed:true, attendance:att, logged_by:'Admin', logged_at:firebase.firestore.FieldValue.serverTimestamp()};
     if(blocks) data.blocks = blocks;
