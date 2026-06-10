@@ -351,6 +351,102 @@ footer strong{color:#fff}
 .btn-signout{background:none;border:1px solid rgba(255,255,255,.35);color:rgba(255,255,255,.85);padding:6px 14px;border-radius:20px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;display:none}
 .btn-signout:hover{background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.6)}
 
+/* ── SESSION DETAIL MODAL ─────────────────── */
+#session-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:1100;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+#session-overlay.open{display:flex}
+.session-modal{background:#fff;border-radius:12px;width:100%;max-width:680px;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden;margin:auto}
+.session-modal .modal-header{background:var(--black);color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between}
+.session-modal .modal-header h2{font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+.session-modal .modal-body{padding:20px}
+.session-targets-table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:16px}
+.session-targets-table th{background:#f5f5f5;padding:7px 12px;text-align:left;font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.session-targets-table td{padding:7px 12px;border-bottom:1px solid var(--border)}
+.group-badge{display:inline-flex;align-items:center;gap:4px;background:var(--purple-light);color:var(--purple);border-radius:999px;padding:2px 10px;font-size:.72rem;font-weight:800}
+.group-badge.g4{background:#fef3c7;color:#92400e}
+.attendance-grid{display:flex;flex-direction:column;gap:4px;margin-bottom:16px}
+.att-row{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:6px;background:#fafafa;border:1px solid var(--border)}
+.att-row.present{background:#dcfce7;border-color:#86efac}
+.att-row.absent{background:#fee2e2;border-color:#fca5a5;opacity:.8}
+.att-name{font-size:.85rem;font-weight:600;flex:1}
+.att-status{font-size:.85rem}
+.att-group-hdr{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:8px 8px 2px;margin-top:6px}
+.log-section{background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+.log-section h4{font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px}
+.log-field{margin-bottom:10px}
+.log-field label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.log-field input,.log-field textarea,.log-field select{width:100%;border:2px solid var(--border);border-radius:6px;padding:7px 10px;font-size:.88rem;font-family:inherit}
+.log-field input:focus,.log-field textarea:focus{outline:none;border-color:var(--purple)}
+.log-field textarea{resize:vertical;min-height:70px}
+.log-stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.log-stat{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;min-width:90px}
+.log-stat .ls-val{font-size:1.3rem;font-weight:900;color:var(--purple)}
+.log-stat .ls-lbl{font-size:.7rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.btn-details{background:none;border:none;color:var(--purple);font-size:.75rem;font-weight:700;cursor:pointer;padding:4px 0 0;text-decoration:underline;display:block;width:100%;text-align:center;margin-top:6px}
+.btn-details:hover{color:var(--purple-dark)}
+.session-logged-badge{display:inline-block;background:#dcfce7;color:#15803d;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:999px;margin-top:4px}
+
+/* ── COACH LOGIN ──────────────────────────── */
+.coach-login-bar{background:#f5f0ff;border:1px solid #d8c8f8;border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.coach-login-bar label{font-size:.83rem;font-weight:700;color:var(--purple);white-space:nowrap}
+.coach-pin-input{border:2px solid var(--purple);border-radius:6px;padding:5px 10px;font-size:.88rem;font-family:inherit;width:110px;letter-spacing:2px}
+.coach-pin-input:focus{outline:none;box-shadow:0 0 0 2px var(--purple-light)}
+.btn-coach-login{background:var(--purple);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:.82rem;font-weight:700}
+.btn-coach-login:hover{background:var(--purple-dark)}
+.coach-active-bar{background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:9px 16px;display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.coach-active-name{font-size:.88rem;font-weight:700;color:#15803d;flex:1}
+.btn-coach-signout{background:none;border:1px solid #86efac;color:#15803d;padding:4px 12px;border-radius:999px;font-size:.75rem;font-weight:700;cursor:pointer}
+.btn-coach-signout:hover{background:#dcfce7}
+
+/* ── SUMMER OVERVIEW ─────────────────────── */
+.summer-overview-section{margin-bottom:40px}
+.progress-bar-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:20px}
+.progress-bar-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-bar-label span{font-size:.88rem;font-weight:700;color:var(--text)}
+.progress-bar-label strong{color:var(--purple)}
+.progress-bar-outer{height:12px;background:#e8e8e8;border-radius:999px;overflow:hidden}
+.progress-bar-inner{height:100%;background:linear-gradient(90deg,var(--purple),#a855f7);border-radius:999px;transition:width .4s}
+.group-chips-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+.group-chip{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 16px;font-size:.82rem;font-weight:700;line-height:1.5}
+.group-chip .gc-title{color:var(--purple);font-size:.88rem;margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.group-chip .gc-sub{font-size:.75rem;color:var(--muted);font-weight:600}
+.group-chip.g4 .gc-title{color:#92400e}
+.attendance-table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:20px}
+.att-overview-table{border-collapse:collapse;font-size:.75rem;min-width:600px;width:100%}
+.att-overview-table th{background:var(--black);color:#fff;padding:7px 10px;text-align:center;font-weight:700;white-space:nowrap;font-size:.68rem;text-transform:uppercase;letter-spacing:.4px}
+.att-overview-table th.name-col{text-align:left;min-width:90px}
+.att-overview-table td{padding:6px 8px;border-bottom:1px solid #f0f0f0;text-align:center;white-space:nowrap}
+.att-overview-table td.name-col{text-align:left;font-weight:700;font-size:.8rem}
+.att-overview-table tr.group-row-hdr td{background:#f5f5f5;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:4px 10px;text-align:left}
+.att-cell-yes{color:#15803d;font-size:.85rem}
+.att-cell-no{color:#dc2626;font-size:.85rem;opacity:.7}
+.att-cell-blank{color:#ccc;font-size:.8rem}
+
+/* ── ADMIN NEW TABS ───────────────────────── */
+.players-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.players-table th{background:var(--black);color:#fff;padding:8px 10px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.4px}
+.players-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.players-table tr:hover td{background:#fafafa}
+.players-table .player-group-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.7rem;font-weight:800}
+.players-table .pgb-1{background:#e8f4fd;color:#1e40af}
+.players-table .pgb-2{background:#fef3c7;color:#92400e}
+.players-table .pgb-3{background:#fee2e2;color:#b91c1c}
+.players-table .pgb-4{background:#fef9c3;color:#78350f}
+.players-table .pgb-none{background:#f0f0f0;color:#666}
+.sessions-admin-list{display:flex;flex-direction:column;gap:6px}
+.session-admin-row{background:#fafafa;border:1px solid var(--border);border-radius:7px;padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s}
+.session-admin-row:hover{background:var(--purple-light)}
+.session-admin-row.completed{border-left:4px solid #16a34a}
+.session-admin-detail{display:none;background:#f9f9f9;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:0 0 8px 8px;padding:16px;margin-top:-4px;margin-bottom:8px}
+.session-admin-detail.open{display:block}
+.coaches-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.coaches-table th{background:var(--black);color:#fff;padding:8px 10px;text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.4px}
+.coaches-table td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.coaches-table tr:hover td{background:#fafafa}
+.add-coach-form{background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px}
+.admin-att-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-top:8px}
+.admin-att-item{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.8rem}
+.admin-att-item input[type=checkbox]{accent-color:var(--purple);width:14px;height:14px}
+
 </style>
 </head>
 <body>
@@ -426,6 +522,15 @@ footer strong{color:#fff}
     </div>
     <p class="conditioning-meet">📍 Meet at Carey Stadium Parking Lot at 4:45 PM</p>
     <p class="conditioning-sub">Click any session to sign up. Your name will be visible to the whole team.</p>
+    <div class="coach-login-bar" id="coach-login-bar">
+      <label>🔑 Coach?</label>
+      <input type="password" id="coach-pin-input" class="coach-pin-input" placeholder="PIN" maxlength="10" onkeydown="if(event.key==='Enter')coachLogin()" />
+      <button class="btn-coach-login" onclick="coachLogin()">Login</button>
+    </div>
+    <div class="coach-active-bar" id="coach-active-bar" style="display:none">
+      <span class="coach-active-name" id="coach-active-name">Coaching as: —</span>
+      <button class="btn-coach-signout" onclick="coachSignOut()">Sign Out</button>
+    </div>
     <div class="cond-name-row" id="cond-name-row">
       <span style="font-size:.85rem;color:#555">Signing up as:</span>
       <span id="cond-voter-display" style="font-weight:700;color:var(--purple)"></span>
@@ -440,6 +545,16 @@ footer strong{color:#fff}
     <div class="cond-minicamps">
       <div class="cond-minicamps-title">⚽ Mini Camps</div>
       <div class="cond-camp-grid" id="camp-grid"></div>
+    </div>
+  </section>
+
+  <!-- SUMMER OVERVIEW -->
+  <section class="summer-overview-section" id="summer-overview">
+    <div class="section-header">
+      <div class="section-title">📊 Summer Overview</div>
+    </div>
+    <div id="summer-overview-content">
+      <p style="font-size:.85rem;color:var(--muted)">Loading overview…</p>
     </div>
   </section>
 
@@ -599,6 +714,9 @@ footer strong{color:#fff}
           <button class="admin-tab" onclick="switchTab('schedule',this)">📅 Schedule</button>
           <button class="admin-tab" onclick="switchTab('announcements',this)">📢 News</button>
           <button class="admin-tab" onclick="switchTab('camps',this)">🏕️ Camps</button>
+          <button class="admin-tab" onclick="switchTab('players',this)">👥 Players</button>
+          <button class="admin-tab" onclick="switchTab('sessions',this)">📋 Sessions</button>
+          <button class="admin-tab" onclick="switchTab('coaches',this)">🔑 Coaches</button>
           <button class="admin-tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
         </div>
 
@@ -693,6 +811,35 @@ footer strong{color:#fff}
           </div>
         </div>
 
+        <!-- PLAYERS TAB -->
+        <div id="tab-players" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Manage player roster, test times, and group assignments.</p>
+          <div id="admin-players-list"></div>
+        </div>
+
+        <!-- SESSIONS TAB -->
+        <div id="tab-sessions" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Log workout data and attendance for each conditioning session.</p>
+          <div class="sessions-admin-list" id="admin-sessions-list"></div>
+        </div>
+
+        <!-- COACHES TAB -->
+        <div id="tab-coaches" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Manage coach PINs. Coaches can log sessions without full admin access.</p>
+          <div id="admin-coaches-list"></div>
+          <div class="add-coach-form">
+            <p style="font-weight:800;font-size:.88rem;margin-bottom:12px">➕ Add Coach</p>
+            <div class="form-row">
+              <div class="form-group"><label>Name</label><input type="text" id="new-coach-name" placeholder="Coach Smith"/></div>
+              <div class="form-group"><label>PIN</label><input type="text" id="new-coach-pin" placeholder="1234" maxlength="10"/></div>
+            </div>
+            <div class="form-group"><label>Role</label>
+              <select id="new-coach-role"><option value="coach">Coach</option><option value="owner">Owner</option></select>
+            </div>
+            <button class="btn-primary" onclick="adminAddCoach()">Add Coach</button>
+          </div>
+        </div>
+
         <!-- SETTINGS TAB -->
         <div id="tab-settings" class="tab-panel">
           <div style="max-width:340px">
@@ -712,6 +859,18 @@ footer strong{color:#fff}
     </div><!-- /modal-body -->
   </div><!-- /modal -->
 </div><!-- /modal-overlay -->
+
+<!-- ======= SESSION DETAIL MODAL ======= -->
+<div id="session-overlay" onclick="sessionOverlayClick(event)">
+  <div class="session-modal">
+    <div class="modal-header">
+      <h2 id="session-modal-title">📋 Session Details</h2>
+      <button class="modal-close" onclick="closeSessionModal()">✕</button>
+    </div>
+    <div class="modal-body" id="session-modal-body">
+    </div>
+  </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -937,29 +1096,88 @@ function renderCondGrid() {
   var grid = document.getElementById('cond-grid');
   if(!grid) return;
   var myName = getCondName();
-  grid.innerHTML = COND_SESSIONS.map(function(s) {
+  grid.innerHTML = '';
+  COND_SESSIONS.forEach(function(s) {
     var attendees = condData[s.id] || [];
     var isMine = myName && attendees.indexOf(myName) !== -1;
-    var chipsHtml = attendees.map(function(n) {
-      var mine = myName && n === myName;
-      return '<span class="cond-attendee-chip' + (mine?' mine':'') + '">'
-        + n
-        + (mine ? ' <button onclick="condLeave(\''+s.id+'\',\''+n.replace(/\'/g,'')+'\')" title="Remove me">✕</button>' : '')
-        + '</span>';
-    }).join('');
-    return '<div class="cond-card' + (isMine?' signed-up':'') + '">'
-      + '<div class="cond-day">'+s.day+'</div>'
-      + '<div class="cond-date">'+s.date+'</div>'
-      + '<div class="cond-time">5:00 – 6:00 PM &nbsp;·&nbsp; GA</div>'
-      + '<div class="cond-count">'+(attendees.length > 0 ? attendees.length+' player'+(attendees.length!==1?'s':'') : 'Be the first!')+'</div>'
-      + '<div class="cond-attendees">'+(chipsHtml||'<span style="color:#aaa;font-style:italic">No sign-ups yet</span>')+'</div>'
-      + (myName
-          ? '<button class="cond-signup-btn '+(isMine?'leave':'join')+'" onclick="cond'+(isMine?'Leave':'Join')+'(\''+s.id+'\',\''+myName.replace(/\'/g,'')+'\')">'
-            + (isMine ? '✓ I\'m Out' : '+ I\'m In')
-            + '</button>'
-          : '<div style="font-size:.72rem;color:#aaa;font-style:italic;text-align:center">Set your name above to sign up</div>')
-      + '</div>';
-  }).join('');
+    var log = sessionLogData[s.id];
+    var isLogged = log && log.completed;
+
+    var card = document.createElement('div');
+    card.className = 'cond-card' + (isMine ? ' signed-up' : '');
+
+    var dayDiv = document.createElement('div'); dayDiv.className = 'cond-day'; dayDiv.textContent = s.day;
+    var dateDiv = document.createElement('div'); dateDiv.className = 'cond-date'; dateDiv.textContent = s.date;
+    var timeDiv = document.createElement('div'); timeDiv.className = 'cond-time';
+    timeDiv.innerHTML = '5:00 – 6:00 PM  ·  GA';
+    card.appendChild(dayDiv); card.appendChild(dateDiv); card.appendChild(timeDiv);
+
+    if(isLogged) {
+      var badge = document.createElement('span'); badge.className = 'session-logged-badge';
+      badge.textContent = '✅ Logged';
+      card.appendChild(badge);
+    }
+
+    var countDiv = document.createElement('div'); countDiv.className = 'cond-count';
+    countDiv.textContent = attendees.length > 0
+      ? attendees.length + ' player' + (attendees.length !== 1 ? 's' : '')
+      : 'Be the first!';
+    card.appendChild(countDiv);
+
+    var attsDiv = document.createElement('div'); attsDiv.className = 'cond-attendees';
+    if(attendees.length) {
+      attendees.forEach(function(n) {
+        var mine = myName && n === myName;
+        var chip = document.createElement('span');
+        chip.className = 'cond-attendee-chip' + (mine ? ' mine' : '');
+        chip.textContent = n;
+        if(mine) {
+          var rmBtn = document.createElement('button');
+          rmBtn.title = 'Remove me'; rmBtn.textContent = '✕';
+          rmBtn.setAttribute('data-sid', s.id); rmBtn.setAttribute('data-n', n);
+          rmBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            condLeave(this.getAttribute('data-sid'), this.getAttribute('data-n'));
+          });
+          chip.appendChild(rmBtn);
+        }
+        attsDiv.appendChild(chip);
+      });
+    } else {
+      attsDiv.innerHTML = '<span style="color:#aaa;font-style:italic">No sign-ups yet</span>';
+    }
+    card.appendChild(attsDiv);
+
+    if(myName) {
+      var signBtn = document.createElement('button');
+      signBtn.className = 'cond-signup-btn ' + (isMine ? 'leave' : 'join');
+      signBtn.textContent = isMine ? '✓ I\'m Out' : '+ I\'m In';
+      signBtn.setAttribute('data-sid', s.id); signBtn.setAttribute('data-n', myName);
+      signBtn.setAttribute('data-mine', isMine ? '1' : '0');
+      signBtn.addEventListener('click', function() {
+        if(this.getAttribute('data-mine') === '1') condLeave(this.getAttribute('data-sid'), this.getAttribute('data-n'));
+        else condJoin(this.getAttribute('data-sid'), this.getAttribute('data-n'));
+      });
+      card.appendChild(signBtn);
+    } else {
+      var noNameDiv = document.createElement('div');
+      noNameDiv.style.cssText = 'font-size:.72rem;color:#aaa;font-style:italic;text-align:center';
+      noNameDiv.textContent = 'Set your name above to sign up';
+      card.appendChild(noNameDiv);
+    }
+
+    var detBtn = document.createElement('button');
+    detBtn.className = 'btn-details';
+    detBtn.textContent = '📋 Details';
+    detBtn.setAttribute('data-sid', s.id);
+    detBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      openSessionDetail(this.getAttribute('data-sid'));
+    });
+    card.appendChild(detBtn);
+
+    grid.appendChild(card);
+  });
 }
 function condJoin(sessionId, name) {
   if(!name){showToast('Set your name first.'); return;}
@@ -1034,6 +1252,485 @@ function renderCampGrid() {
   }).join('');
 }
 
+// ===================== PLAYER ROSTER =====================
+const PLAYERS = [
+  {name:'John',   testTime:'5:32', testSecs:332, group:4},
+  {name:'Liam',   testTime:'5:35', testSecs:335, group:4},
+  {name:'Tucker', testTime:'5:40', testSecs:340, group:4},
+  {name:'Cullen', testTime:'5:54', testSecs:354, group:4},
+  {name:'Grayson',testTime:'6:00', testSecs:360, group:1},
+  {name:'Oliver', testTime:'6:03', testSecs:363, group:1, isGuest:true},
+  {name:'Miles',  testTime:'6:18', testSecs:378, group:1},
+  {name:'Tyler',  testTime:'6:33', testSecs:393, group:2},
+  {name:'Dylan',  testTime:null, testSecs:null, group:null},
+  {name:'Nathan', testTime:null, testSecs:null, group:null},
+  {name:'Evan',   testTime:null, testSecs:null, group:null},
+  {name:'Mithul', testTime:null, testSecs:null, group:null},
+  {name:'Riley',  testTime:null, testSecs:null, group:null},
+  {name:'Wesley', testTime:null, testSecs:null, group:null},
+  {name:'Pedro',  testTime:null, testSecs:null, group:null},
+  {name:'Gavin',  testTime:null, testSecs:null, group:null},
+  {name:'Mason',  testTime:null, testSecs:null, group:null},
+  {name:'Kullen', testTime:null, testSecs:null, group:null},
+  {name:'Connor', testTime:null, testSecs:null, group:null},
+  {name:'Elijah', testTime:null, testSecs:null, group:null},
+  {name:'Lance',  testTime:null, testSecs:null, group:null},
+  {name:'Ishy',   testTime:null, testSecs:null, group:null}
+];
+
+const GROUP_TARGETS = {
+  1: {tue:510, thu:242},
+  2: {tue:475, thu:225},
+  3: {tue:440, thu:210},
+  4: {tue:550, thu:260}
+};
+
+// ─── Global vars for new features ───
+let sessionLogData = {};
+let coachesData = {};
+let openSessionId = null;
+let coachName = sessionStorage.getItem('f6ad_coach') || '';
+
+// ===================== COACH LOGIN =====================
+function coachLogin() {
+  var pin = document.getElementById('coach-pin-input').value.trim();
+  if(!pin) { showToast('Enter your PIN.'); return; }
+  var found = null;
+  Object.keys(coachesData).forEach(function(id) {
+    if(coachesData[id].pin === pin) found = coachesData[id];
+  });
+  if(!found) { showToast('PIN not recognized.'); return; }
+  coachName = found.name;
+  sessionStorage.setItem('f6ad_coach', coachName);
+  renderCoachBar();
+  showToast('Welcome, Coach ' + coachName + '!');
+}
+function coachSignOut() {
+  coachName = '';
+  sessionStorage.removeItem('f6ad_coach');
+  renderCoachBar();
+  // If session modal is open re-render it
+  if(openSessionId) renderSessionModalContent(openSessionId);
+  showToast('Signed out as coach.');
+}
+function isCoachLoggedIn() { return !!coachName; }
+function renderCoachBar() {
+  var loginBar = document.getElementById('coach-login-bar');
+  var activeBar = document.getElementById('coach-active-bar');
+  var activeName = document.getElementById('coach-active-name');
+  var pinInput = document.getElementById('coach-pin-input');
+  if(coachName) {
+    if(loginBar) loginBar.style.display = 'none';
+    if(activeBar) activeBar.style.display = 'flex';
+    if(activeName) activeName.textContent = 'Coaching as: ' + coachName;
+    if(pinInput) pinInput.value = '';
+  } else {
+    if(loginBar) loginBar.style.display = 'flex';
+    if(activeBar) activeBar.style.display = 'none';
+  }
+}
+
+// ===================== SESSION DETAIL MODAL =====================
+function openSessionDetail(sessionId) {
+  openSessionId = sessionId;
+  document.getElementById('session-overlay').classList.add('open');
+  renderSessionModalContent(sessionId);
+}
+function closeSessionModal() {
+  document.getElementById('session-overlay').classList.remove('open');
+  openSessionId = null;
+}
+function sessionOverlayClick(e) {
+  if(e.target === document.getElementById('session-overlay')) closeSessionModal();
+}
+function renderSessionModalContent(sessionId) {
+  var session = COND_SESSIONS.find(function(s){ return s.id === sessionId; });
+  if(!session) return;
+  var log = sessionLogData[sessionId] || null;
+  var isTue = session.day === 'Tuesday';
+  var dayType = isTue ? '2-min run (Tuesday)' : '1-min run (Thursday)';
+  var dayKey = isTue ? 'tue' : 'thu';
+  var canEdit = isAdminUnlocked() || isCoachLoggedIn();
+
+  var titleEl = document.getElementById('session-modal-title');
+  if(titleEl) titleEl.textContent = '📋 ' + session.date + ' — ' + session.day;
+
+  var body = document.getElementById('session-modal-body');
+  if(!body) return;
+  body.innerHTML = '';
+
+  // Day type info
+  var infoDiv = document.createElement('div');
+  infoDiv.style.cssText = 'font-size:.85rem;color:var(--muted);margin-bottom:14px';
+  infoDiv.innerHTML = '<strong>' + session.date + '</strong> &nbsp;·&nbsp; ' + dayType;
+  body.appendChild(infoDiv);
+
+  // Group targets table
+  var targHdr = document.createElement('p');
+  targHdr.style.cssText = 'font-weight:800;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px';
+  targHdr.textContent = 'Group Targets';
+  body.appendChild(targHdr);
+
+  var tbl = document.createElement('table');
+  tbl.className = 'session-targets-table';
+  var thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Group</th><th>Target Yards</th><th>Players</th></tr>';
+  tbl.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  [4,1,2,3].forEach(function(g) {
+    var targets = GROUP_TARGETS[g];
+    var yds = targets ? targets[dayKey] : '—';
+    var members = PLAYERS.filter(function(p){ return p.group === g; });
+    var tr = document.createElement('tr');
+    var label = 'Group ' + g + (g === 4 ? ' ⚡' : '');
+    tr.innerHTML = '<td><span class="group-badge' + (g===4?' g4':'') + '">' + label + '</span></td>'
+      + '<td style="font-weight:700;color:var(--purple)">' + yds + ' yd</td>'
+      + '<td style="font-size:.78rem;color:var(--muted)">' + members.map(function(p){return p.name;}).join(', ') + '</td>';
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  body.appendChild(tbl);
+
+  // Log data display
+  if(log) {
+    var logSection = document.createElement('div');
+    logSection.className = 'log-section';
+    var lh = document.createElement('h4');
+    lh.textContent = 'Workout Log';
+    logSection.appendChild(lh);
+    var statRow = document.createElement('div');
+    statRow.className = 'log-stat-row';
+    var stats = [
+      {val: log.blocks || '—', lbl: 'Blocks'},
+      {val: log.reps_per_block || '—', lbl: 'Reps/Block'},
+      {val: log.total_reps || '—', lbl: 'Total Reps'}
+    ];
+    stats.forEach(function(s) {
+      var st = document.createElement('div'); st.className = 'log-stat';
+      st.innerHTML = '<div class="ls-val">' + s.val + '</div><div class="ls-lbl">' + s.lbl + '</div>';
+      statRow.appendChild(st);
+    });
+    logSection.appendChild(statRow);
+    if(log.notes) {
+      var noteP = document.createElement('p');
+      noteP.style.cssText = 'font-size:.83rem;color:#444;line-height:1.5;margin-top:6px;background:#f5f0ff;padding:8px 10px;border-radius:6px';
+      noteP.textContent = log.notes;
+      logSection.appendChild(noteP);
+    }
+    if(log.logged_by) {
+      var byP = document.createElement('p');
+      byP.style.cssText = 'font-size:.72rem;color:var(--muted);margin-top:6px';
+      byP.textContent = 'Logged by: ' + log.logged_by;
+      logSection.appendChild(byP);
+    }
+    body.appendChild(logSection);
+  }
+
+  // Attendance grid
+  var attHdr = document.createElement('p');
+  attHdr.style.cssText = 'font-weight:800;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px';
+  attHdr.textContent = 'Attendance';
+  body.appendChild(attHdr);
+
+  var attGrid = document.createElement('div');
+  attGrid.className = 'attendance-grid';
+  var attendance = (log && log.attendance) ? log.attendance : {};
+  var sortedPlayers = PLAYERS.slice().sort(function(a,b) {
+    var ga = a.group || 99, gb = b.group || 99;
+    if(ga !== gb) return ga - gb;
+    return a.name.localeCompare(b.name);
+  });
+  var currentGroup = null;
+  sortedPlayers.forEach(function(p) {
+    var g = p.group || 0;
+    if(g !== currentGroup) {
+      currentGroup = g;
+      var hdr = document.createElement('div');
+      hdr.className = 'att-group-hdr';
+      hdr.textContent = g ? ('Group ' + g + (g===4?' ⚡':'')) : 'Untested';
+      attGrid.appendChild(hdr);
+    }
+    var row = document.createElement('div');
+    var present = attendance[p.name];
+    row.className = 'att-row' + (present === true ? ' present' : present === false ? ' absent' : '');
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'att-name';
+    nameSpan.textContent = p.name + (p.isGuest ? ' (guest)' : '');
+    row.appendChild(nameSpan);
+    var statusSpan = document.createElement('span');
+    statusSpan.className = 'att-status';
+    statusSpan.textContent = present === true ? '✓' : present === false ? '✗' : '—';
+    row.appendChild(statusSpan);
+    attGrid.appendChild(row);
+  });
+  body.appendChild(attGrid);
+
+  // Edit button for admin/coach
+  if(canEdit) {
+    var editBtn = document.createElement('button');
+    editBtn.className = 'btn-primary';
+    editBtn.style.marginTop = '10px';
+    editBtn.textContent = '✏️ Edit Session';
+    editBtn.setAttribute('data-sid', sessionId);
+    editBtn.addEventListener('click', function() {
+      renderSessionEditForm(this.getAttribute('data-sid'));
+    });
+    body.appendChild(editBtn);
+  }
+}
+
+function renderSessionEditForm(sessionId) {
+  var body = document.getElementById('session-modal-body');
+  if(!body) return;
+  var session = COND_SESSIONS.find(function(s){ return s.id === sessionId; });
+  var log = sessionLogData[sessionId] || {};
+  var isTue = session.day === 'Tuesday';
+  var dayKey = isTue ? 'tue' : 'thu';
+  var attendance = log.attendance || {};
+
+  body.innerHTML = '';
+
+  var formDiv = document.createElement('div');
+
+  // Blocks input
+  var blocksGroup = document.createElement('div'); blocksGroup.className = 'log-field';
+  var blocksLabel = document.createElement('label'); blocksLabel.textContent = 'Blocks (sets)';
+  var blocksInput = document.createElement('input'); blocksInput.type = 'number';
+  blocksInput.id = 'edit-blocks'; blocksInput.min = '1'; blocksInput.max = '20';
+  blocksInput.value = log.blocks || '';
+  blocksGroup.appendChild(blocksLabel); blocksGroup.appendChild(blocksInput);
+  formDiv.appendChild(blocksGroup);
+
+  // Reps per block
+  var repsGroup = document.createElement('div'); repsGroup.className = 'log-field';
+  var repsLabel = document.createElement('label'); repsLabel.textContent = 'Reps per Block';
+  var repsInput = document.createElement('input'); repsInput.type = 'number';
+  repsInput.id = 'edit-reps'; repsInput.min = '1'; repsInput.max = '50';
+  repsInput.value = log.reps_per_block || '';
+  repsGroup.appendChild(repsLabel); repsGroup.appendChild(repsInput);
+  formDiv.appendChild(repsGroup);
+
+  // Total reps (auto-calc display)
+  var totalGroup = document.createElement('div'); totalGroup.className = 'log-field';
+  var totalLabel = document.createElement('label'); totalLabel.textContent = 'Total Reps (auto-calculated)';
+  var totalInput = document.createElement('input'); totalInput.type = 'number';
+  totalInput.id = 'edit-total-reps'; totalInput.readOnly = true;
+  totalInput.style.background = '#f5f5f5';
+  totalInput.value = log.total_reps || '';
+  function recalcTotal() {
+    var b = parseInt(blocksInput.value) || 0;
+    var r = parseInt(repsInput.value) || 0;
+    totalInput.value = b && r ? b * r : '';
+  }
+  blocksInput.addEventListener('input', recalcTotal);
+  repsInput.addEventListener('input', recalcTotal);
+  totalGroup.appendChild(totalLabel); totalGroup.appendChild(totalInput);
+  formDiv.appendChild(totalGroup);
+
+  // Notes
+  var notesGroup = document.createElement('div'); notesGroup.className = 'log-field';
+  var notesLabel = document.createElement('label'); notesLabel.textContent = 'Notes';
+  var notesInput = document.createElement('textarea');
+  notesInput.id = 'edit-notes'; notesInput.placeholder = 'e.g. Humid day, strong effort';
+  notesInput.value = log.notes || '';
+  notesGroup.appendChild(notesLabel); notesGroup.appendChild(notesInput);
+  formDiv.appendChild(notesGroup);
+
+  // Attendance checkboxes
+  var attHdr = document.createElement('p');
+  attHdr.style.cssText = 'font-weight:800;font-size:.82rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:14px 0 6px';
+  attHdr.textContent = 'Attendance';
+  formDiv.appendChild(attHdr);
+
+  var attWrapper = document.createElement('div');
+  attWrapper.className = 'admin-att-grid';
+
+  var sortedPlayers = PLAYERS.slice().sort(function(a,b) {
+    var ga = a.group || 99, gb = b.group || 99;
+    if(ga !== gb) return ga - gb;
+    return a.name.localeCompare(b.name);
+  });
+
+  sortedPlayers.forEach(function(p) {
+    var item = document.createElement('div'); item.className = 'admin-att-item';
+    var cb = document.createElement('input'); cb.type = 'checkbox';
+    cb.id = 'att-cb-' + p.name.replace(/\s/g,'_');
+    cb.checked = attendance[p.name] === true;
+    var lbl = document.createElement('label'); lbl.htmlFor = cb.id;
+    lbl.textContent = p.name + (p.isGuest ? '*' : '');
+    lbl.style.cssText = 'flex:1;cursor:pointer';
+    item.appendChild(cb); item.appendChild(lbl);
+    attWrapper.appendChild(item);
+  });
+  formDiv.appendChild(attWrapper);
+
+  // Buttons row
+  var btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:10px;margin-top:16px;flex-wrap:wrap';
+
+  var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary';
+  saveBtn.textContent = '💾 Save Log';
+  saveBtn.addEventListener('click', function() {
+    saveSessionLog(sessionId);
+  });
+
+  var cancelBtn = document.createElement('button'); cancelBtn.className = 'btn-edit';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', function() {
+    renderSessionModalContent(sessionId);
+  });
+
+  btnRow.appendChild(saveBtn); btnRow.appendChild(cancelBtn);
+  formDiv.appendChild(btnRow);
+  body.appendChild(formDiv);
+}
+
+function saveSessionLog(sessionId) {
+  var blocks = parseInt(document.getElementById('edit-blocks').value) || null;
+  var reps = parseInt(document.getElementById('edit-reps').value) || null;
+  var total = blocks && reps ? blocks * reps : null;
+  var notes = document.getElementById('edit-notes').value.trim();
+
+  var attendance = {};
+  PLAYERS.forEach(function(p) {
+    var cb = document.getElementById('att-cb-' + p.name.replace(/\s/g,'_'));
+    if(cb) attendance[p.name] = cb.checked;
+  });
+
+  var logger = isAdminUnlocked() ? 'Admin' : coachName;
+  var data = {
+    completed: true,
+    attendance: attendance,
+    logged_by: logger,
+    logged_at: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  if(blocks !== null) data.blocks = blocks;
+  if(reps !== null) data.reps_per_block = reps;
+  if(total !== null) data.total_reps = total;
+  if(notes) data.notes = notes;
+
+  db.collection('session_log').doc(sessionId).set(data, {merge:true})
+    .then(function() {
+      showToast('Session log saved ✓');
+      renderSessionModalContent(sessionId);
+    })
+    .catch(function(e) { showToast('Error: ' + e.message); });
+}
+
+// ===================== SUMMER OVERVIEW =====================
+function renderSummerOverview() {
+  var container = document.getElementById('summer-overview-content');
+  if(!container) return;
+  container.innerHTML = '';
+
+  var completedCount = COND_SESSIONS.filter(function(s) {
+    return sessionLogData[s.id] && sessionLogData[s.id].completed;
+  }).length;
+  var total = COND_SESSIONS.length;
+
+  // Progress bar
+  var pbWrap = document.createElement('div'); pbWrap.className = 'progress-bar-wrap';
+  var pbLabel = document.createElement('div'); pbLabel.className = 'progress-bar-label';
+  var pbText = document.createElement('span');
+  pbText.innerHTML = 'Sessions Completed: <strong>' + completedCount + ' / ' + total + '</strong>';
+  var pbPct = document.createElement('span');
+  pbPct.style.cssText = 'font-size:.82rem;color:var(--muted)';
+  pbPct.textContent = Math.round(completedCount/total*100) + '%';
+  pbLabel.appendChild(pbText); pbLabel.appendChild(pbPct);
+  var pbOuter = document.createElement('div'); pbOuter.className = 'progress-bar-outer';
+  var pbInner = document.createElement('div'); pbInner.className = 'progress-bar-inner';
+  pbInner.style.width = Math.round(completedCount/total*100) + '%';
+  pbOuter.appendChild(pbInner);
+  pbWrap.appendChild(pbLabel); pbWrap.appendChild(pbOuter);
+  container.appendChild(pbWrap);
+
+  // Group chips
+  var chipsRow = document.createElement('div'); chipsRow.className = 'group-chips-row';
+  [4,1,2,3].forEach(function(g) {
+    var members = PLAYERS.filter(function(p){ return p.group === g; });
+    if(!members.length) return;
+    var targets = GROUP_TARGETS[g];
+    var chip = document.createElement('div');
+    chip.className = 'group-chip' + (g===4?' g4':'');
+    var titleDiv = document.createElement('div'); titleDiv.className = 'gc-title';
+    titleDiv.innerHTML = 'Group ' + g + (g===4?' ⚡':'') + ' <span style="font-size:.72rem;font-weight:600;color:var(--muted)">' + members.length + ' players</span>';
+    var subDiv = document.createElement('div'); subDiv.className = 'gc-sub';
+    subDiv.textContent = targets.tue + 'yd Tue · ' + targets.thu + 'yd Thu';
+    chip.appendChild(titleDiv); chip.appendChild(subDiv);
+    chipsRow.appendChild(chip);
+  });
+  // Untested chip
+  var untested = PLAYERS.filter(function(p){ return !p.group; });
+  if(untested.length) {
+    var chip = document.createElement('div'); chip.className = 'group-chip';
+    var titleDiv = document.createElement('div'); titleDiv.className = 'gc-title';
+    titleDiv.textContent = 'Untested — ' + untested.length + ' players';
+    chip.appendChild(titleDiv);
+    chipsRow.appendChild(chip);
+  }
+  container.appendChild(chipsRow);
+
+  // Attendance table
+  var tableWrap = document.createElement('div'); tableWrap.className = 'attendance-table-wrap';
+  var tbl = document.createElement('table'); tbl.className = 'att-overview-table';
+
+  // Header row
+  var thead = document.createElement('thead');
+  var hrow = document.createElement('tr');
+  var th0 = document.createElement('th'); th0.className = 'name-col'; th0.textContent = 'Player';
+  hrow.appendChild(th0);
+  COND_SESSIONS.forEach(function(s) {
+    var th = document.createElement('th');
+    var parts = s.date.split(', ')[0]; // "Jun 9"
+    var abbr = parts.replace(' ', ' '); // non-breaking space
+    th.textContent = abbr;
+    th.title = s.date + ' (' + s.day + ')';
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  tbl.appendChild(thead);
+
+  var tbody = document.createElement('tbody');
+  var sortedByGroup = PLAYERS.slice().sort(function(a,b) {
+    var ga = a.group || 99, gb = b.group || 99;
+    if(ga !== gb) return ga - gb;
+    return a.name.localeCompare(b.name);
+  });
+  var lastGroup = null;
+  sortedByGroup.forEach(function(p) {
+    var g = p.group || 0;
+    if(g !== lastGroup) {
+      lastGroup = g;
+      var hdrRow = document.createElement('tr'); hdrRow.className = 'group-row-hdr';
+      var hdrTd = document.createElement('td'); hdrTd.colSpan = COND_SESSIONS.length + 1;
+      hdrTd.textContent = g ? ('Group ' + g + (g===4?' ⚡':'')) : 'Untested';
+      hdrRow.appendChild(hdrTd);
+      tbody.appendChild(hdrRow);
+    }
+    var row = document.createElement('tr');
+    var nameTd = document.createElement('td'); nameTd.className = 'name-col';
+    nameTd.textContent = p.name + (p.isGuest ? '*' : '');
+    row.appendChild(nameTd);
+    COND_SESSIONS.forEach(function(s) {
+      var td = document.createElement('td');
+      var log = sessionLogData[s.id];
+      if(log && log.attendance && log.attendance[p.name] !== undefined) {
+        var present = log.attendance[p.name];
+        td.className = present ? 'att-cell-yes' : 'att-cell-no';
+        td.textContent = present ? '✓' : '✗';
+      } else {
+        td.className = 'att-cell-blank';
+        td.textContent = '—';
+      }
+      row.appendChild(td);
+    });
+    tbody.appendChild(row);
+  });
+  tbl.appendChild(tbody);
+  tableWrap.appendChild(tbl);
+  container.appendChild(tableWrap);
+}
+
 // ===================== LISTENERS =====================
 function startListeners() {
   ['fall','winter','spring','summer27'].forEach(season => {
@@ -1058,6 +1755,39 @@ function startListeners() {
     announcementItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderAnnouncements();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminAnnouncements();
+  });
+  db.collection('session_log').onSnapshot(function(snap) {
+    sessionLogData = {};
+    snap.forEach(function(doc) { sessionLogData[doc.id] = doc.data(); });
+    renderSummerOverview();
+    renderCondGrid();
+    if(openSessionId) renderSessionModalContent(openSessionId);
+    var adminPanel = document.getElementById('admin-panel');
+    if(adminPanel && adminPanel.style.display !== 'none') {
+      var tabSessions = document.getElementById('tab-sessions');
+      if(tabSessions && tabSessions.classList.contains('active')) renderAdminSessions();
+    }
+  });
+  db.collection('players').onSnapshot(function(snap) {
+    snap.forEach(function(doc) {
+      var p = PLAYERS.find(function(x){ return x.name === doc.id; });
+      if(p) Object.assign(p, doc.data());
+    });
+    renderSummerOverview();
+    var adminPanel = document.getElementById('admin-panel');
+    if(adminPanel && adminPanel.style.display !== 'none') {
+      var tabPlayers = document.getElementById('tab-players');
+      if(tabPlayers && tabPlayers.classList.contains('active')) renderAdminPlayers();
+    }
+  });
+  db.collection('coaches').onSnapshot(function(snap) {
+    coachesData = {};
+    snap.forEach(function(doc) { coachesData[doc.id] = doc.data(); });
+    var adminPanel = document.getElementById('admin-panel');
+    if(adminPanel && adminPanel.style.display !== 'none') {
+      var tabCoaches = document.getElementById('tab-coaches');
+      if(tabCoaches && tabCoaches.classList.contains('active')) renderAdminCoaches();
+    }
   });
 }
 
@@ -1817,8 +2547,11 @@ function showAdminPanel() {
 
 function switchTab(tab, btn) {
   if(tab==='camps') renderAdminCamps();
-  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  if(tab==='players') renderAdminPlayers();
+  if(tab==='sessions') renderAdminSessions();
+  if(tab==='coaches') renderAdminCoaches();
+  document.querySelectorAll('.admin-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   btn.classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
 }
@@ -1838,6 +2571,377 @@ function changePassword() {
 }
 
 
+// ===================== ADMIN PLAYERS =====================
+function renderAdminPlayers() {
+  var container = document.getElementById('admin-players-list');
+  if(!container) return;
+  container.innerHTML = '';
+
+  var tbl = document.createElement('table'); tbl.className = 'players-table';
+  var thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Name</th><th>Group</th><th>Test Time</th><th>Tue Target</th><th>Thu Target</th><th>Status</th><th></th></tr>';
+  tbl.appendChild(thead);
+  var tbody = document.createElement('tbody');
+
+  var sorted = PLAYERS.slice().sort(function(a,b) {
+    var ga = a.group||99, gb = b.group||99;
+    if(ga !== gb) return ga - gb;
+    return a.name.localeCompare(b.name);
+  });
+
+  sorted.forEach(function(p) {
+    var g = p.group;
+    var targets = g ? GROUP_TARGETS[g] : null;
+    var row = document.createElement('tr');
+
+    var nameTd = document.createElement('td');
+    nameTd.style.fontWeight = '700';
+    nameTd.textContent = p.name + (p.isGuest ? ' *' : '');
+    row.appendChild(nameTd);
+
+    var grpTd = document.createElement('td');
+    if(g) {
+      var badge = document.createElement('span');
+      badge.className = 'player-group-badge pgb-' + g;
+      badge.textContent = 'Group ' + g + (g===4?' ⚡':'');
+      grpTd.appendChild(badge);
+    } else {
+      grpTd.innerHTML = '<span class="player-group-badge pgb-none">Untested</span>';
+    }
+    row.appendChild(grpTd);
+
+    var timeTd = document.createElement('td');
+    timeTd.textContent = p.testTime || '—';
+    row.appendChild(timeTd);
+
+    var tueTd = document.createElement('td');
+    tueTd.textContent = targets ? targets.tue + 'yd' : '—';
+    row.appendChild(tueTd);
+
+    var thuTd = document.createElement('td');
+    thuTd.textContent = targets ? targets.thu + 'yd' : '—';
+    row.appendChild(thuTd);
+
+    var statusTd = document.createElement('td');
+    statusTd.innerHTML = g ? '<span style="color:#15803d;font-weight:700">✓ Placed</span>' : '<span style="color:#d97706;font-weight:700">⏳ Pending test</span>';
+    row.appendChild(statusTd);
+
+    var actTd = document.createElement('td');
+    var editBtn = document.createElement('button'); editBtn.className = 'btn-edit';
+    editBtn.style.cssText = 'padding:4px 10px;font-size:.72rem';
+    editBtn.textContent = 'Edit';
+    editBtn.setAttribute('data-pname', p.name);
+    editBtn.addEventListener('click', function() { openPlayerEdit(this.getAttribute('data-pname'), row); });
+    actTd.appendChild(editBtn);
+    row.appendChild(actTd);
+
+    tbody.appendChild(row);
+  });
+  tbl.appendChild(tbody);
+  container.appendChild(tbl);
+}
+
+function openPlayerEdit(playerName, row) {
+  var p = PLAYERS.find(function(x){ return x.name === playerName; });
+  if(!p) return;
+  // Insert edit row after this row
+  var existingEdit = document.getElementById('player-edit-row');
+  if(existingEdit) existingEdit.remove();
+
+  var editRow = document.createElement('tr');
+  editRow.id = 'player-edit-row';
+  var editTd = document.createElement('td'); editTd.colSpan = 7;
+  editTd.style.cssText = 'background:var(--purple-light);padding:14px;';
+
+  var editDiv = document.createElement('div');
+  editDiv.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end';
+
+  // Group select
+  var grpDiv = document.createElement('div');
+  var grpLbl = document.createElement('label'); grpLbl.textContent = 'Group';
+  grpLbl.style.cssText = 'display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:3px';
+  var grpSel = document.createElement('select'); grpSel.id = 'pe-group';
+  grpSel.style.cssText = 'border:2px solid var(--purple);border-radius:6px;padding:6px 10px;font-size:.85rem;font-family:inherit';
+  [['','Untested'],['1','Group 1'],['2','Group 2'],['3','Group 3'],['4','Group 4 ⚡']].forEach(function(opt) {
+    var o = document.createElement('option'); o.value = opt[0]; o.textContent = opt[1];
+    if((p.group||'').toString() === opt[0]) o.selected = true;
+    grpSel.appendChild(o);
+  });
+  grpDiv.appendChild(grpLbl); grpDiv.appendChild(grpSel);
+  editDiv.appendChild(grpDiv);
+
+  // Test time input
+  var timeDiv = document.createElement('div');
+  var timeLbl = document.createElement('label'); timeLbl.textContent = 'Test Time (mm:ss)';
+  timeLbl.style.cssText = 'display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:3px';
+  var timeInp = document.createElement('input'); timeInp.type = 'text';
+  timeInp.id = 'pe-time'; timeInp.placeholder = '6:15';
+  timeInp.value = p.testTime || '';
+  timeInp.style.cssText = 'border:2px solid var(--purple);border-radius:6px;padding:6px 10px;font-size:.85rem;font-family:inherit;width:90px';
+  timeDiv.appendChild(timeLbl); timeDiv.appendChild(timeInp);
+  editDiv.appendChild(timeDiv);
+
+  // Auto-assign checkbox
+  var autoDiv = document.createElement('div');
+  autoDiv.style.cssText = 'display:flex;align-items:center;gap:6px;padding-bottom:6px';
+  var autoCb = document.createElement('input'); autoCb.type = 'checkbox';
+  autoCb.id = 'pe-auto'; autoCb.checked = true;
+  var autoLbl = document.createElement('label'); autoLbl.htmlFor = 'pe-auto';
+  autoLbl.textContent = 'Auto-assign group from time';
+  autoLbl.style.fontSize = '.82rem';
+  autoDiv.appendChild(autoCb); autoDiv.appendChild(autoLbl);
+  editDiv.appendChild(autoDiv);
+
+  // Buttons
+  var savePBtn = document.createElement('button'); savePBtn.className = 'btn-primary';
+  savePBtn.style.cssText = 'padding:7px 16px;font-size:.82rem';
+  savePBtn.textContent = 'Save';
+  savePBtn.setAttribute('data-pname', playerName);
+  savePBtn.addEventListener('click', function() {
+    savePlayerEdit(this.getAttribute('data-pname'));
+  });
+
+  var cancelPBtn = document.createElement('button'); cancelPBtn.className = 'btn-edit';
+  cancelPBtn.style.cssText = 'padding:7px 14px;font-size:.82rem';
+  cancelPBtn.textContent = 'Cancel';
+  cancelPBtn.addEventListener('click', function() {
+    var er = document.getElementById('player-edit-row');
+    if(er) er.remove();
+  });
+  editDiv.appendChild(savePBtn); editDiv.appendChild(cancelPBtn);
+  editTd.appendChild(editDiv);
+  editRow.appendChild(editTd);
+  row.parentNode.insertBefore(editRow, row.nextSibling);
+}
+
+function savePlayerEdit(playerName) {
+  var grpVal = document.getElementById('pe-group').value;
+  var timeVal = document.getElementById('pe-time').value.trim();
+  var autoAssign = document.getElementById('pe-auto').checked;
+
+  var group = grpVal ? parseInt(grpVal) : null;
+  var testTime = timeVal || null;
+  var testSecs = null;
+
+  if(timeVal) {
+    var parts = timeVal.split(':');
+    if(parts.length === 2) {
+      testSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      if(autoAssign) {
+        if(testSecs < 360) group = 4;
+        else if(testSecs <= 390) group = 1;
+        else if(testSecs <= 410) group = 2;
+        else group = 3;
+      }
+    }
+  }
+
+  var data = {group: group, testTime: testTime, testSecs: testSecs};
+  db.collection('players').doc(playerName).set(data, {merge: true})
+    .then(function() {
+      showToast(playerName + ' updated ✓');
+      var er = document.getElementById('player-edit-row'); if(er) er.remove();
+      renderAdminPlayers();
+    })
+    .catch(function(e) { showToast('Error: ' + e.message); });
+}
+
+// ===================== ADMIN SESSIONS =====================
+function renderAdminSessions() {
+  var container = document.getElementById('admin-sessions-list');
+  if(!container) return;
+  container.innerHTML = '';
+
+  COND_SESSIONS.forEach(function(s) {
+    var log = sessionLogData[s.id] || null;
+    var isCompleted = log && log.completed;
+    var attCount = log && log.attendance ? Object.values(log.attendance).filter(function(v){ return v; }).length : 0;
+
+    var rowWrap = document.createElement('div');
+
+    var row = document.createElement('div');
+    row.className = 'session-admin-row' + (isCompleted ? ' completed' : '');
+
+    var dateSpan = document.createElement('span');
+    dateSpan.style.cssText = 'font-weight:700;flex:1;font-size:.88rem';
+    dateSpan.textContent = s.date + ' (' + s.day + ')';
+    row.appendChild(dateSpan);
+
+    var statusSpan = document.createElement('span');
+    statusSpan.style.cssText = 'font-size:.78rem;' + (isCompleted ? 'color:#15803d;font-weight:700' : 'color:var(--muted)');
+    statusSpan.textContent = isCompleted ? '✅ Logged (' + attCount + ' present)' : '⚪ Not logged';
+    row.appendChild(statusSpan);
+
+    var editBtn = document.createElement('button');
+    editBtn.className = 'btn-edit';
+    editBtn.style.cssText = 'padding:4px 12px;font-size:.75rem';
+    editBtn.textContent = 'Edit';
+    editBtn.setAttribute('data-sid', s.id);
+    editBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var sid = this.getAttribute('data-sid');
+      var detail = document.getElementById('sadmin-detail-' + sid);
+      if(detail) detail.classList.toggle('open');
+    });
+    row.appendChild(editBtn);
+    rowWrap.appendChild(row);
+
+    // Inline edit detail
+    var detail = document.createElement('div');
+    detail.className = 'session-admin-detail';
+    detail.id = 'sadmin-detail-' + s.id;
+    buildAdminSessionDetail(detail, s.id, log);
+    rowWrap.appendChild(detail);
+
+    container.appendChild(rowWrap);
+  });
+}
+
+function buildAdminSessionDetail(container, sessionId, log) {
+  container.innerHTML = '';
+  var log2 = log || {};
+  var attendance = log2.attendance || {};
+
+  var session = COND_SESSIONS.find(function(x){ return x.id === sessionId; });
+  var isTue = session && session.day === 'Tuesday';
+
+  // Blocks / reps row
+  var fr = document.createElement('div'); fr.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px';
+  function numField(id, lbl, val, min, max) {
+    var d = document.createElement('div'); d.className = 'log-field'; d.style.flex = '1';
+    var l = document.createElement('label'); l.textContent = lbl;
+    var inp = document.createElement('input'); inp.type = 'number';
+    inp.id = id; inp.min = min; inp.max = max; inp.value = val || ''; inp.style.borderColor = 'var(--purple)';
+    d.appendChild(l); d.appendChild(inp);
+    return d;
+  }
+  var blocksF = numField('sadmin-blocks-'+sessionId, 'Blocks', log2.blocks, 1, 20);
+  var repsF = numField('sadmin-reps-'+sessionId, 'Reps/Block', log2.reps_per_block, 1, 50);
+  var totalF = numField('sadmin-total-'+sessionId, 'Total Reps (auto)', log2.total_reps, 0, 9999);
+  var totalInp = totalF.querySelector('input'); totalInp.readOnly = true; totalInp.style.background = '#eee';
+  var blocksInp = blocksF.querySelector('input');
+  var repsInp = repsF.querySelector('input');
+  function recalc() {
+    var b = parseInt(blocksInp.value)||0, r = parseInt(repsInp.value)||0;
+    totalInp.value = b && r ? b*r : '';
+  }
+  blocksInp.addEventListener('input', recalc); repsInp.addEventListener('input', recalc);
+  fr.appendChild(blocksF); fr.appendChild(repsF); fr.appendChild(totalF);
+  container.appendChild(fr);
+
+  // Notes
+  var notesD = document.createElement('div'); notesD.className = 'log-field'; notesD.style.marginBottom = '12px';
+  var notesL = document.createElement('label'); notesL.textContent = 'Notes';
+  var notesTA = document.createElement('textarea'); notesTA.id = 'sadmin-notes-'+sessionId;
+  notesTA.value = log2.notes || ''; notesTA.style.borderColor = 'var(--purple)';
+  notesD.appendChild(notesL); notesD.appendChild(notesTA);
+  container.appendChild(notesD);
+
+  // Attendance
+  var attHdr = document.createElement('p');
+  attHdr.style.cssText = 'font-weight:700;font-size:.82rem;margin-bottom:8px';
+  attHdr.textContent = 'Attendance (check = present)';
+  container.appendChild(attHdr);
+
+  var attWrap = document.createElement('div'); attWrap.className = 'admin-att-grid';
+  var sorted = PLAYERS.slice().sort(function(a,b) {
+    var ga = a.group||99, gb = b.group||99;
+    return ga !== gb ? ga-gb : a.name.localeCompare(b.name);
+  });
+  sorted.forEach(function(p) {
+    var item = document.createElement('div'); item.className = 'admin-att-item';
+    var cb = document.createElement('input'); cb.type = 'checkbox';
+    cb.id = 'satt-'+sessionId+'-'+p.name.replace(/\s/g,'_');
+    cb.checked = attendance[p.name] === true;
+    var lbl = document.createElement('label'); lbl.htmlFor = cb.id;
+    lbl.textContent = p.name; lbl.style.cssText = 'flex:1;cursor:pointer;font-size:.8rem';
+    item.appendChild(cb); item.appendChild(lbl);
+    attWrap.appendChild(item);
+  });
+  container.appendChild(attWrap);
+
+  // Save button
+  var saveBtnRow = document.createElement('div'); saveBtnRow.style.marginTop = '14px';
+  var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary';
+  saveBtn.textContent = '💾 Save';
+  saveBtn.setAttribute('data-sid', sessionId);
+  saveBtn.addEventListener('click', function() {
+    var sid = this.getAttribute('data-sid');
+    var blocks = parseInt(document.getElementById('sadmin-blocks-'+sid).value)||null;
+    var reps = parseInt(document.getElementById('sadmin-reps-'+sid).value)||null;
+    var total = blocks && reps ? blocks*reps : null;
+    var notes = document.getElementById('sadmin-notes-'+sid).value.trim();
+    var att = {};
+    PLAYERS.forEach(function(p) {
+      var cb2 = document.getElementById('satt-'+sid+'-'+p.name.replace(/\s/g,'_'));
+      if(cb2) att[p.name] = cb2.checked;
+    });
+    var data = {completed:true, attendance:att, logged_by:'Admin', logged_at:firebase.firestore.FieldValue.serverTimestamp()};
+    if(blocks) data.blocks = blocks;
+    if(reps) data.reps_per_block = reps;
+    if(total) data.total_reps = total;
+    if(notes) data.notes = notes;
+    db.collection('session_log').doc(sid).set(data, {merge:true})
+      .then(function(){ showToast('Session saved ✓'); })
+      .catch(function(e){ showToast('Error: '+e.message); });
+  });
+  saveBtnRow.appendChild(saveBtn);
+  container.appendChild(saveBtnRow);
+}
+
+// ===================== ADMIN COACHES =====================
+function renderAdminCoaches() {
+  var container = document.getElementById('admin-coaches-list');
+  if(!container) return;
+  var coaches = Object.keys(coachesData).map(function(id){ return Object.assign({id:id}, coachesData[id]); });
+  if(!coaches.length) {
+    container.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No coaches yet. Add one below.</p>';
+    return;
+  }
+  var tbl = document.createElement('table'); tbl.className = 'coaches-table';
+  var thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Name</th><th>Role</th><th>PIN</th><th>Actions</th></tr>';
+  tbl.appendChild(thead);
+  var tbody = document.createElement('tbody');
+  coaches.forEach(function(c) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td style="font-weight:700">' + c.name + '</td>'
+      + '<td><span style="background:' + (c.role==='owner'?'#fef3c7;color:#92400e':'#ede9fe;color:#5b21b6') + ';padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:800">' + (c.role||'coach').toUpperCase() + '</span></td>'
+      + '<td style="font-family:monospace;letter-spacing:2px">' + c.pin + '</td>'
+      + '<td></td>';
+    var delBtn = document.createElement('button'); delBtn.className = 'btn-danger';
+    delBtn.style.cssText = 'padding:4px 10px;font-size:.72rem';
+    delBtn.textContent = 'Remove';
+    delBtn.setAttribute('data-cid', c.id);
+    delBtn.addEventListener('click', function() {
+      if(!confirm('Remove coach ' + c.name + '?')) return;
+      db.collection('coaches').doc(this.getAttribute('data-cid')).delete()
+        .then(function(){ showToast('Coach removed.'); })
+        .catch(function(e){ showToast('Error: '+e.message); });
+    });
+    tr.cells[3].appendChild(delBtn);
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  container.innerHTML = '';
+  container.appendChild(tbl);
+}
+
+function adminAddCoach() {
+  var name = document.getElementById('new-coach-name').value.trim();
+  var pin = document.getElementById('new-coach-pin').value.trim();
+  var role = document.getElementById('new-coach-role').value;
+  if(!name || !pin) { showToast('Name and PIN are required.'); return; }
+  var id = name.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now();
+  db.collection('coaches').doc(id).set({name:name, pin:pin, role:role})
+    .then(function() {
+      document.getElementById('new-coach-name').value = '';
+      document.getElementById('new-coach-pin').value = '';
+      showToast('Coach ' + name + ' added ✓');
+    })
+    .catch(function(e){ showToast('Error: '+e.message); });
+}
+
 function showToast(msg) {
   var t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -1852,6 +2956,8 @@ document.addEventListener('DOMContentLoaded', function() {
   renderCondNameRow();
   renderCondGrid();
   renderCampGrid();
+  renderCoachBar();
+  renderSummerOverview();
   startCondListeners();
   renderConfirmedSummer();
   renderSummerGrid();
