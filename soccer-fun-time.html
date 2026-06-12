@@ -4396,6 +4396,9 @@ function gtRenderLive(view, gameId) {
     html += '<p style="font-size:.78rem;color:var(--muted);margin-top:18px"><strong>Unavailable:</strong> ' +
       outs.map(function(a){ return gtEsc(gtPlayerShort(a.player_id)) + (a.notes ? ' (' + gtEsc(a.notes) + ')' : ''); }).join(', ') + '</p>';
   }
+  if (canEdit) {
+    html += '<div style="margin-top:26px;text-align:right"><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
+  }
   view.innerHTML = html;
   // ticking clock
   if (!GT.clockTimer) {
@@ -4463,6 +4466,21 @@ function gtEndPeriod(gid) {
 }
 function gtStartNextPeriod(gid) {
   gtGameUpdate(gid, { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: firebase.firestore.FieldValue.serverTimestamp() });
+}
+function gtDeleteGame(gid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var n = GT.events.filter(function(e){ return e.game_id === gid; }).length;
+  if (!confirm('Delete ' + g.home_team + ' vs ' + g.away_team + ' and its ' + n + ' logged event(s)? This cannot be undone.')) return;
+  var batch = db.batch();
+  batch.delete(db.collection('gt_games').doc(gid));
+  GT.events.filter(function(e){ return e.game_id === gid; }).forEach(function(e){ batch.delete(db.collection('gt_events').doc(e.id)); });
+  GT.subs.filter(function(s){ return s.game_id === gid; }).forEach(function(s){ batch.delete(db.collection('gt_subs').doc(s.id)); });
+  GT.avail.filter(function(a){ return a.game_id === gid; }).forEach(function(a){ batch.delete(db.collection('gt_availability').doc(a.id)); });
+  batch.commit().then(function() {
+    showToast('Game deleted.');
+    gtGo('/gametracker');
+  }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtEndGame(gid) {
   var g = gtGame(gid); if (!g) return;
@@ -4679,7 +4697,8 @@ function gtRenderReview(view, gameId) {
   }
   html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="btn-primary" onclick="gtExportGame(\'' + g.id + '\')">📋 Copy Game Summary</button>' +
-    '<button class="gt-minibtn" style="padding:10px 16px" onclick="gtGo(\'/gametracker\')">← All Games</button></div>';
+    '<button class="gt-minibtn" style="padding:10px 16px" onclick="gtGo(\'/gametracker\')">← All Games</button>' +
+    (canEdit ? '<button class="gt-minibtn danger" style="padding:10px 16px;margin-left:auto" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button>' : '') + '</div>';
   view.innerHTML = html;
 }
 function gtExportGame(gid) {
