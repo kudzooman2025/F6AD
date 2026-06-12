@@ -916,6 +916,20 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
         </div>
       </div>
 
+      <!-- FIRST-TIME PASSWORD SETUP -->
+      <div id="admin-setup" style="display:none">
+        <div class="login-form">
+          <p style="font-weight:800;font-size:.92rem;margin-bottom:6px">🔐 Set Admin Password</p>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">No admin password is set on this device yet. Create one to unlock the admin panel.</p>
+          <label>New Password</label>
+          <input type="password" id="setup-pw-new" placeholder="At least 6 characters"/>
+          <label>Confirm Password</label>
+          <input type="password" id="setup-pw-confirm" onkeydown="if(event.key==='Enter')setupAdminPassword()"/>
+          <div class="login-error" id="setup-error">Error</div>
+          <button class="btn-primary" onclick="setupAdminPassword()">Set Password &amp; Unlock</button>
+        </div>
+      </div>
+
       <!-- ADMIN PANEL -->
       <div id="admin-panel" style="display:none">
         <div class="admin-tabs">
@@ -4076,7 +4090,7 @@ function gtRenderNew(view) {
       '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Venue</label>' +
       '<input type="text" id="gt-su-venue" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue) + '" placeholder="Kohler Field, Blue Bell"/></div></div>' +
       '<div class="gm-row" style="margin-top:14px"><div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Periods</label>' +
-      '<div class="gt-avail-toggle">' + [1, 2, 4].map(function(n){ return '<button class="' + (s.num_periods === n ? 'on-yes' : '') + '" onclick="gtSetupField(\'num_periods\',' + n + ');gtSetupCapture();gtRerender(true)">' + n + '</button>'; }).join('') + '</div></div>' +
+      '<div class="gt-avail-toggle">' + [1, 2, 3, 4].map(function(n){ return '<button class="' + (s.num_periods === n ? 'on-yes' : '') + '" onclick="gtSetupField(\'num_periods\',' + n + ');gtSetupCapture();gtRerender(true)">' + n + '</button>'; }).join('') + '</div></div>' +
       '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Minutes per period</label>' +
       '<input type="number" id="gt-su-dur" min="1" max="60" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + s.period_duration_minutes + '"/></div></div>';
   } else if (s.step === 2) {
