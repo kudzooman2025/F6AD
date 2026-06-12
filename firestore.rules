@@ -2,7 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // F6AD team site — allow read/write on all collections
-    // (votes_fall, votes_winter, votes_spring, votes_summer27, schedule, announcements)
+    // (votes_fall, votes_winter, votes_spring, votes_summer27, schedule, announcements,
+    //  session_log, players, coaches, and GameTracker: gt_rosters, gt_players, gt_games,
+    //  gt_availability, gt_events, gt_subs)
     match /{document=**} {
       allow read, write: if true;
     }
