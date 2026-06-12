@@ -1258,7 +1258,7 @@ function getSeasonCollection(s){ return s==='summer27'?'votes_summer27':'votes_'
 function getVoterName()    { return localStorage.getItem('f6ad_voter') || ''; }
 function saveVoterName(n)  { localStorage.setItem('f6ad_voter', n); }
 // ===================== AUTH (Firebase Authentication) =====================
-const OWNER_EMAIL = 'kudzooman@gmail.com';
+const OWNER_EMAILS = ['kudzooman@gmail.com', 'kudzooman@proton.me'];
 var authUser = null, authRole = null, authStaffName = '';
 var coachName = '';  // set from staff record after Firebase sign-in
 var staffData = {}, staffUnsub = null;
@@ -1278,7 +1278,7 @@ function navAuthClick(e) {
 }
 function isAdminUnlocked() { return authRole === 'admin'; }
 function isCoachLoggedIn() { return authRole === 'admin' || authRole === 'coach'; }
-function authIsOwner(u) { return !!u && u.email === OWNER_EMAIL && u.emailVerified; }
+function authIsOwner(u) { return !!u && OWNER_EMAILS.indexOf(u.email) >= 0 && u.emailVerified; }
 
 function authRefreshUI() {
   renderNavAuth();
@@ -1356,7 +1356,7 @@ function authSignIn(email, pw, errEl) {
   if (!email || !pw) { authShowErr(errEl, 'Enter email and password.'); return; }
   firebase.auth().signInWithEmailAndPassword(email, pw)
     .then(function(cred) {
-      if (cred.user.email === OWNER_EMAIL && !cred.user.emailVerified) {
+      if (OWNER_EMAILS.indexOf(cred.user.email) >= 0 && !cred.user.emailVerified) {
         cred.user.sendEmailVerification().catch(function(){});
         authShowErr(errEl, 'Verify your email first — a new verification link was just sent. Click it, then sign in again.');
         return firebase.auth().signOut();
@@ -1371,7 +1371,7 @@ function authCreateAccount(email, pw, errEl) {
   firebase.auth().createUserWithEmailAndPassword(email, pw)
     .then(function(cred) {
       cred.user.sendEmailVerification().catch(function(){});
-      if (cred.user.email === OWNER_EMAIL) {
+      if (OWNER_EMAILS.indexOf(cred.user.email) >= 0) {
         authShowErr(errEl, 'Account created! Check your inbox for a verification link, then sign in.');
         return firebase.auth().signOut();
       }

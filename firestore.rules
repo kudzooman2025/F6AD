@@ -8,7 +8,7 @@ service cloud.firestore {
     // Site owner: verified email match (bootstrap — works before any staff docs exist)
     function isOwner() {
       return signedIn()
-        && request.auth.token.email == 'kudzooman@gmail.com'
+        && request.auth.token.email in ['kudzooman@gmail.com', 'kudzooman@proton.me']
         && request.auth.token.email_verified == true;
     }
     // Staff: has a record in the staff collection (created by an admin)
