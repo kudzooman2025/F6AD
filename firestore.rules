@@ -1,12 +1,58 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // F6AD team site — allow read/write on all collections
-    // (votes_fall, votes_winter, votes_spring, votes_summer27, schedule, announcements,
-    //  session_log, players, coaches, and GameTracker: gt_rosters, gt_players, gt_games,
-    //  gt_availability, gt_events, gt_subs)
-    match /{document=**} {
-      allow read, write: if true;
+
+    function signedIn() {
+      return request.auth != null;
     }
+    // Site owner: verified email match (bootstrap — works before any staff docs exist)
+    function isOwner() {
+      return signedIn()
+        && request.auth.token.email == 'kudzooman@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+    // Staff: has a record in the staff collection (created by an admin)
+    function isStaff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/staff/$(request.auth.uid));
+    }
+    function isAdmin() {
+      return isOwner()
+        || (isStaff()
+            && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    // Staff directory: users can read their own record; admins manage all
+    match /staff/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ---- Public family features (no account needed) ----
+    match /votes_fall/{doc}     { allow read, write: if true; }
+    match /votes_winter/{doc}   { allow read, write: if true; }
+    match /votes_spring/{doc}   { allow read, write: if true; }
+    match /votes_summer27/{doc} { allow read, write: if true; }
+    match /conditioning/{doc}   { allow read, write: if true; }
+
+    // ---- Team content: public read, admin write ----
+    match /schedule/{doc}      { allow read: if true; allow write: if isAdmin(); }
+    match /announcements/{doc} { allow read: if true; allow write: if isAdmin(); }
+
+    // ---- Coach-managed data: public read, staff write ----
+    match /players/{doc}     { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /session_log/{doc} { allow read: if true; allow write: if isStaff() || isAdmin(); }
+
+    // ---- GameTracker: public read (parents), staff write ----
+    match /gt_rosters/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /gt_players/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /gt_games/{doc}        { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /gt_availability/{doc} { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /gt_events/{doc}       { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /gt_subs/{doc}         { allow read: if true; allow write: if isStaff() || isAdmin(); }
+
+    // ---- Legacy coach PIN collection: locked down, no longer used ----
+    match /coaches/{doc} { allow read, write: if isAdmin(); }
   }
 }

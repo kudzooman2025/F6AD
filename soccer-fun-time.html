@@ -723,9 +723,10 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
     <p class="conditioning-meet">📍 Meet at Carey Stadium Parking Lot at 4:45 PM</p>
     <p class="conditioning-sub">Click any session to sign up. Your name will be visible to the whole team.</p>
     <div class="coach-login-bar" id="coach-login-bar">
-      <label>🔑 Coach?</label>
-      <input type="password" id="coach-pin-input" class="coach-pin-input" placeholder="PIN" maxlength="10" onkeydown="if(event.key==='Enter')coachLogin()" />
-      <button class="btn-coach-login" onclick="coachLogin()">Login</button>
+      <label>🔑 Staff?</label>
+      <input type="text" id="coach-email-input" class="coach-pin-input" style="width:180px" placeholder="Email" />
+      <input type="password" id="coach-pin-input" class="coach-pin-input" style="width:120px" placeholder="Password" onkeydown="if(event.key==='Enter')coachLogin()" />
+      <button class="btn-coach-login" onclick="coachLogin()">Sign In</button>
     </div>
     <div class="coach-active-bar" id="coach-active-bar" style="display:none">
       <span class="coach-active-name" id="coach-active-name">Coaching as: —</span>
@@ -906,27 +907,20 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
     </div>
     <div class="modal-body">
 
-      <!-- LOGIN -->
+      <!-- STAFF SIGN-IN (Firebase Auth) -->
       <div id="admin-login">
         <div class="login-form">
-          <label>Admin Password</label>
-          <input type="password" id="admin-pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()"/>
+          <label>Email</label>
+          <input type="text" id="admin-email-input" placeholder="you@example.com"/>
+          <label style="margin-top:10px">Password</label>
+          <input type="password" id="admin-pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')tryLogin()"/>
           <div class="login-error" id="login-error">Incorrect password. Try again.</div>
-          <button class="btn-primary" onclick="tryLogin()">Unlock Admin</button>
-        </div>
-      </div>
-
-      <!-- FIRST-TIME PASSWORD SETUP -->
-      <div id="admin-setup" style="display:none">
-        <div class="login-form">
-          <p style="font-weight:800;font-size:.92rem;margin-bottom:6px">🔐 Set Admin Password</p>
-          <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px">No admin password is set on this device yet. Create one to unlock the admin panel.</p>
-          <label>New Password</label>
-          <input type="password" id="setup-pw-new" placeholder="At least 6 characters"/>
-          <label>Confirm Password</label>
-          <input type="password" id="setup-pw-confirm" onkeydown="if(event.key==='Enter')setupAdminPassword()"/>
-          <div class="login-error" id="setup-error">Error</div>
-          <button class="btn-primary" onclick="setupAdminPassword()">Set Password &amp; Unlock</button>
+          <button class="btn-primary" onclick="tryLogin()">Sign In</button>
+          <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+            <button class="t-notes-toggle" style="margin:0" onclick="adminCreateAccount()">First time? Create account</button>
+            <button class="t-notes-toggle" style="margin:0" onclick="authSendReset(document.getElementById('admin-email-input').value.trim())">Forgot password?</button>
+          </div>
+          <p style="font-size:.74rem;color:var(--muted);margin-top:12px">Staff sign-in. Creating an account does not grant access by itself — the team owner must add you as staff.</p>
         </div>
       </div>
 
@@ -1047,32 +1041,36 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
           <div class="sessions-admin-list" id="admin-sessions-list"></div>
         </div>
 
-        <!-- COACHES TAB -->
+        <!-- STAFF TAB -->
         <div id="tab-coaches" class="tab-panel">
-          <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Manage coach PINs. Coaches can log sessions without full admin access.</p>
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Manage staff accounts. Coaches can run GameTracker and log sessions; admins can also use this panel.</p>
           <div id="admin-coaches-list"></div>
           <div class="add-coach-form">
-            <p style="font-weight:800;font-size:.88rem;margin-bottom:12px">➕ Add Coach</p>
+            <p style="font-weight:800;font-size:.88rem;margin-bottom:12px">➕ Add Staff Account</p>
             <div class="form-row">
               <div class="form-group"><label>Name</label><input type="text" id="new-coach-name" placeholder="Coach Smith"/></div>
-              <div class="form-group"><label>PIN</label><input type="text" id="new-coach-pin" placeholder="1234" maxlength="10"/></div>
+              <div class="form-group"><label>Email</label><input type="text" id="new-coach-email" placeholder="coach@example.com"/></div>
             </div>
-            <div class="form-group"><label>Role</label>
-              <select id="new-coach-role"><option value="coach">Coach</option><option value="owner">Owner</option></select>
+            <div class="form-row">
+              <div class="form-group"><label>Temporary Password (8+ chars)</label><input type="text" id="new-coach-pin" placeholder="They can change it later"/></div>
+              <div class="form-group"><label>Role</label>
+                <select id="new-coach-role"><option value="coach">Coach</option><option value="admin">Admin</option></select>
+              </div>
             </div>
-            <button class="btn-primary" onclick="adminAddCoach()">Add Coach</button>
+            <button class="btn-primary" onclick="adminAddCoach()">Create Account</button>
+            <p style="font-size:.76rem;color:var(--muted);margin-top:8px">Share the email + temporary password with them. They sign in on the site and can use "Forgot password?" to set their own.</p>
           </div>
         </div>
 
         <!-- SETTINGS TAB -->
         <div id="tab-settings" class="tab-panel">
-          <div style="max-width:340px">
-            <p style="font-weight:800;font-size:.9rem;margin-bottom:14px">Change Admin Password</p>
-            <div class="form-group"><label>Current Password</label><input type="password" id="old-pw" /></div>
-            <div class="form-group"><label>New Password</label><input type="password" id="new-pw" /></div>
-            <div class="form-group"><label>Confirm New Password</label><input type="password" id="confirm-pw" /></div>
-            <button class="btn-primary" onclick="changePassword()">Update Password</button>
-            <p style="font-size:.78rem;color:var(--muted);margin-top:10px" id="pw-msg"></p>
+          <div style="max-width:400px">
+            <p style="font-weight:800;font-size:.9rem;margin-bottom:8px">Account</p>
+            <p style="font-size:.84rem;color:var(--muted);margin-bottom:14px" id="settings-account-line">—</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn-primary" onclick="authSendReset(authUser ? authUser.email : '')">Send Password Reset Email</button>
+              <button class="btn-edit" onclick="authSignOut();closeAdmin()">Sign Out</button>
+            </div>
           </div>
           <hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">
           <p style="font-weight:800;font-size:.9rem;margin-bottom:10px">Admin Actions</p>
@@ -1098,6 +1096,7 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 
 // ===================== FIREBASE =====================
@@ -1257,10 +1256,122 @@ function getSeasonTournaments(s){ return s==='fall'?FALL_TOURNAMENTS : s==='wint
 function getSeasonCollection(s){ return s==='summer27'?'votes_summer27':'votes_'+s; }
 function getVoterName()    { return localStorage.getItem('f6ad_voter') || ''; }
 function saveVoterName(n)  { localStorage.setItem('f6ad_voter', n); }
-function getAdminPw()      { return localStorage.getItem('f6ad_pw') || ''; }
-function saveAdminPw(p)    { localStorage.setItem('f6ad_pw', p); }
-function isAdminUnlocked() { return sessionStorage.getItem('f6ad_admin') === '1'; }
-function setAdminUnlocked(){ sessionStorage.setItem('f6ad_admin', '1'); }
+// ===================== AUTH (Firebase Authentication) =====================
+const OWNER_EMAIL = 'kudzooman@gmail.com';
+var authUser = null, authRole = null, authStaffName = '';
+var coachName = '';  // set from staff record after Firebase sign-in
+var staffData = {}, staffUnsub = null;
+function isAdminUnlocked() { return authRole === 'admin'; }
+function isCoachLoggedIn() { return authRole === 'admin' || authRole === 'coach'; }
+function authIsOwner(u) { return !!u && u.email === OWNER_EMAIL && u.emailVerified; }
+
+function authRefreshUI() {
+  renderCoachBar();
+  var overlay = document.getElementById('admin-overlay');
+  if (overlay && overlay.classList.contains('open')) {
+    if (authRole === 'admin') showAdminPanel();
+    else if (authRole === 'coach') closeAdmin();
+    else {
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('admin-login').style.display = '';
+    }
+  }
+  if (typeof gtRerender === 'function') gtRerender(true);
+}
+function subscribeStaff() {
+  if (staffUnsub) { staffUnsub(); staffUnsub = null; }
+  staffData = {};
+  if (authRole !== 'admin') return;
+  staffUnsub = db.collection('staff').onSnapshot(function(snap) {
+    staffData = {};
+    snap.forEach(function(d){ staffData[d.id] = d.data(); });
+    var adminPanel = document.getElementById('admin-panel');
+    if (adminPanel && adminPanel.style.display !== 'none') {
+      var tabCoaches = document.getElementById('tab-coaches');
+      if (tabCoaches && tabCoaches.classList.contains('active')) renderAdminCoaches();
+    }
+  }, function(){ /* permissions race during sign-out */ });
+}
+firebase.auth().onAuthStateChanged(function(u) {
+  authUser = u;
+  if (!u) {
+    authRole = null; authStaffName = ''; coachName = '';
+    subscribeStaff(); authRefreshUI();
+    return;
+  }
+  db.collection('staff').doc(u.uid).get().then(function(doc) {
+    if (doc.exists) {
+      authRole = doc.data().role === 'admin' ? 'admin' : 'coach';
+      authStaffName = doc.data().name || u.email;
+    } else if (authIsOwner(u)) {
+      authRole = 'admin'; authStaffName = 'Chris';
+      db.collection('staff').doc(u.uid).set({
+        name: 'Chris', email: u.email, role: 'admin',
+        created_at: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).catch(function(){});
+    } else {
+      authRole = null; authStaffName = '';
+    }
+    coachName = isCoachLoggedIn() ? authStaffName : '';
+    subscribeStaff(); authRefreshUI();
+  }).catch(function() {
+    if (authIsOwner(u)) { authRole = 'admin'; authStaffName = 'Chris'; }
+    else { authRole = null; authStaffName = ''; }
+    coachName = isCoachLoggedIn() ? authStaffName : '';
+    subscribeStaff(); authRefreshUI();
+  });
+});
+function authErrMsg(e) {
+  var c = e.code || '';
+  if (c.indexOf('user-not-found') >= 0 || c.indexOf('wrong-password') >= 0 || c.indexOf('invalid-credential') >= 0 || c.indexOf('invalid-login-credentials') >= 0) return 'Email or password incorrect.';
+  if (c.indexOf('too-many-requests') >= 0) return 'Too many attempts — wait a few minutes and try again.';
+  if (c.indexOf('operation-not-allowed') >= 0) return 'Email/password sign-in is not enabled in Firebase yet (see Authentication → Sign-in method).';
+  if (c.indexOf('email-already-in-use') >= 0) return 'That email already has an account.';
+  if (c.indexOf('invalid-email') >= 0) return 'Invalid email address.';
+  if (c.indexOf('weak-password') >= 0) return 'Password too weak — use at least 8 characters.';
+  if (c.indexOf('network') >= 0) return 'Network error — check your connection.';
+  return e.message || 'Sign-in failed.';
+}
+function authShowErr(errEl, msg) {
+  if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+  else showToast(msg);
+}
+function authSignIn(email, pw, errEl) {
+  if (!email || !pw) { authShowErr(errEl, 'Enter email and password.'); return; }
+  firebase.auth().signInWithEmailAndPassword(email, pw)
+    .then(function(cred) {
+      if (cred.user.email === OWNER_EMAIL && !cred.user.emailVerified) {
+        cred.user.sendEmailVerification().catch(function(){});
+        authShowErr(errEl, 'Verify your email first — a new verification link was just sent. Click it, then sign in again.');
+        return firebase.auth().signOut();
+      }
+      showToast('Signed in ✓');
+    })
+    .catch(function(e){ authShowErr(errEl, authErrMsg(e)); });
+}
+function authCreateAccount(email, pw, errEl) {
+  if (!email || !pw) { authShowErr(errEl, 'Enter email and password.'); return; }
+  if (pw.length < 8) { authShowErr(errEl, 'Password must be at least 8 characters.'); return; }
+  firebase.auth().createUserWithEmailAndPassword(email, pw)
+    .then(function(cred) {
+      cred.user.sendEmailVerification().catch(function(){});
+      if (cred.user.email === OWNER_EMAIL) {
+        authShowErr(errEl, 'Account created! Check your inbox for a verification link, then sign in.');
+        return firebase.auth().signOut();
+      }
+      showToast('Account created. Ask the team owner to add you as staff before you can manage anything.');
+    })
+    .catch(function(e){ authShowErr(errEl, authErrMsg(e)); });
+}
+function authSendReset(email) {
+  if (!email) { showToast('Enter your email first.'); return; }
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(function(){ showToast('Password reset email sent to ' + email); })
+    .catch(function(e){ showToast(authErrMsg(e)); });
+}
+function authSignOut() {
+  firebase.auth().signOut().then(function(){ showToast('Signed out.'); });
+}
 
 // ===================== SUMMER CONDITIONING =====================
 const COND_SESSIONS = [
@@ -1512,10 +1623,8 @@ const GROUP_TARGETS = {
 
 // ─── Global vars for new features ───
 let sessionLogData = {};
-let coachesData = {};
 let playerGroupEditMode = false;
 let openSessionId = null;
-let coachName = sessionStorage.getItem('f6ad_coach') || '';
 
 // ─── Attendance entry helper (backward-compat: old format=bool, new=object) ───
 function getAttEntry(att, name) {
@@ -1533,29 +1642,16 @@ function effectiveGroup(player, sessionId) {
   return player.group;
 }
 
-// ===================== COACH LOGIN =====================
+// ===================== COACH LOGIN (Firebase Auth) =====================
 function coachLogin() {
-  var pin = document.getElementById('coach-pin-input').value.trim();
-  if(!pin) { showToast('Enter your PIN.'); return; }
-  var found = null;
-  Object.keys(coachesData).forEach(function(id) {
-    if(coachesData[id].pin === pin) found = coachesData[id];
-  });
-  if(!found) { showToast('PIN not recognized.'); return; }
-  coachName = found.name;
-  sessionStorage.setItem('f6ad_coach', coachName);
-  renderCoachBar();
-  showToast('Welcome, Coach ' + coachName + '!');
+  var email = (document.getElementById('coach-email-input') || { value: '' }).value.trim();
+  var pw = (document.getElementById('coach-pin-input') || { value: '' }).value;
+  authSignIn(email, pw);
 }
 function coachSignOut() {
-  coachName = '';
-  sessionStorage.removeItem('f6ad_coach');
-  renderCoachBar();
-  // If session modal is open re-render it
+  authSignOut();
   if(openSessionId) renderSessionModalContent(openSessionId);
-  showToast('Signed out as coach.');
 }
-function isCoachLoggedIn() { return !!coachName; }
 function renderCoachBar() {
   var loginBar = document.getElementById('coach-login-bar');
   var activeBar = document.getElementById('coach-active-bar');
@@ -2161,15 +2257,6 @@ function startListeners() {
     if(adminPanel && adminPanel.style.display !== 'none') {
       var tabPlayers = document.getElementById('tab-players');
       if(tabPlayers && tabPlayers.classList.contains('active')) renderAdminPlayers();
-    }
-  });
-  db.collection('coaches').onSnapshot(function(snap) {
-    coachesData = {};
-    snap.forEach(function(doc) { coachesData[doc.id] = doc.data(); });
-    var adminPanel = document.getElementById('admin-panel');
-    if(adminPanel && adminPanel.style.display !== 'none') {
-      var tabCoaches = document.getElementById('tab-coaches');
-      if(tabCoaches && tabCoaches.classList.contains('active')) renderAdminCoaches();
     }
   });
 }
@@ -2899,7 +2986,9 @@ function signOut() {
 // ===================== ADMIN =====================
 function openAdmin() {
   document.getElementById('admin-overlay').classList.add('open');
-  if (isAdminUnlocked()) showAdminPanel();
+  if (isAdminUnlocked()) { showAdminPanel(); return; }
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('admin-login').style.display = '';
 }
 function closeAdmin() {
   document.getElementById('admin-overlay').classList.remove('open');
@@ -2909,51 +2998,32 @@ function overlayClick(e) {
 }
 
 function tryLogin() {
-  const stored = getAdminPw();
-  if (!stored) {
-    // No password set — redirect to setup
-    document.getElementById('admin-login').style.display = 'none';
-    document.getElementById('admin-setup').style.display = '';
-    return;
-  }
-  const pw = document.getElementById('admin-pw-input').value;
-  if (pw === stored) {
-    setAdminUnlocked();
-    document.getElementById('login-error').style.display = 'none';
-    document.getElementById('admin-pw-input').value = '';
-    showAdminPanel();
-  } else {
-    document.getElementById('login-error').style.display = 'block';
-  }
+  var errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  authSignIn(
+    document.getElementById('admin-email-input').value.trim(),
+    document.getElementById('admin-pw-input').value,
+    errEl
+  );
 }
 
-function setupAdminPassword() {
-  var np = document.getElementById('setup-pw-new').value.trim();
-  var cp = document.getElementById('setup-pw-confirm').value.trim();
-  var errEl = document.getElementById('setup-error');
+function adminCreateAccount() {
+  var errEl = document.getElementById('login-error');
   errEl.style.display = 'none';
-  if (np.length < 6) {
-    errEl.textContent = 'Password must be at least 6 characters.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (np !== cp) {
-    errEl.textContent = 'Passwords do not match. Try again.';
-    errEl.style.display = 'block';
-    return;
-  }
-  localStorage.setItem('f6ad_pw', np);
-  document.getElementById('setup-pw-new').value = '';
-  document.getElementById('setup-pw-confirm').value = '';
-  document.getElementById('admin-setup').style.display = 'none';
-  document.getElementById('admin-login').style.display = '';
-  setAdminUnlocked();
-  showAdminPanel();
+  authCreateAccount(
+    document.getElementById('admin-email-input').value.trim(),
+    document.getElementById('admin-pw-input').value,
+    errEl
+  );
 }
 
 function showAdminPanel() {
   document.getElementById('admin-login').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
+  var pwEl = document.getElementById('admin-pw-input');
+  if (pwEl) pwEl.value = '';
+  var acct = document.getElementById('settings-account-line');
+  if (acct && authUser) acct.textContent = 'Signed in as ' + authUser.email + (authStaffName ? ' (' + authStaffName + ')' : '');
   renderAdminSchedule();
   renderAdminAnnouncements();
   renderVoteTally();
@@ -2970,19 +3040,7 @@ function switchTab(tab, btn) {
   document.getElementById('tab-'+tab).classList.add('active');
 }
 
-function changePassword() {
-  const old = document.getElementById('old-pw').value;
-  const n = document.getElementById('new-pw').value;
-  const c = document.getElementById('confirm-pw').value;
-  const msg = document.getElementById('pw-msg');
-  if (old !== getAdminPw()) { msg.textContent = '❌ Current password incorrect.'; msg.style.color='#dc2626'; return; }
-  if (!n || n.length < 4) { msg.textContent = '❌ New password must be at least 4 characters.'; msg.style.color='#dc2626'; return; }
-  if (n !== c) { msg.textContent = '❌ Passwords do not match.'; msg.style.color='#dc2626'; return; }
-  saveAdminPw(n);
-  ['old-pw','new-pw','confirm-pw'].forEach(id => document.getElementById(id).value = '');
-  msg.textContent = '✅ Password updated!';
-  msg.style.color = '#16a34a';
-}
+
 
 
 // ===================== ADMIN PLAYERS =====================
@@ -3446,32 +3504,38 @@ function buildAdminSessionDetail(container, sessionId, log) {
 function renderAdminCoaches() {
   var container = document.getElementById('admin-coaches-list');
   if(!container) return;
-  var coaches = Object.keys(coachesData).map(function(id){ return Object.assign({id:id}, coachesData[id]); });
-  if(!coaches.length) {
-    container.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No coaches yet. Add one below.</p>';
+  var staff = Object.keys(staffData).map(function(id){ return Object.assign({id:id}, staffData[id]); });
+  if(!staff.length) {
+    container.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No staff accounts yet. Add one below.</p>';
     return;
   }
   var tbl = document.createElement('table'); tbl.className = 'coaches-table';
   var thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Name</th><th>Role</th><th>PIN</th><th>Actions</th></tr>';
+  thead.innerHTML = '<tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr>';
   tbl.appendChild(thead);
   var tbody = document.createElement('tbody');
-  coaches.forEach(function(c) {
+  staff.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }).forEach(function(c) {
     var tr = document.createElement('tr');
-    tr.innerHTML = '<td style="font-weight:700">' + c.name + '</td>'
-      + '<td><span style="background:' + (c.role==='owner'?'#fef3c7;color:#92400e':'#ede9fe;color:#5b21b6') + ';padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:800">' + (c.role||'coach').toUpperCase() + '</span></td>'
-      + '<td style="font-family:monospace;letter-spacing:2px">' + c.pin + '</td>'
-      + '<td></td>';
+    tr.innerHTML = '<td style="font-weight:700"></td><td style="font-size:.8rem"></td>'
+      + '<td><span style="background:' + (c.role==='admin'?'#fef3c7;color:#92400e':'#ede9fe;color:#5b21b6') + ';padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:800">' + (c.role==='admin'?'ADMIN':'COACH') + '</span></td>'
+      + '<td style="white-space:nowrap"></td>';
+    tr.cells[0].textContent = c.name || '—';
+    tr.cells[1].textContent = c.email || '—';
+    var resetBtn = document.createElement('button'); resetBtn.className = 'btn-edit';
+    resetBtn.style.cssText = 'padding:4px 10px;font-size:.72rem;margin-right:6px';
+    resetBtn.textContent = 'Reset PW';
+    resetBtn.addEventListener('click', function() { authSendReset(c.email); });
     var delBtn = document.createElement('button'); delBtn.className = 'btn-danger';
     delBtn.style.cssText = 'padding:4px 10px;font-size:.72rem';
     delBtn.textContent = 'Remove';
-    delBtn.setAttribute('data-cid', c.id);
     delBtn.addEventListener('click', function() {
-      if(!confirm('Remove coach ' + c.name + '?')) return;
-      db.collection('coaches').doc(this.getAttribute('data-cid')).delete()
-        .then(function(){ showToast('Coach removed.'); })
+      if(authUser && c.id === authUser.uid) { showToast("You can't remove your own staff access."); return; }
+      if(!confirm('Remove staff access for ' + (c.name || c.email) + '? Their sign-in will remain but they will lose all permissions.')) return;
+      db.collection('staff').doc(c.id).delete()
+        .then(function(){ showToast('Staff access removed.'); })
         .catch(function(e){ showToast('Error: '+e.message); });
     });
+    tr.cells[3].appendChild(resetBtn);
     tr.cells[3].appendChild(delBtn);
     tbody.appendChild(tr);
   });
@@ -3482,17 +3546,33 @@ function renderAdminCoaches() {
 
 function adminAddCoach() {
   var name = document.getElementById('new-coach-name').value.trim();
-  var pin = document.getElementById('new-coach-pin').value.trim();
+  var email = document.getElementById('new-coach-email').value.trim();
+  var pw = document.getElementById('new-coach-pin').value;
   var role = document.getElementById('new-coach-role').value;
-  if(!name || !pin) { showToast('Name and PIN are required.'); return; }
-  var id = name.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now();
-  db.collection('coaches').doc(id).set({name:name, pin:pin, role:role})
+  if(!name || !email || !pw) { showToast('Name, email, and temporary password are required.'); return; }
+  if(pw.length < 8) { showToast('Temporary password must be at least 8 characters.'); return; }
+  // Secondary app so creating the account doesn't sign the admin out
+  var sec;
+  try { sec = firebase.app('Secondary'); }
+  catch(e) { sec = firebase.initializeApp(firebaseConfig, 'Secondary'); }
+  sec.auth().createUserWithEmailAndPassword(email, pw)
+    .then(function(cred) {
+      return db.collection('staff').doc(cred.user.uid).set({
+        name: name, email: email, role: role,
+        created_at: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function(){ return sec.auth().signOut(); });
+    })
     .then(function() {
       document.getElementById('new-coach-name').value = '';
+      document.getElementById('new-coach-email').value = '';
       document.getElementById('new-coach-pin').value = '';
-      showToast('Coach ' + name + ' added ✓');
+      showToast(name + ' added as ' + role + ' ✓ Share their email + temporary password.');
     })
-    .catch(function(e){ showToast('Error: '+e.message); });
+    .catch(function(e) {
+      if((e.code||'').indexOf('email-already-in-use') >= 0) {
+        showToast('That email already has an account — have them sign in once, then add their staff record from the Firebase console (Authentication → copy UID → Firestore staff collection).');
+      } else showToast('Error: ' + authErrMsg(e));
+    });
 }
 
 function showToast(msg) {
@@ -3803,22 +3883,20 @@ function gtRenderNav() {
 // ---------- coach lock ----------
 function gtLockBanner() {
   if (gtCanEdit()) return '';
-  return '<div class="gt-lock"><span>🔑 <strong>View-only.</strong> Coaches: enter your PIN to manage games and rosters.</span>' +
-    '<input type="password" id="gt-pin" placeholder="PIN" maxlength="10" onkeydown="if(event.key===\'Enter\')gtCoachLogin()"/>' +
-    '<button onclick="gtCoachLogin()">Login</button></div>';
+  if (authUser) {
+    return '<div class="gt-lock"><span>🔒 <strong>View-only.</strong> Signed in as ' + gtEsc(authUser.email) + ' — this account has no staff access. Ask the team owner to add you.</span>' +
+      '<button onclick="authSignOut()">Sign Out</button></div>';
+  }
+  return '<div class="gt-lock"><span>🔑 <strong>View-only.</strong> Staff sign-in:</span>' +
+    '<input type="text" id="gt-email" placeholder="Email" style="width:180px"/>' +
+    '<input type="password" id="gt-pin" placeholder="Password" style="width:120px" onkeydown="if(event.key===\'Enter\')gtCoachLogin()"/>' +
+    '<button onclick="gtCoachLogin()">Sign In</button></div>';
 }
 function gtCoachLogin() {
-  var pin = (document.getElementById('gt-pin') || {}).value || '';
-  pin = pin.trim();
-  if (!pin) { showToast('Enter your PIN.'); return; }
-  var found = null;
-  Object.keys(coachesData).forEach(function(id) { if (coachesData[id].pin === pin) found = coachesData[id]; });
-  if (!found) { showToast('PIN not recognized.'); return; }
-  coachName = found.name;
-  sessionStorage.setItem('f6ad_coach', coachName);
-  renderCoachBar();
-  showToast('Welcome, Coach ' + coachName + '!');
-  gtRerender(true);
+  authSignIn(
+    (document.getElementById('gt-email') || { value: '' }).value.trim(),
+    (document.getElementById('gt-pin') || { value: '' }).value
+  );
 }
 
 // ---------- modal ----------
