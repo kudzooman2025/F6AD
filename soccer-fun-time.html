@@ -268,7 +268,9 @@ footer strong{color:#fff}
   .t-grid{grid-template-columns:1fr}
   .hero h2{font-size:1.7rem}
   .form-row{grid-template-columns:1fr}
-  nav a:not(.btn-admin):not(.nav-gt){display:none}
+  nav{gap:2px}
+  nav a{font-size:.64rem;padding:4px 6px;letter-spacing:.2px}
+  .btn-admin{padding:6px 10px;font-size:.7rem}
 }
 
 /* CONFIRMED SUMMER SECTION */
@@ -632,6 +634,8 @@ footer strong{color:#fff}
 }
 
 .nav-gt{color:#fff!important;border:1px solid var(--purple);border-radius:6px;background:rgba(123,47,212,.3)}
+nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
+
 </style>
 </head>
 <body>
@@ -641,10 +645,10 @@ footer strong{color:#fff}
   <div class="header-inner">
     <div class="logo"><span>⚽</span><h1>F6AD</h1></div>
     <nav>
-      <a href="#tournaments">Tournaments</a>
-      <a href="#schedule">Schedule</a>
-      <a href="#conditioning">Conditioning</a>
-      <a href="#announcements">News</a>
+      <a href="#/home" class="site-link" data-page="home">Home</a>
+      <a href="#/schedule" class="site-link" data-page="schedule">Schedule</a>
+      <a href="#/conditioning" class="site-link" data-page="conditioning">Conditioning</a>
+      <a href="#/tournaments" class="site-link" data-page="tournaments">Tournaments</a>
       <a href="#/gametracker" class="nav-gt">⚽ GameTracker</a>
       <button class="btn-signout" id="btn-signout" onclick="signOut()">Sign Out</button>
       <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
@@ -667,6 +671,16 @@ footer strong{color:#fff}
 
 <!-- MAIN -->
 <div class="container">
+  <!-- HOME QUICK LINKS -->
+  <section id="home-cards" style="margin-bottom:36px">
+    <div class="gt-bigbtns" style="margin-bottom:0">
+      <a class="gt-bigbtn" href="#/schedule"><span class="bb-icon">📅</span><span class="bb-label">Schedule</span><span class="bb-desc">Games, practices &amp; events</span></a>
+      <a class="gt-bigbtn" href="#/conditioning"><span class="bb-icon">🏃</span><span class="bb-label">Conditioning</span><span class="bb-desc">Summer sign-up &amp; progress</span></a>
+      <a class="gt-bigbtn" href="#/tournaments"><span class="bb-icon">🗳️</span><span class="bb-label">Tournaments</span><span class="bb-desc">Vote on next season</span></a>
+      <a class="gt-bigbtn" href="#/gametracker"><span class="bb-icon">⚽</span><span class="bb-label">GameTracker</span><span class="bb-desc">Live games &amp; season stats</span></a>
+    </div>
+  </section>
+
   <!-- ANNOUNCEMENTS -->
   <section id="announcements" class="ann-section">
     <div class="section-header">
@@ -3686,19 +3700,50 @@ function gtListen() {
 
 // ---------- routing ----------
 function gtGo(path) { window.location.hash = path; }
+var SITE_PAGES = {
+  home: ['home-cards', 'announcements'],
+  schedule: ['schedule'],
+  conditioning: ['conditioning', 'summer-overview'],
+  tournaments: ['confirmed-summer', 'tournaments']
+};
+var SITE_LEGACY = { announcements: 'home', news: 'home', schedule: 'schedule', conditioning: 'conditioning', tournaments: 'tournaments' };
+function sitePage() {
+  var h = window.location.hash || '';
+  if (h.indexOf('#/') === 0) {
+    var p = h.slice(2).split('/')[0];
+    return SITE_PAGES[p] ? p : 'home';
+  }
+  return SITE_LEGACY[h.replace('#', '')] || 'home';
+}
+function siteRender() {
+  var page = sitePage();
+  var hero = document.querySelector('.hero');
+  if (hero) hero.style.display = page === 'home' ? '' : 'none';
+  Object.keys(SITE_PAGES).forEach(function(p) {
+    SITE_PAGES[p].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = SITE_PAGES[page].indexOf(id) >= 0 ? '' : 'none';
+    });
+  });
+  document.querySelectorAll('nav a.site-link').forEach(function(a) {
+    a.classList.toggle('nav-active', a.getAttribute('data-page') === page);
+  });
+}
 function gtRoute() {
   var h = window.location.hash || '';
   var isGT = h.indexOf('#/gametracker') === 0;
   var hero = document.querySelector('.hero');
   var container = document.querySelector('.container');
   var root = document.getElementById('gt-root');
-  if (hero) hero.style.display = isGT ? 'none' : '';
   if (container) container.style.display = isGT ? 'none' : '';
   if (root) root.style.display = isGT ? 'block' : 'none';
   if (!isGT) {
     if (GT.clockTimer) { clearInterval(GT.clockTimer); GT.clockTimer = null; }
+    siteRender();
+    window.scrollTo(0, 0);
     return;
   }
+  if (hero) hero.style.display = 'none';
   gtListen();
   var parts = h.replace(/^#\//, '').split('/');
   var page = parts[1] || 'home';
@@ -3733,7 +3778,7 @@ function gtRenderNav() {
     ['home', '#/gametracker', '⚽ GameTracker'],
     ['season', '#/gametracker/season', '📊 Season Stats'],
     ['roster', '#/gametracker/roster', '👥 Roster'],
-    ['site', '#announcements', '🏠 Team Site']
+    ['site', '#/home', '🏠 Team Site']
   ];
   nav.innerHTML = items.map(function(it) {
     var active = (it[0] === page) || (it[0] === 'home' && ['live', 'review', 'new'].indexOf(page) >= 0);
