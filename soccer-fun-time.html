@@ -650,6 +650,7 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
       <a href="#/conditioning" class="site-link" data-page="conditioning">Conditioning</a>
       <a href="#/tournaments" class="site-link" data-page="tournaments">Tournaments</a>
       <a href="#/gametracker" class="nav-gt">⚽ GameTracker</a>
+      <a href="#" id="nav-auth" style="display:none" onclick="navAuthClick(event)">Sign In</a>
       <button class="btn-signout" id="btn-signout" onclick="signOut()">Sign Out</button>
       <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
     </nav>
@@ -1261,11 +1262,26 @@ const OWNER_EMAIL = 'kudzooman@gmail.com';
 var authUser = null, authRole = null, authStaffName = '';
 var coachName = '';  // set from staff record after Firebase sign-in
 var staffData = {}, staffUnsub = null;
+localStorage.removeItem('f6ad_pw'); // legacy device password — no longer used
+function renderNavAuth() {
+  var el = document.getElementById('nav-auth');
+  if (!el) return;
+  el.style.display = '';
+  el.textContent = authUser
+    ? 'Sign Out (' + (authStaffName || authUser.email.split('@')[0]) + ')'
+    : 'Staff Sign In';
+}
+function navAuthClick(e) {
+  e.preventDefault();
+  if (authUser) authSignOut();
+  else openAdmin();
+}
 function isAdminUnlocked() { return authRole === 'admin'; }
 function isCoachLoggedIn() { return authRole === 'admin' || authRole === 'coach'; }
 function authIsOwner(u) { return !!u && u.email === OWNER_EMAIL && u.emailVerified; }
 
 function authRefreshUI() {
+  renderNavAuth();
   renderCoachBar();
   var overlay = document.getElementById('admin-overlay');
   if (overlay && overlay.classList.contains('open')) {
@@ -1308,7 +1324,7 @@ firebase.auth().onAuthStateChanged(function(u) {
       db.collection('staff').doc(u.uid).set({
         name: 'Chris', email: u.email, role: 'admin',
         created_at: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }).catch(function(){});
+      }, { merge: true }).catch(function(e){ showToast('Heads up: could not save your staff record (' + e.message + ')'); });
     } else {
       authRole = null; authStaffName = '';
     }
