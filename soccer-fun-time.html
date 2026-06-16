@@ -573,6 +573,7 @@ footer strong{color:#fff}
 .gt-fitem{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-size:.85rem;cursor:pointer}
 .gt-fitem .fi-min{font-weight:900;color:var(--purple);font-variant-numeric:tabular-nums;margin-right:8px}
 .gt-fitem .fi-wall{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
+.gt-et-badge{font-size:.72rem;font-weight:800;color:#c05500;background:#fff3e0;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
 .gt-fitem .fi-note{color:var(--muted);font-size:.78rem}
 .gt-fitem .fi-actions{display:none;margin-top:8px;gap:8px}
 .gt-fitem.open .fi-actions{display:flex;flex-wrap:wrap}
@@ -3846,6 +3847,32 @@ function gtClockSeconds(g) {
   }
   return Math.max(0, Math.floor(base));
 }
+function gtDisplaySeconds(g) {
+  // cumulative game seconds for display (clock runs continuously across periods)
+  if (!g) return 0;
+  var curPeriod = g.current_period || 1;
+  var pe = g.period_elapsed || {};
+  var prev = 0;
+  for (var p = 1; p < curPeriod; p++) {
+    prev += (pe[p] != null) ? pe[p] : (g.period_duration_minutes || 0) * 60;
+  }
+  return prev + gtClockSeconds(g);
+}
+function gtFmtDisplayClock(g) {
+  // Format the live game clock with extra-time annotation
+  var dispSec = gtDisplaySeconds(g);
+  var dur = (g && g.period_duration_minutes) || 0;
+  var curPeriod = g ? (g.current_period || 1) : 1;
+  var pe = g ? (g.period_elapsed || {}) : {};
+  // cumulative scheduled time up to and including current period
+  var scheduledThisPeriodEnd = curPeriod * dur * 60;
+  if (dur > 0 && dispSec > scheduledThisPeriodEnd) {
+    var extra = dispSec - scheduledThisPeriodEnd;
+    var em = Math.floor(extra / 60), es = extra % 60;
+    return gtFmtMMSS(scheduledThisPeriodEnd) + ' <span class="gt-et-badge">+' + em + ':' + (es < 10 ? '0' : '') + es + ' ET</span>';
+  }
+  return gtFmtMMSS(dispSec);
+}
 function gtPeriodActual(g, p) {
   // actual elapsed seconds of a COMPLETED period (fallback: nominal)
   var pe = g.period_elapsed || {};
@@ -4539,7 +4566,7 @@ function gtRenderLive(view, gameId) {
   // clock bar
   html += '<div class="gt-clockbar">' +
     '<div class="gt-period" id="gt-period-label">' + gtEsc(gtPeriodLabel(g)) + '</div>' +
-    '<div class="gt-clock" id="gt-clock-display">' + gtFmtMMSS(gtClockSeconds(g)) + '</div>' +
+    '<div class="gt-clock" id="gt-clock-display">' + gtFmtDisplayClock(g) + '</div>' +
     '<div class="gt-scoreline">' +
     '<span class="sc-team">' + gtEsc(g.home_team) + '</span><span class="sc-num">' + (g.home_score || 0) + '</span>' +
     '<span style="color:#666">–</span>' +
@@ -4620,7 +4647,7 @@ function gtRenderLive(view, gameId) {
       var cur = gtGame(gameId);
       var el = document.getElementById('gt-clock-display');
       var pl = document.getElementById('gt-period-label');
-      if (cur && el) el.textContent = gtFmtMMSS(gtClockSeconds(cur));
+      if (cur && el) el.innerHTML = gtFmtDisplayClock(cur);
       if (cur && pl) pl.textContent = gtPeriodLabel(cur);
     }, 500);
   }
@@ -4727,6 +4754,10 @@ function gtOpenEventPopup(gid, pid) {
   if (g.status === 'setup') { showToast('Start the game clock first.'); return; }
   var p = gtP(pid);
   GT.pendingEvent = { gameId: gid, playerId: pid, clock: gtClockSeconds(g), period: g.current_period || 1, type: null };
+  var rosterPlayers = g.roster_id ? gtRosterPlayers(g.roster_id).filter(function(pl){ return pl.id !== pid; }) : [];
+  var assistOpts = '<option value="">None</option>' + rosterPlayers.map(function(pl) {
+    return '<option value="' + pl.id + '">' + (pl.jersey_number != null ? '#' + pl.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pl.id)) + '</option>';
+  }).join('');
   gtOpenModal(
     '<h3><span>' + (p && p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pid)) + '</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<div class="gm-clock">🕐 ' + gtEsc(gtPeriodLabel(g, GT.pendingEvent.period, 'in_progress')) + ' · ' + gtFmtMMSS(GT.pendingEvent.clock) + ' (captured at tap)</div>' +
@@ -4748,6 +4779,8 @@ function gtSelEventType(t) {
     var el = document.getElementById('gt-et-' + et.id);
     if (el) el.classList.toggle('sel', et.id === t);
   });
+  var ar = document.getElementById('gt-assist-row');
+  if (ar) ar.style.display = (t === 'goal') ? '' : 'none';
 }
 function gtParseMMSS(str) {
   var m = String(str || '').trim().match(/^(\d{1,3}):([0-5]?\d)$/);
@@ -4764,14 +4797,30 @@ function gtSaveLiveEvent() {
     clock = manual;
   }
   var g = gtGame(pe.gameId);
-  db.collection('gt_events').add({
+  var notes = document.getElementById('gt-ev-notes').value.trim();
+  var assistPid = (pe.type === 'goal') ? (document.getElementById('gt-assist-pid') || {}).value || '' : '';
+  var evData = {
     game_id: pe.gameId, player_id: pe.playerId, event_type: pe.type,
     game_clock_seconds: clock, period: pe.period,
-    notes: document.getElementById('gt-ev-notes').value.trim(), youtube_url: '',
+    notes: notes, youtube_url: '',
     created_at: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function() {
+  };
+  db.collection('gt_events').add(evData).then(function() {
     if (pe.type === 'goal' && g) gtBumpScore(g, 'us', 1);
-    showToast(gtEventType(pe.type).emoji + ' ' + gtEventType(pe.type).label + ' logged for ' + gtPlayerShort(pe.playerId));
+    var ops = [];
+    if (pe.type === 'goal' && assistPid) {
+      ops.push(db.collection('gt_events').add({
+        game_id: pe.gameId, player_id: assistPid, event_type: 'assist',
+        game_clock_seconds: clock, period: pe.period,
+        notes: '', youtube_url: '',
+        created_at: firebase.firestore.FieldValue.serverTimestamp()
+      }));
+    }
+    return Promise.all(ops);
+  }).then(function() {
+    var msg = gtEventType(pe.type).emoji + ' ' + gtEventType(pe.type).label + ' logged for ' + gtPlayerShort(pe.playerId);
+    if (assistPid) msg += ' (assist: ' + gtPlayerShort(assistPid) + ')';
+    showToast(msg);
     gtCloseModal();
   }).catch(function(e){ showToast('Error: ' + e.message); });
 }
