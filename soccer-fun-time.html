@@ -1248,6 +1248,7 @@ let localCreditsFall = {}, localCreditsWinter = {}, localCreditsSpring = {}, loc
 let creditSaveTimers = {};
 const pendingCreditSaves = new Set();
 let showPastEvents = false;
+let showPastCondSessions = false;
 
 function getSeasonVotes(s)    { return s==='fall'?allVotesFall : s==='winter'?allVotesWinter : s==='spring'?allVotesSpring : allVotesSummer27; }
 function getSeasonNotes(s)    { return s==='fall'?allNotesFall : s==='winter'?allNotesWinter : s==='spring'?allNotesSpring : allNotesSummer27; }
@@ -1443,12 +1444,23 @@ function startCondListeners() {
     if(document.getElementById('tab-camps')&&document.getElementById('tab-camps').classList.contains('active')) renderAdminCamps();
   });
 }
+function toggleCondArchive() {
+  showPastCondSessions = !showPastCondSessions;
+  renderCondGrid();
+}
+
 function renderCondGrid() {
   var grid = document.getElementById('cond-grid');
   if(!grid) return;
   var myName = getCondName();
   grid.innerHTML = '';
-  COND_SESSIONS.forEach(function(s) {
+
+  var today = new Date(); today.setHours(0,0,0,0);
+  var past    = COND_SESSIONS.filter(function(s){ return new Date(s.id + 'T00:00:00') < today; });
+  var upcoming = COND_SESSIONS.filter(function(s){ return new Date(s.id + 'T00:00:00') >= today; });
+
+  // Render upcoming sessions first
+  upcoming.forEach(function(s) {
     var attendees = condData[s.id] || [];
     var isMine = myName && attendees.indexOf(myName) !== -1;
     var log = sessionLogData[s.id];
@@ -1529,7 +1541,125 @@ function renderCondGrid() {
 
     grid.appendChild(card);
   });
+
+  // Past sessions toggle (only if there are past sessions)
+  if(past.length) {
+    var toggleRow = document.createElement('div');
+    toggleRow.style.cssText = 'grid-column:1/-1;margin-top:6px;border-top:2px dashed var(--border);padding-top:12px';
+
+    var toggleBtn = document.createElement('button');
+    toggleBtn.className = 'schedule-archive-toggle';
+    toggleBtn.onclick = toggleCondArchive;
+    var chevron = document.createElement('span');
+    chevron.className = 'archive-chevron' + (showPastCondSessions ? ' open' : '');
+    chevron.textContent = '▼';
+    var label = document.createElement('span');
+    label.textContent = showPastCondSessions
+      ? 'Hide Past Sessions (' + past.length + ')'
+      : 'Show Past Sessions (' + past.length + ')';
+    toggleBtn.appendChild(chevron);
+    toggleBtn.appendChild(document.createTextNode(' '));
+    toggleBtn.appendChild(label);
+    toggleRow.appendChild(toggleBtn);
+    grid.appendChild(toggleRow);
+
+    if(showPastCondSessions) {
+      // Past cards in their own sub-grid
+      var pastGrid = document.createElement('div');
+      pastGrid.style.cssText = 'grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-top:12px;opacity:.65';
+      past.forEach(function(s) { pastGrid.appendChild(makeCondCard(s, myName, true)); });
+      grid.appendChild(pastGrid);
+    }
+  }
 }
+
+function makeCondCard(s, myName, isPast) {
+  var attendees = condData[s.id] || [];
+  var isMine = myName && attendees.indexOf(myName) !== -1;
+  var log = sessionLogData[s.id];
+  var isLogged = log && log.completed;
+
+  var card = document.createElement('div');
+  card.className = 'cond-card' + (isMine ? ' signed-up' : '');
+  if(isPast) card.style.cssText = 'pointer-events:none;filter:grayscale(.3)';
+
+  var dayDiv = document.createElement('div'); dayDiv.className = 'cond-day'; dayDiv.textContent = s.day;
+  var dateDiv = document.createElement('div'); dateDiv.className = 'cond-date'; dateDiv.textContent = s.date;
+  var timeDiv = document.createElement('div'); timeDiv.className = 'cond-time';
+  timeDiv.innerHTML = '5:00 – 6:00 PM  ·  GA';
+  card.appendChild(dayDiv); card.appendChild(dateDiv); card.appendChild(timeDiv);
+
+  if(isLogged) {
+    var badge = document.createElement('span'); badge.className = 'session-logged-badge';
+    badge.textContent = '✅ Logged';
+    card.appendChild(badge);
+  }
+
+  var countDiv = document.createElement('div'); countDiv.className = 'cond-count';
+  countDiv.textContent = attendees.length > 0
+    ? attendees.length + ' player' + (attendees.length !== 1 ? 's' : '')
+    : 'No sign-ups';
+  card.appendChild(countDiv);
+
+  var attsDiv = document.createElement('div'); attsDiv.className = 'cond-attendees';
+  if(attendees.length) {
+    attendees.forEach(function(n) {
+      var chip = document.createElement('span');
+      chip.className = 'cond-attendee-chip' + (myName && n === myName ? ' mine' : '');
+      chip.textContent = n;
+      attsDiv.appendChild(chip);
+    });
+  } else {
+    attsDiv.innerHTML = '<span style="color:#aaa;font-style:italic">No sign-ups</span>';
+  }
+  card.appendChild(attsDiv);
+
+  if(!isPast) {
+    // Sign-up / leave controls
+    if(myName) {
+      var signBtn = document.createElement('button');
+      signBtn.className = 'cond-signup-btn ' + (isMine ? 'leave' : 'join');
+      signBtn.textContent = isMine ? "✓ I'm Out" : "+ I'm In";
+      signBtn.setAttribute('data-sid', s.id); signBtn.setAttribute('data-n', myName);
+      signBtn.setAttribute('data-mine', isMine ? '1' : '0');
+      signBtn.addEventListener('click', function() {
+        if(this.getAttribute('data-mine') === '1') condLeave(this.getAttribute('data-sid'), this.getAttribute('data-n'));
+        else condJoin(this.getAttribute('data-sid'), this.getAttribute('data-n'));
+      });
+      // Also add remove button on chips for this player
+      attsDiv.querySelectorAll && attsDiv.querySelectorAll('.cond-attendee-chip.mine').forEach(function(chip){
+        if(!chip.querySelector('button')) {
+          var rmBtn = document.createElement('button');
+          rmBtn.title = 'Remove me'; rmBtn.textContent = '✕';
+          rmBtn.setAttribute('data-sid', s.id); rmBtn.setAttribute('data-n', myName);
+          rmBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            condLeave(this.getAttribute('data-sid'), this.getAttribute('data-n'));
+          });
+          chip.appendChild(rmBtn);
+        }
+      });
+      card.appendChild(signBtn);
+    } else {
+      var noNameDiv = document.createElement('div');
+      noNameDiv.style.cssText = 'font-size:.72rem;color:#aaa;font-style:italic;text-align:center';
+      noNameDiv.textContent = 'Set your name above to sign up';
+      card.appendChild(noNameDiv);
+    }
+  }
+  var detBtn = document.createElement('button');
+  detBtn.className = 'btn-details';
+  if(isPast) detBtn.style.cssText = 'pointer-events:auto;filter:none';
+  detBtn.textContent = '📋 Details';
+  detBtn.setAttribute('data-sid', s.id);
+  detBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    openSessionDetail(this.getAttribute('data-sid'));
+  });
+  card.appendChild(detBtn);
+  return card;
+}
+
 function condJoin(sessionId, name) {
   if(!name){showToast('Set your name first.'); return;}
   db.collection('conditioning').doc(sessionId).set(
