@@ -8,7 +8,7 @@ function gtStartSetup() {
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: '',
     num_periods: 2, period_duration_minutes: 35,
     roster_id: act ? act.id : '',
-    avail: {}, notes: {}, guests: []
+    avail: {}, notes: {}, guests: [], guestIds: {}
   };
   gtGo('/gametracker/new');
 }
@@ -82,7 +82,18 @@ function gtRenderNew(view) {
       }
     }
   } else if (s.step === 3) {
-    html += '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Add guest players joining for this game only. They can be converted to full players later from the Roster Manager.</p>';
+    html += '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Pick guests from your saved pool, or add a new one below (new guests are saved to the pool for next time).</p>';
+    var pool = gtGuestPool();
+    if (pool.length) {
+      html += '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Guest Pool</label>';
+      html += '<div style="margin-bottom:16px">' + pool.map(function(p) {
+        var on = !!s.guestIds[p.id];
+        return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--purple);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + ' <span class="gt-guest-badge">Guest</span></span>' +
+          '<span class="gt-avail-toggle"><button class="' + (on ? 'on-yes' : '') + '" onclick="GT.setup.guestIds[\'' + p.id + '\']=true;gtRerender(true)">In</button>' +
+          '<button class="' + (!on ? 'on-no' : '') + '" onclick="delete GT.setup.guestIds[\'' + p.id + '\'];gtRerender(true)">Out</button></span></div>';
+      }).join('') + '</div>';
+    }
+    html += '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Add a new guest</label>';
     html += s.guests.map(function(g, i) {
       return '<div class="gt-avail-row"><span class="gt-avail-name">' + (g.jersey_number != null && g.jersey_number !== '' ? '<span style="color:var(--purple);font-weight:900">#' + gtEsc(g.jersey_number) + '</span> ' : '') +
         gtEsc(g.first_name + ' ' + g.last_name) + ' <span class="gt-guest-badge">Guest</span></span>' +
@@ -100,7 +111,11 @@ function gtRenderNew(view) {
       '<p style="font-size:.85rem;color:var(--muted)">' + gtEsc(s.game_type) + (s.venue ? ' · ' + gtEsc(s.venue) : '') + ' · ' + s.num_periods + ' × ' + s.period_duration_minutes + ' min · ' + (s.f6ad_side === 'home' ? 'Home' : 'Away') + '</p>' +
       '<p style="font-size:.85rem;margin-top:12px"><strong>Roster:</strong> ' + (ros ? gtEsc(ros.name) : '⚠️ none selected') + '</p>' +
       '<p style="font-size:.85rem;margin-top:6px"><strong>Available (' + availables.length + '):</strong> ' + availables.map(function(p){ return gtEsc(gtPlayerShort(p.id)); }).join(', ') + '</p>' +
-      (s.guests.length ? '<p style="font-size:.85rem;margin-top:6px"><strong>Guests (' + s.guests.length + '):</strong> ' + s.guests.map(function(g){ return gtEsc(g.first_name + ' ' + g.last_name); }).join(', ') + '</p>' : '');
+      (function() {
+        var names = s.guests.map(function(g){ return gtEsc((g.first_name + ' ' + g.last_name).trim()); })
+          .concat(Object.keys(s.guestIds || {}).map(function(id){ return gtEsc(gtPlayerName(id)); }));
+        return names.length ? '<p style="font-size:.85rem;margin-top:6px"><strong>Guests (' + names.length + '):</strong> ' + names.join(', ') + '</p>' : '';
+      })();
   }
   html += '</div><div style="display:flex;gap:10px;flex-wrap:wrap">';
   if (s.step > 1) html += '<button class="gt-minibtn" style="padding:10px 18px" onclick="gtSetupNav(-1)">← Back</button>';
@@ -170,7 +185,7 @@ function gtCreateGame() {
     var ref = db.collection('gt_players').doc();
     guestRefs.push(ref);
     batch.set(ref, {
-      roster_id: s.roster_id, first_name: g.first_name, last_name: g.last_name,
+      roster_id: '__guests__', first_name: g.first_name, last_name: g.last_name,
       jersey_number: g.jersey_number === '' || g.jersey_number == null ? null : parseInt(g.jersey_number, 10),
       position: g.position || '', parent_name: '', parent_phone: '',
       whatsapp_opt_in: false, is_guest: true, created_at: ts
@@ -187,6 +202,10 @@ function gtCreateGame() {
   guestRefs.forEach(function(ref) {
     var aref = db.collection('gt_availability').doc();
     batch.set(aref, { game_id: gameRef.id, player_id: ref.id, available: true, notes: 'Guest player', created_at: ts });
+  });
+  Object.keys(s.guestIds || {}).forEach(function(pid) {
+    var aref = db.collection('gt_availability').doc();
+    batch.set(aref, { game_id: gameRef.id, player_id: pid, available: true, notes: 'Guest player', created_at: ts });
   });
   batch.commit().then(function() {
     GT.setup = null;

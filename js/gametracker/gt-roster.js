@@ -58,7 +58,59 @@ function gtRenderRoster(view) {
       html += '</tbody></table></div>';
     }
   }
+  // Guest player pool (reusable across games)
+  html += '<div class="gt-title" style="margin-top:30px;font-size:1.05rem">🎽 Guest Players</div>' +
+    '<div class="gt-sub">A reusable pool of guests you can add to any game. Their stats are tracked like any player.</div>';
+  if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtOpenGuestForm(null)">➕ Add Guest</button>';
+  var guests = gtGuestPool();
+  if (!guests.length) html += '<div class="gt-empty">No guest players yet.</div>';
+  else {
+    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
+    guests.forEach(function(p) {
+      html += '<tr><td class="num" style="font-weight:900;color:var(--purple)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
+        '<td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span> <span class="gt-guest-badge">Guest</span>' + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</td>' +
+        '<td>' + gtEsc(p.position || '—') + '</td>' +
+        (canEdit ? '<td style="white-space:nowrap"><button class="gt-minibtn" onclick="gtOpenGuestForm(\'' + p.id + '\')">Edit</button> <button class="gt-minibtn danger" onclick="gtDeletePlayer(\'' + p.id + '\')">Remove</button></td>' : '') +
+        '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
   view.innerHTML = html;
+}
+function gtOpenGuestForm(pid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var p = pid ? gtP(pid) : null;
+  gtOpenModal(
+    '<h3>' + (p ? '✏️ Edit Guest' : '➕ Add Guest') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<div class="gm-row"><div><label>First Name</label><input type="text" id="gt-gf2-first" value="' + gtAttr(p ? p.first_name : '') + '" autocomplete="off"/></div>' +
+    '<div><label>Last Name</label><input type="text" id="gt-gf2-last" value="' + gtAttr(p ? p.last_name : '') + '"/></div></div>' +
+    '<div class="gm-row"><div><label>Jersey #</label><input type="number" id="gt-gf2-num" value="' + (p && p.jersey_number != null ? p.jersey_number : '') + '" min="0" max="99"/></div>' +
+    '<div><label>Position</label><input type="text" id="gt-gf2-pos" value="' + gtAttr(p ? p.position : '') + '" placeholder="GK, DEF, MID, FWD"/></div></div>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveGuest(' + (p ? '\'' + p.id + '\'' : 'null') + ')">Save Guest</button>' +
+    '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtSaveGuest(pid) {
+  if (!gtCanEdit()) return;
+  var first = document.getElementById('gt-gf2-first').value.trim();
+  if (!first) { showToast('First name is required.'); return; }
+  var numV = document.getElementById('gt-gf2-num').value;
+  var data = {
+    roster_id: '__guests__', first_name: first,
+    last_name: document.getElementById('gt-gf2-last').value.trim(),
+    jersey_number: numV === '' ? null : parseInt(numV, 10),
+    position: document.getElementById('gt-gf2-pos').value.trim(),
+    is_guest: true, updated_at: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  var op;
+  if (pid) op = db.collection('gt_players').doc(pid).set(data, { merge: true });
+  else {
+    data.parent_name = ''; data.parent_phone = ''; data.whatsapp_opt_in = false;
+    data.created_at = firebase.firestore.FieldValue.serverTimestamp();
+    op = db.collection('gt_players').add(data);
+  }
+  op.then(function(){ showToast('Guest saved ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtOpenRosterForm(rid) {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }

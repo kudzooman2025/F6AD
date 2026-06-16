@@ -71,6 +71,14 @@ function gtRosterPlayers(rid) {
     return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id));
   });
 }
+function gtGuestPool() {
+  // reusable pool of guest players (tracked like any player, not tied to a squad)
+  return GT.players.filter(function(p){ return p.is_guest; }).sort(function(a, b) {
+    var an = a.jersey_number == null ? 999 : a.jersey_number, bn = b.jersey_number == null ? 999 : b.jersey_number;
+    if (an !== bn) return an - bn;
+    return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id));
+  });
+}
 function gtActiveRoster() { return GT.rosters.find(function(r){ return r.is_active && !r.archived; }); }
 function gtRoster(id) { return GT.rosters.find(function(r){ return r.id === id; }); }
 function gtGame(id) { return GT.games.find(function(g){ return g.id === id; }); }
