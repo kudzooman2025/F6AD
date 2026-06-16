@@ -1459,7 +1459,36 @@ function renderCondGrid() {
   var past    = COND_SESSIONS.filter(function(s){ return new Date(s.id + 'T00:00:00') < today; });
   var upcoming = COND_SESSIONS.filter(function(s){ return new Date(s.id + 'T00:00:00') >= today; });
 
-  // Render upcoming sessions first
+  // Past sessions toggle at top (only if there are past sessions)
+  if(past.length) {
+    var toggleRow = document.createElement('div');
+    toggleRow.style.cssText = 'grid-column:1/-1;margin-bottom:10px;border-bottom:2px dashed var(--border);padding-bottom:12px';
+
+    var toggleBtn = document.createElement('button');
+    toggleBtn.className = 'schedule-archive-toggle';
+    toggleBtn.onclick = toggleCondArchive;
+    var chevron = document.createElement('span');
+    chevron.className = 'archive-chevron' + (showPastCondSessions ? ' open' : '');
+    chevron.textContent = '▼';
+    var label = document.createElement('span');
+    label.textContent = showPastCondSessions
+      ? 'Hide Past Sessions (' + past.length + ')'
+      : 'Show Past Sessions (' + past.length + ')';
+    toggleBtn.appendChild(chevron);
+    toggleBtn.appendChild(document.createTextNode(' '));
+    toggleBtn.appendChild(label);
+    toggleRow.appendChild(toggleBtn);
+
+    if(showPastCondSessions) {
+      var pastGrid = document.createElement('div');
+      pastGrid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-top:12px;opacity:.65';
+      past.forEach(function(s) { pastGrid.appendChild(makeCondCard(s, myName, true)); });
+      toggleRow.appendChild(pastGrid);
+    }
+    grid.appendChild(toggleRow);
+  }
+
+  // Upcoming sessions
   upcoming.forEach(function(s) {
     var attendees = condData[s.id] || [];
     var isMine = myName && attendees.indexOf(myName) !== -1;
@@ -1542,35 +1571,6 @@ function renderCondGrid() {
     grid.appendChild(card);
   });
 
-  // Past sessions toggle (only if there are past sessions)
-  if(past.length) {
-    var toggleRow = document.createElement('div');
-    toggleRow.style.cssText = 'grid-column:1/-1;margin-top:6px;border-top:2px dashed var(--border);padding-top:12px';
-
-    var toggleBtn = document.createElement('button');
-    toggleBtn.className = 'schedule-archive-toggle';
-    toggleBtn.onclick = toggleCondArchive;
-    var chevron = document.createElement('span');
-    chevron.className = 'archive-chevron' + (showPastCondSessions ? ' open' : '');
-    chevron.textContent = '▼';
-    var label = document.createElement('span');
-    label.textContent = showPastCondSessions
-      ? 'Hide Past Sessions (' + past.length + ')'
-      : 'Show Past Sessions (' + past.length + ')';
-    toggleBtn.appendChild(chevron);
-    toggleBtn.appendChild(document.createTextNode(' '));
-    toggleBtn.appendChild(label);
-    toggleRow.appendChild(toggleBtn);
-    grid.appendChild(toggleRow);
-
-    if(showPastCondSessions) {
-      // Past cards in their own sub-grid
-      var pastGrid = document.createElement('div');
-      pastGrid.style.cssText = 'grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-top:12px;opacity:.65';
-      past.forEach(function(s) { pastGrid.appendChild(makeCondCard(s, myName, true)); });
-      grid.appendChild(pastGrid);
-    }
-  }
 }
 
 function makeCondCard(s, myName, isPast) {
@@ -5063,4 +5063,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html>                                                                                       
+</html>                                                                                                                                        
