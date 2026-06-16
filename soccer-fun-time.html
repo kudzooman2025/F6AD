@@ -4746,8 +4746,17 @@ function gtOpenEventPopup(gid, pid) {
   if (g.status === 'setup') { showToast('Start the game clock first.'); return; }
   var p = gtP(pid);
   GT.pendingEvent = { gameId: gid, playerId: pid, clock: gtClockSeconds(g), period: g.current_period || 1, type: null };
-  var rosterPlayers = g.roster_id ? gtRosterPlayers(g.roster_id).filter(function(pl){ return pl.id !== pid; }) : [];
-  var assistOpts = '<option value="">None</option>' + rosterPlayers.map(function(pl) {
+  // Use the same available-player list the live game grid uses, minus the scorer
+  var assistPlayers = gtAvailIds(gid)
+    .filter(function(id){ return id !== pid; })
+    .map(function(id){ return gtP(id); })
+    .filter(Boolean)
+    .sort(function(a, b) {
+      var an = a.jersey_number == null ? 999 : a.jersey_number;
+      var bn = b.jersey_number == null ? 999 : b.jersey_number;
+      return an - bn;
+    });
+  var assistOpts = '<option value="">None</option>' + assistPlayers.map(function(pl) {
     return '<option value="' + pl.id + '">' + (pl.jersey_number != null ? '#' + pl.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pl.id)) + '</option>';
   }).join('');
   gtOpenModal(
