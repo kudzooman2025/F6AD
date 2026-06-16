@@ -572,6 +572,7 @@ footer strong{color:#fff}
 .gt-feed{display:flex;flex-direction:column;gap:6px}
 .gt-fitem{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-size:.85rem;cursor:pointer}
 .gt-fitem .fi-min{font-weight:900;color:var(--purple);font-variant-numeric:tabular-nums;margin-right:8px}
+.gt-fitem .fi-wall{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
 .gt-fitem .fi-note{color:var(--muted);font-size:.78rem}
 .gt-fitem .fi-actions{display:none;margin-top:8px;gap:8px}
 .gt-fitem.open .fi-actions{display:flex;flex-wrap:wrap}
@@ -3752,13 +3753,14 @@ var GT = {
 };
 
 var GT_EVENT_TYPES = [
-  { id: 'goal',         label: 'Goal',         emoji: '⚽' },
-  { id: 'assist',       label: 'Assist',       emoji: '🅰️' },
-  { id: 'shot_on_goal', label: 'Shot on Goal', emoji: '🎯' },
-  { id: 'highlight',    label: 'Highlight',    emoji: '⭐' },
-  { id: 'yellow_card',  label: 'Yellow Card',  emoji: '🟨' },
-  { id: 'red_card',     label: 'Red Card',     emoji: '🟥' },
-  { id: 'save',         label: 'Save',         emoji: '🧤' }
+  { id: 'goal',           label: 'Goal',           emoji: '⚽' },
+  { id: 'assist',         label: 'Assist',         emoji: '🅰️' },
+  { id: 'shot_on_target', label: 'Shot on Target', emoji: '🎯' },
+  { id: 'shot',           label: 'Shot',           emoji: '💨' },
+  { id: 'highlight',      label: 'Highlight',      emoji: '⭐' },
+  { id: 'yellow_card',    label: 'Yellow Card',    emoji: '🟨' },
+  { id: 'red_card',       label: 'Red Card',       emoji: '🟥' },
+  { id: 'save',           label: 'Save',           emoji: '🧤' }
 ];
 function gtEventType(id) {
   if (id === 'opponent_goal') return { id: 'opponent_goal', label: 'Opponent Goal', emoji: '😣' };
@@ -3919,7 +3921,7 @@ function gtMinutesMap(gid) {
   return secs;
 }
 function gtStatLine(pid, events) {
-  var st = { goal: 0, assist: 0, shot_on_goal: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0 };
+  var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0 };
   events.forEach(function(e){ if (e.player_id === pid && st[e.event_type] !== undefined) st[e.event_type]++; });
   return st;
 }
@@ -4056,6 +4058,8 @@ function gtOpenModal(html) {
   document.getElementById('gt-modal-overlay').classList.add('open');
 }
 function gtCloseModal() {
+  var sug = document.getElementById('gt-pf-sug');
+  if (sug && sug.parentNode === document.body) document.body.removeChild(sug);
   document.getElementById('gt-modal-overlay').classList.remove('open');
   document.getElementById('gt-modal').innerHTML = '';
   GT.pendingEvent = null;
@@ -4217,7 +4221,7 @@ function gtOpenPlayerForm(rid, pid) {
   var p = pid ? gtP(pid) : null;
   gtOpenModal(
     '<h3>' + (p ? '✏️ Edit Player' : '➕ Add Player') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<div class="gm-row"><div style="position:relative"><label>First Name</label><input type="text" id="gt-pf-first" value="' + gtAttr(p ? p.first_name : '') + '" autocomplete="off"/><div id="gt-pf-sug" class="gt-autocomplete-list"></div></div>' +
+    '<div class="gm-row"><div><label>First Name</label><input type="text" id="gt-pf-first" value="' + gtAttr(p ? p.first_name : '') + '" autocomplete="off"/></div>' +
     '<div><label>Last Name</label><input type="text" id="gt-pf-last" value="' + gtAttr(p ? p.last_name : '') + '"/></div></div>' +
     '<div class="gm-row"><div><label>Jersey #</label><input type="number" id="gt-pf-num" value="' + (p && p.jersey_number != null ? p.jersey_number : '') + '" min="0" max="99"/></div>' +
     '<div><label>Position</label><input type="text" id="gt-pf-pos" value="' + gtAttr(p ? p.position : '') + '" placeholder="GK, DEF, MID, FWD"/></div></div>' +
@@ -4228,13 +4232,21 @@ function gtOpenPlayerForm(rid, pid) {
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSavePlayer(\'' + rid + '\',' + (p ? '\'' + p.id + '\'' : 'null') + ')">Save Player</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
-  // Wire up player name autocomplete after modal DOM is ready
-  setTimeout(function() { gtWirePlayerAutocomplete(); }, 0);
+  gtWirePlayerAutocomplete();
 }
 function gtWirePlayerAutocomplete() {
   var inp = document.getElementById('gt-pf-first');
-  var sug = document.getElementById('gt-pf-sug');
-  if (!inp || !sug) return;
+  if (!inp) return;
+  // Remove any stale suggestion list from a previous form open
+  var oldSug = document.getElementById('gt-pf-sug');
+  if (oldSug) oldSug.parentNode.removeChild(oldSug);
+  // Create suggestion list at body level so it's never clipped by any ancestor overflow
+  var sug = document.createElement('div');
+  sug.id = 'gt-pf-sug';
+  sug.className = 'gt-autocomplete-list';
+  sug.style.position = 'fixed';
+  sug.style.zIndex = '99999';
+  document.body.appendChild(sug);
   var activeIdx = -1;
   function populatePlayer(pl) {
     inp.value = pl.first_name || '';
@@ -4246,6 +4258,13 @@ function gtWirePlayerAutocomplete() {
     el = document.getElementById('gt-pf-pphone');if(el) el.value = pl.parent_phone || '';
     el = document.getElementById('gt-pf-optin'); if(el) el.checked = !!pl.whatsapp_opt_in;
     sug.style.display = 'none'; activeIdx = -1;
+  }
+  function positionSug() {
+    var rect = inp.getBoundingClientRect();
+    sug.style.top = (rect.bottom + 2) + 'px';
+    sug.style.left = rect.left + 'px';
+    sug.style.width = rect.width + 'px';
+    sug.style.right = 'auto';
   }
   function showSuggestions() {
     var q = inp.value.trim().toLowerCase();
@@ -4263,7 +4282,7 @@ function gtWirePlayerAutocomplete() {
     matches.forEach(function(pl) {
       var item = document.createElement('div');
       item.className = 'gt-autocomplete-item';
-      var sub = []; 
+      var sub = [];
       if (pl.jersey_number != null) sub.push('#' + pl.jersey_number);
       if (pl.position) sub.push(pl.position);
       if (pl.parent_name) sub.push(pl.parent_name);
@@ -4272,6 +4291,7 @@ function gtWirePlayerAutocomplete() {
       item.addEventListener('mousedown', function(e) { e.preventDefault(); populatePlayer(pl); });
       sug.appendChild(item);
     });
+    positionSug();
     sug.style.display = 'block';
   }
   inp.addEventListener('input', showSuggestions);
@@ -4562,6 +4582,7 @@ function gtRenderLive(view, gameId) {
       var badges = '';
       if (st.goal) badges += '<span class="gt-pbadge">⚽' + st.goal + '</span>';
       if (st.assist) badges += '<span class="gt-pbadge">🅰️' + st.assist + '</span>';
+      if (st.shot_on_target) badges += '<span class="gt-pbadge">🎯' + st.shot_on_target + '</span>';
       if (st.save) badges += '<span class="gt-pbadge">🧤' + st.save + '</span>';
       if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
       if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
@@ -4610,8 +4631,16 @@ function gtFeedItem(g, e, canEdit) {
   var who = e.event_type === 'opponent_goal' ? gtEsc(gtTheirName(g)) : gtEsc(gtPlayerShort(e.player_id));
   var open = GT.openFeedItem === e.id;
   var yt = gtYtId(e.youtube_url);
+  var wallTime = '';
+  if (e.created_at && e.created_at.toDate) {
+    var d = e.created_at.toDate();
+    var hh = d.getHours(), mm = d.getMinutes();
+    var ap = hh >= 12 ? 'PM' : 'AM';
+    hh = hh % 12 || 12;
+    wallTime = ' <span class="fi-wall">@ ' + hh + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap + '</span>';
+  }
   return '<div class="gt-fitem' + (open ? ' open' : '') + '" onclick="gtToggleFeedItem(\'' + e.id + '\')">' +
-    '<span class="fi-min">[' + min + '&prime;]</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label +
+    '<span class="fi-min">[' + min + '&prime;]</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label + wallTime +
     (e.notes ? ' <span class="fi-note">· ' + gtEsc(e.notes) + '</span>' : '') +
     (yt ? '<br><a class="gt-yt-thumb" href="' + gtAttr(e.youtube_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://img.youtube.com/vi/' + yt + '/default.jpg" alt=""/>▶ Highlight</a>' : '') +
     (canEdit ? '<div class="fi-actions">' +
