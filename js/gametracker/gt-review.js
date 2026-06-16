@@ -15,12 +15,13 @@ function gtRenderReview(view, gameId) {
     (res ? '<div style="margin-top:6px"><span class="gt-result-' + res.toLowerCase() + '" style="font-size:1rem">' + (res === 'W' ? '✅ Win' : res === 'L' ? '❌ Loss' : '➖ Draw') + '</span></div>' : '<div style="margin-top:6px">' + gtStatusPill(g) + (canEdit ? ' <a href="#/gametracker/live/' + g.id + '" style="font-size:.8rem;font-weight:700">Open live view →</a>' : '') + '</div>') +
     '</div>';
   // stat strip
-  var totals = { goal: 0, assist: 0, shot_on_goal: 0, save: 0, yellow_card: 0, red_card: 0 };
+  var totals = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, save: 0, yellow_card: 0, red_card: 0 };
   events.forEach(function(e){ if (totals[e.event_type] !== undefined) totals[e.event_type]++; });
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + totals.goal + '</div><div class="sb-label">Goals</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + totals.assist + '</div><div class="sb-label">Assists</div></div>' +
-    '<div class="gt-stat-box"><div class="sb-num">' + totals.shot_on_goal + '</div><div class="sb-label">Shots on Goal</div></div>' +
+    '<div class="gt-stat-box"><div class="sb-num">' + totals.shot_on_target + '</div><div class="sb-label">Shots on Target</div></div>' +
+    '<div class="gt-stat-box"><div class="sb-num">' + totals.shot + '</div><div class="sb-label">Shots</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + totals.save + '</div><div class="sb-label">Saves</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + (totals.yellow_card + totals.red_card) + '</div><div class="sb-label">Cards</div></div>' +
     '</div>';
@@ -44,20 +45,21 @@ function gtRenderReview(view, gameId) {
   var availIds = gtAvailIds(g.id);
   if (availIds.length) {
     var mins = gtMinutesMap(g.id);
-    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Player</th><th class="num">⚽ G</th><th class="num">🅰️ A</th><th class="num">🎯 SOG</th><th class="num">🟨</th><th class="num">🟥</th><th class="num">🧤 SV</th><th class="num">Min</th></tr></thead><tbody>';
+    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Player</th><th class="num">⚽ G</th><th class="num">🅰️ A</th><th class="num">🎯 SOT</th><th class="num">💨 SH</th><th class="num">🟨</th><th class="num">🟥</th><th class="num">🧤 SV</th><th class="num">Min</th></tr></thead><tbody>';
     availIds.map(function(pid){ return gtP(pid); }).filter(Boolean)
       .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); })
       .forEach(function(p) {
         var st = gtStatLine(p.id, events);
         html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' + (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + '</td>' +
-          '<td class="num">' + (st.goal || '') + '</td><td class="num">' + (st.assist || '') + '</td><td class="num">' + (st.shot_on_goal || '') + '</td>' +
+          '<td class="num">' + (st.goal || '') + '</td><td class="num">' + (st.assist || '') + '</td><td class="num">' + (st.shot_on_target || '') + '</td><td class="num">' + (st.shot || '') + '</td>' +
           '<td class="num">' + (st.yellow_card || '') + '</td><td class="num">' + (st.red_card || '') + '</td><td class="num">' + (st.save || '') + '</td>' +
           '<td class="num">' + Math.round((mins[p.id] || 0) / 60) + '</td></tr>';
       });
     html += '</tbody></table></div>';
   }
   html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' +
-    '<button class="btn-primary" onclick="gtExportGame(\'' + g.id + '\')">📋 Copy Game Summary</button>' +
+    '<button class="btn-primary" onclick="gtExportGame(\'' + g.id + '\')">📋 Copy Summary</button>' +
+    '<button class="btn-primary" onclick="gtExportGamePDF(\'' + g.id + '\')">📄 Export PDF</button>' +
     '<button class="gt-minibtn" style="padding:10px 16px" onclick="gtGo(\'/gametracker\')">← All Games</button>' +
     (canEdit ? '<button class="gt-minibtn danger" style="padding:10px 16px;margin-left:auto" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button>' : '') + '</div>';
   view.innerHTML = html;
@@ -72,11 +74,63 @@ function gtExportGame(gid) {
   events.forEach(function(e) {
     var t = gtEventType(e.event_type);
     var who = e.event_type === 'opponent_goal' ? gtTheirName(g) : gtPlayerName(e.player_id);
-    lines.push('[' + gtNominalMinute(g, e.period, e.game_clock_seconds) + "'] " + who + ' - ' + t.label + (e.notes ? ' (' + e.notes + ')' : '') + (e.youtube_url ? ' ' + e.youtube_url : ''));
+    lines.push('[' + gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + '] ' + who + ' - ' + t.label + (e.notes ? ' (' + e.notes + ')' : '') + (e.youtube_url ? ' ' + e.youtube_url : ''));
   });
   lines.push('');
   lines.push('— F6AD GameTracker');
   navigator.clipboard.writeText(lines.join('\n')).then(function(){ showToast('Game summary copied!'); });
+}
+function gtPdfDate(ts) {
+  var d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : new Date());
+  if (isNaN(d.getTime())) d = new Date();
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+function gtExportGamePDF(gid) {
+  var g = gtGame(gid); if (!g) return;
+  if (!(window.jspdf && window.jspdf.jsPDF)) { showToast('PDF tool still loading — try again in a moment.'); return; }
+  var events = gtGameEvents(gid);
+  var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter' });
+  var purple = [123, 47, 212];
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(purple[0], purple[1], purple[2]);
+  doc.text('F6AD GameTracker', 40, 48);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(110);
+  doc.text((g.game_type || 'game') + '  ·  ' + gtFmtDate(g.played_at || g.created_at) + (g.venue ? '  ·  ' + g.venue : ''), 40, 66);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(20);
+  doc.text(g.home_team + '   ' + (g.home_score || 0) + ' - ' + (g.away_score || 0) + '   ' + g.away_team, 40, 92);
+  var res = g.status === 'complete' ? gtResult(g) : null;
+  var y = 100;
+  if (res) { doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(110); doc.text(res === 'W' ? 'Win' : res === 'L' ? 'Loss' : 'Draw', 40, (y += 12)); }
+  var evRows = events.map(function(e) {
+    var who = e.event_type === 'opponent_goal' ? gtTheirName(g) : gtPlayerName(e.player_id);
+    return [gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)), gtEventType(e.event_type).label, who, e.notes || ''];
+  });
+  doc.autoTable({
+    startY: y + 16,
+    head: [['Clock', 'Event', 'Player', 'Notes']],
+    body: evRows.length ? evRows : [['—', 'No events logged', '', '']],
+    headStyles: { fillColor: purple }, styles: { fontSize: 9, cellPadding: 4 },
+    columnStyles: { 0: { cellWidth: 50 }, 3: { cellWidth: 210 } },
+    margin: { left: 40, right: 40 }
+  });
+  var availIds = gtAvailIds(g.id);
+  var mins = gtMinutesMap(g.id);
+  var statRows = availIds.map(function(pid){ return gtP(pid); }).filter(Boolean)
+    .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); })
+    .map(function(p) {
+      var st = gtStatLine(p.id, events);
+      return [gtPlayerName(p.id), st.goal || 0, st.assist || 0, st.shot_on_target || 0, st.shot || 0, st.yellow_card || 0, st.red_card || 0, st.save || 0, Math.round((mins[p.id] || 0) / 60)];
+    });
+  if (statRows.length) {
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 22,
+      head: [['Player', 'G', 'A', 'SOT', 'SH', 'Y', 'R', 'SV', 'Min']],
+      body: statRows,
+      headStyles: { fillColor: purple }, styles: { fontSize: 9, cellPadding: 4 },
+      margin: { left: 40, right: 40 }
+    });
+  }
+  doc.save('F6AD_vs_' + String(gtTheirName(g) || 'game').replace(/[^a-z0-9]+/gi, '_') + '_' + gtPdfDate(g.played_at || g.created_at) + '.pdf');
+  showToast('PDF exported ✓');
 }
 
 // ---------- SEASON OVERVIEW ----------
@@ -161,7 +215,7 @@ function gtRenderSeason(view) {
   var stats = gtSeasonPlayerStats(games, rid);
   if (!stats.length) html += '<div class="gt-empty">No player stats yet.</div>';
   else {
-    var cols = [['name', 'Player'], ['gp', 'GP'], ['goals', '⚽ G'], ['assists', '🅰️ A'], ['shots', '🎯 SOG'], ['yc', '🟨 YC'], ['rc', '🟥 RC'], ['saves', '🧤 SV'], ['min', 'Min']];
+    var cols = [['name', 'Player'], ['gp', 'GP'], ['goals', '⚽ G'], ['assists', '🅰️ A'], ['sot', '🎯 SOT'], ['sh', '💨 SH'], ['yc', '🟨 YC'], ['rc', '🟥 RC'], ['saves', '🧤 SV'], ['min', 'Min']];
     var ss = GT.seasonSort;
     stats.sort(function(a, b) {
       var va = a[ss.col], vb = b[ss.col];
@@ -174,7 +228,7 @@ function gtRenderSeason(view) {
     stats.forEach(function(s) {
       html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + s.id + '\')">' + gtEsc(s.name) + '</span>' + (s.guest ? '<span class="gt-guest-badge">Guest</span>' : '') + '</td>' +
         '<td class="num">' + s.gp + '</td><td class="num">' + s.goals + '</td><td class="num">' + s.assists + '</td>' +
-        '<td class="num">' + s.shots + '</td><td class="num">' + s.yc + '</td><td class="num">' + s.rc + '</td>' +
+        '<td class="num">' + s.sot + '</td><td class="num">' + s.sh + '</td><td class="num">' + s.yc + '</td><td class="num">' + s.rc + '</td>' +
         '<td class="num">' + s.saves + '</td><td class="num">' + s.min + '</td></tr>';
     });
     html += '</tbody></table></div>';
@@ -199,11 +253,11 @@ function gtSeasonPlayerStats(games, rid) {
       var p = gtP(pid);
       if (!p) return;
       if (!GT.seasonShowGuests && p.is_guest) return;
-      if (!map[pid]) map[pid] = { id: pid, name: gtPlayerName(pid), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, shots: 0, yc: 0, rc: 0, saves: 0, min: 0 };
+      if (!map[pid]) map[pid] = { id: pid, name: gtPlayerName(pid), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, min: 0 };
       var row = map[pid];
       row.gp++;
       var st = gtStatLine(pid, events);
-      row.goals += st.goal; row.assists += st.assist; row.shots += st.shot_on_goal;
+      row.goals += st.goal; row.assists += st.assist; row.sot += st.shot_on_target; row.sh += st.shot;
       row.yc += st.yellow_card; row.rc += st.red_card; row.saves += st.save;
       row.min += Math.round((mins[pid] || 0) / 60);
     });
@@ -212,7 +266,7 @@ function gtSeasonPlayerStats(games, rid) {
   if (rid) gtRosterPlayers(rid).forEach(function(p) {
     if (map[p.id]) return;
     if (!GT.seasonShowGuests && p.is_guest) return;
-    map[p.id] = { id: p.id, name: gtPlayerName(p.id), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, shots: 0, yc: 0, rc: 0, saves: 0, min: 0 };
+    map[p.id] = { id: p.id, name: gtPlayerName(p.id), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, min: 0 };
   });
   return Object.keys(map).map(function(k){ return map[k]; });
 }
@@ -227,12 +281,12 @@ function gtRenderPlayerProfile(view, pid) {
   var games = GT.games.filter(function(g) {
     return g.status === 'complete' && gtAvailIds(g.id).indexOf(pid) >= 0;
   }).sort(function(a, b){ return gtTsMillis(b.played_at || b.created_at) - gtTsMillis(a.played_at || a.created_at); });
-  var tot = { goals: 0, assists: 0, shots: 0, yc: 0, rc: 0, saves: 0, min: 0 };
+  var tot = { goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, min: 0 };
   var rows = games.map(function(g) {
     var events = gtGameEvents(g.id);
     var st = gtStatLine(pid, events);
     var mins = Math.round((gtMinutesMap(g.id)[pid] || 0) / 60);
-    tot.goals += st.goal; tot.assists += st.assist; tot.shots += st.shot_on_goal;
+    tot.goals += st.goal; tot.assists += st.assist; tot.sot += st.shot_on_target; tot.sh += st.shot;
     tot.yc += st.yellow_card; tot.rc += st.red_card; tot.saves += st.save; tot.min += mins;
     var highlights = events.filter(function(e){ return e.player_id === pid && gtYtId(e.youtube_url); });
     return { g: g, st: st, mins: mins, highlights: highlights };
@@ -244,20 +298,21 @@ function gtRenderPlayerProfile(view, pid) {
     '<div class="gt-stat-box"><div class="sb-num">' + games.length + '</div><div class="sb-label">Games</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + tot.goals + '</div><div class="sb-label">Goals</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + tot.assists + '</div><div class="sb-label">Assists</div></div>' +
-    '<div class="gt-stat-box"><div class="sb-num">' + tot.shots + '</div><div class="sb-label">Shots on Goal</div></div>' +
+    '<div class="gt-stat-box"><div class="sb-num">' + tot.sot + '</div><div class="sb-label">Shots on Target</div></div>' +
+    '<div class="gt-stat-box"><div class="sb-num">' + tot.sh + '</div><div class="sb-label">Shots</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + tot.saves + '</div><div class="sb-label">Saves</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + tot.min + '</div><div class="sb-label">Minutes</div></div>' +
     '</div>';
   html += '<div class="section-title" style="margin-bottom:12px">📜 Game by Game</div>';
   if (!rows.length) html += '<div class="gt-empty">No completed games yet.</div>';
   else {
-    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Date</th><th>Opponent</th><th class="num">Result</th><th class="num">⚽</th><th class="num">🅰️</th><th class="num">🎯</th><th class="num">🧤</th><th class="num">Min</th><th>Highlights</th></tr></thead><tbody>';
+    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Date</th><th>Opponent</th><th class="num">Result</th><th class="num">⚽</th><th class="num">🅰️</th><th class="num">🎯</th><th class="num">💨</th><th class="num">🧤</th><th class="num">Min</th><th>Highlights</th></tr></thead><tbody>';
     rows.forEach(function(r) {
       var g = r.g, res = gtResult(g);
       html += '<tr><td style="cursor:pointer" onclick="gtGo(\'/gametracker/review/' + g.id + '\')">' + gtFmtDate(g.played_at || g.created_at) + '</td>' +
         '<td style="font-weight:700;cursor:pointer" onclick="gtGo(\'/gametracker/review/' + g.id + '\')">' + gtEsc(gtTheirName(g)) + '</td>' +
         '<td class="num"><span class="gt-result-' + res.toLowerCase() + '">' + res + '</span> ' + gtOurScore(g) + '–' + gtTheirScore(g) + '</td>' +
-        '<td class="num">' + (r.st.goal || '') + '</td><td class="num">' + (r.st.assist || '') + '</td><td class="num">' + (r.st.shot_on_goal || '') + '</td><td class="num">' + (r.st.save || '') + '</td>' +
+        '<td class="num">' + (r.st.goal || '') + '</td><td class="num">' + (r.st.assist || '') + '</td><td class="num">' + (r.st.shot_on_target || '') + '</td><td class="num">' + (r.st.shot || '') + '</td><td class="num">' + (r.st.save || '') + '</td>' +
         '<td class="num">' + r.mins + '</td>' +
         '<td>' + r.highlights.map(function(e) {
           return '<a class="gt-yt-thumb" href="' + gtAttr(e.youtube_url) + '" target="_blank" rel="noopener"><img src="https://img.youtube.com/vi/' + gtYtId(e.youtube_url) + '/default.jpg" alt=""/>▶ ' + gtNominalMinute(g, e.period, e.game_clock_seconds) + '&prime;</a> ';

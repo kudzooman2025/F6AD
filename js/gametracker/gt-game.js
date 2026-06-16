@@ -252,6 +252,7 @@ function gtRenderLive(view, gameId) {
       if (st.goal) badges += '<span class="gt-pbadge">⚽' + st.goal + '</span>';
       if (st.assist) badges += '<span class="gt-pbadge">🅰️' + st.assist + '</span>';
       if (st.shot_on_target) badges += '<span class="gt-pbadge">🎯' + st.shot_on_target + '</span>';
+      if (st.shot) badges += '<span class="gt-pbadge">💨' + st.shot + '</span>';
       if (st.save) badges += '<span class="gt-pbadge">🧤' + st.save + '</span>';
       if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
       if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
@@ -299,14 +300,14 @@ function gtFeedItem(g, e, canEdit) {
   var who = e.event_type === 'opponent_goal' ? gtEsc(gtTheirName(g)) : gtEsc(gtPlayerShort(e.player_id));
   var open = GT.openFeedItem === e.id;
   var yt = gtYtId(e.youtube_url);
-  var cumSec = gtCumSec(g, e.period, e.game_clock_seconds);
+  var cumSec = gtDisplayCumSec(g, e.period, e.game_clock_seconds);
   var gameClockStr = gtFmtMMSS(cumSec);
   return '<div class="gt-fitem' + (open ? ' open' : '') + '" onclick="gtToggleFeedItem(\'' + e.id + '\')">' +
     '<span class="fi-min">[' + gameClockStr + ']</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label +
     (e.notes ? ' <span class="fi-note">· ' + gtEsc(e.notes) + '</span>' : '') +
     (yt ? '<br><a class="gt-yt-thumb" href="' + gtAttr(e.youtube_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://img.youtube.com/vi/' + yt + '/default.jpg" alt=""/>▶ Highlight</a>' : '') +
     (canEdit ? '<div class="fi-actions">' +
-      '<button class="gt-minibtn" onclick="event.stopPropagation();gtEditEventNotes(\'' + e.id + '\')">✏️ Edit Note</button>' +
+      '<button class="gt-minibtn" onclick="event.stopPropagation();gtOpenEditEvent(\'' + e.id + '\')">✏️ Edit</button>' +
       '<button class="gt-minibtn" onclick="event.stopPropagation();gtLinkYoutube(\'' + e.id + '\')">🎥 ' + (e.youtube_url ? 'Edit' : 'Link') + ' Highlight</button>' +
       '<button class="gt-minibtn danger" onclick="event.stopPropagation();gtDeleteEvent(\'' + e.id + '\')">🗑 Delete</button>' +
       '</div>' : '') +
@@ -491,15 +492,63 @@ function gtDeleteEvent(eid) {
     showToast('Event deleted.');
   }).catch(function(err){ showToast('Error: ' + err.message); });
 }
-function gtEditEventNotes(eid) {
+function gtOpenEditEvent(eid) {
   if (!gtCanEdit()) return;
   var e = GT.events.find(function(x){ return x.id === eid; });
   if (!e) return;
-  var v = prompt('Notes for this event:', e.notes || '');
-  if (v === null) return;
-  db.collection('gt_events').doc(eid).update({ notes: v.trim() })
-    .then(function(){ showToast('Note updated ✓'); })
-    .catch(function(err){ showToast('Error: ' + err.message); });
+  var g = gtGame(e.game_id); if (!g) return;
+  var isOpp = e.event_type === 'opponent_goal';
+  var nPeriods = g.num_periods || 2;
+  var typeOpts = GT_EVENT_TYPES.map(function(t) {
+    return '<option value="' + t.id + '"' + (t.id === e.event_type ? ' selected' : '') + '>' + t.emoji + ' ' + t.label + '</option>';
+  }).join('');
+  var pids = gtAvailIds(e.game_id).slice();
+  if (e.player_id && pids.indexOf(e.player_id) < 0) pids.unshift(e.player_id);
+  var playerOpts = pids.map(function(id){ return gtP(id); }).filter(Boolean)
+    .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); })
+    .map(function(pl){ return '<option value="' + pl.id + '"' + (pl.id === e.player_id ? ' selected' : '') + '>' + (pl.jersey_number != null ? '#' + pl.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pl.id)) + '</option>'; }).join('');
+  var periodOpts = '';
+  for (var pp = 1; pp <= nPeriods; pp++) periodOpts += '<option value="' + pp + '"' + (pp === (e.period || 1) ? ' selected' : '') + '>' + gtEsc(gtPeriodLabel(g, pp, 'in_progress')) + '</option>';
+  gtOpenModal(
+    '<h3><span>✏️ Edit Event</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    (isOpp
+      ? '<div class="gm-clock">😣 ' + gtEsc(gtTheirName(g)) + ' — Opponent Goal</div>'
+      : '<label>Event type</label><select id="gt-edit-type">' + typeOpts + '</select>' +
+        '<label>Player</label><select id="gt-edit-player">' + playerOpts + '</select>') +
+    '<label>Period</label><select id="gt-edit-period">' + periodOpts + '</select>' +
+    '<label>Time on game clock (MM:SS within period)</label><input type="text" id="gt-edit-time" value="' + gtFmtMMSS(e.game_clock_seconds || 0) + '" placeholder="MM:SS"/>' +
+    '<label>Notes</label><textarea id="gt-edit-notes">' + gtEsc(e.notes || '') + '</textarea>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveEditEvent(\'' + eid + '\')">💾 Save Changes</button>' +
+    '<button class="gt-minibtn danger" style="padding:10px 16px" onclick="gtDeleteEvent(\'' + eid + '\');gtCloseModal()">🗑 Delete</button></div>'
+  );
+}
+function gtSaveEditEvent(eid) {
+  if (!gtCanEdit()) return;
+  var e = GT.events.find(function(x){ return x.id === eid; });
+  if (!e) return;
+  var g = gtGame(e.game_id);
+  var isOpp = e.event_type === 'opponent_goal';
+  var sec = gtParseMMSS(document.getElementById('gt-edit-time').value);
+  if (sec == null) { showToast('Time must be MM:SS.'); return; }
+  var period = parseInt(document.getElementById('gt-edit-period').value, 10) || 1;
+  var notes = document.getElementById('gt-edit-notes').value.trim();
+  var upd = { game_clock_seconds: sec, period: period, notes: notes };
+  var newType = e.event_type;
+  if (!isOpp) {
+    newType = document.getElementById('gt-edit-type').value || e.event_type;
+    upd.event_type = newType;
+    upd.player_id = document.getElementById('gt-edit-player').value || e.player_id;
+  }
+  db.collection('gt_events').doc(eid).update(upd).then(function() {
+    if (!isOpp && g) {
+      var wasGoal = e.event_type === 'goal', isGoal = newType === 'goal';
+      if (isGoal && !wasGoal) return gtBumpScore(g, 'us', 1);
+      if (!isGoal && wasGoal) return gtBumpScore(g, 'us', -1);
+    }
+  }).then(function() {
+    showToast('Event updated ✓');
+    gtCloseModal();
+  }).catch(function(err){ showToast('Error: ' + err.message); });
 }
 function gtLinkYoutube(eid) {
   if (!gtCanEdit()) return;

@@ -112,15 +112,13 @@ function gtClockSeconds(g) {
   return Math.max(0, Math.floor(base));
 }
 function gtDisplaySeconds(g) {
-  // cumulative game seconds for display (clock runs continuously across periods)
+  // cumulative game seconds for display: the clock runs continuously across
+  // periods, each period starting at the NOMINAL end time of the previous one
+  // (e.g. with 35-min halves the 2nd half starts at 35:00 and counts up).
   if (!g) return 0;
   var curPeriod = g.current_period || 1;
-  var pe = g.period_elapsed || {};
-  var prev = 0;
-  for (var p = 1; p < curPeriod; p++) {
-    prev += (pe[p] != null) ? pe[p] : (g.period_duration_minutes || 0) * 60;
-  }
-  return prev + gtClockSeconds(g);
+  var dur = (g.period_duration_minutes || 0) * 60;
+  return (curPeriod - 1) * dur + gtClockSeconds(g);
 }
 function gtFmtDisplayClock(g) {
   // Format the live game clock with extra-time annotation
@@ -148,6 +146,13 @@ function gtCumSec(g, period, sec) {
   var total = sec || 0;
   for (var p = 1; p < (period || 1); p++) total += gtPeriodActual(g, p);
   return total;
+}
+function gtDisplayCumSec(g, period, sec) {
+  // cumulative game-clock seconds for displaying a stored event, on NOMINAL
+  // period boundaries so it matches the live clock (2nd half event = 35:00+).
+  if (!g) return sec || 0;
+  var dur = (g.period_duration_minutes || 0) * 60;
+  return ((period || 1) - 1) * dur + (sec || 0);
 }
 function gtTotalSeconds(g) {
   // total actual seconds played so far in the game
