@@ -4409,10 +4409,23 @@ function gtRenderNew(view) {
   var s = GT.setup;
   var html = '<div class="gt-title">➕ New Game</div>' + gtSetupSteps() + '<div class="gt-card">';
   if (s.step === 1) {
+    var ourRosters = GT.rosters.filter(function(r){ return !r.archived; });
+    var oppSeen = {}, oppNames = [];
+    GT.games.forEach(function(g) {
+      var opp = gtTheirName(g);
+      if (opp && !oppSeen[opp.toLowerCase()]) { oppSeen[opp.toLowerCase()] = true; oppNames.push(opp); }
+    });
+    oppNames.sort(function(a,b){ return a.localeCompare(b); });
+    var currentOpp = s.f6ad_side === 'home' ? s.away_team : s.home_team;
     html += '<div class="gm-row"><div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Our Team</label>' +
-      '<input type="text" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" id="gt-su-us" value="' + gtAttr(s.f6ad_side === 'home' ? s.home_team : s.away_team) + '"/></div>' +
+      '<select id="gt-su-us" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" onchange="gtSetupCapture();gtRerender(true)">' +
+      (ourRosters.length === 0 ? '<option value="">No rosters yet</option>' : '') +
+      ourRosters.map(function(r){ return '<option value="' + r.id + '"' + (s.roster_id === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') +
+      '</select></div>' +
       '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Opponent</label>' +
-      '<input type="text" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" id="gt-su-them" value="' + gtAttr(s.f6ad_side === 'home' ? s.away_team : s.home_team) + '" placeholder="FC Pennsylvania"/></div></div>' +
+      '<input type="text" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" id="gt-su-them" value="' + gtAttr(currentOpp) + '" list="gt-opp-datalist" placeholder="FC Pennsylvania" autocomplete="off"/>' +
+      '<datalist id="gt-opp-datalist">' + oppNames.map(function(n){ return '<option value="' + gtEsc(n) + '">'; }).join('') + '</datalist>' +
+      '</div></div>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">We are playing</label>' +
       '<div class="gt-avail-toggle"><button class="' + (s.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="gtSetupField(\'f6ad_side\',\'home\');gtSetupCapture();gtRerender(true)">🏠 Home</button>' +
       '<button class="' + (s.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="gtSetupField(\'f6ad_side\',\'away\');gtSetupCapture();gtRerender(true)">✈️ Away</button></div>' +
@@ -4478,8 +4491,16 @@ function gtSetupCapture() {
   var s = GT.setup; if (!s) return;
   var us = document.getElementById('gt-su-us'), them = document.getElementById('gt-su-them');
   if (us && them) {
-    if (s.f6ad_side === 'home') { s.home_team = us.value.trim(); s.away_team = them.value.trim(); }
-    else { s.away_team = us.value.trim(); s.home_team = them.value.trim(); }
+    var usName, usRid;
+    if (us.tagName === 'SELECT') {
+      usRid = us.value;
+      usName = us.selectedIndex >= 0 ? us.options[us.selectedIndex].text : '';
+      if (usRid) s.roster_id = usRid;
+    } else {
+      usName = us.value.trim();
+    }
+    if (s.f6ad_side === 'home') { s.home_team = usName; s.away_team = them.value.trim(); }
+    else { s.away_team = usName; s.home_team = them.value.trim(); }
   }
   var t = document.getElementById('gt-su-type'); if (t) s.game_type = t.value;
   var v = document.getElementById('gt-su-venue'); if (v) s.venue = v.value.trim();
@@ -4491,7 +4512,7 @@ function gtSetupNav(dir) {
     gtSetupCapture();
     var usName = s.f6ad_side === 'home' ? s.home_team : s.away_team;
     var themName = s.f6ad_side === 'home' ? s.away_team : s.home_team;
-    if (!usName || !themName) { showToast('Enter both team names.'); return; }
+    if (!usName || !themName) { showToast('Select a team and enter an opponent.'); return; }
   }
   if (s.step === 2 && dir > 0 && !s.roster_id) { showToast('Select a roster.'); return; }
   s.step = Math.max(1, Math.min(4, s.step + dir));
