@@ -572,7 +572,6 @@ footer strong{color:#fff}
 .gt-feed{display:flex;flex-direction:column;gap:6px}
 .gt-fitem{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-size:.85rem;cursor:pointer}
 .gt-fitem .fi-min{font-weight:900;color:var(--purple);font-variant-numeric:tabular-nums;margin-right:8px}
-.gt-fitem .fi-wall{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
 .gt-et-badge{font-size:.72rem;font-weight:800;color:#c05500;background:#fff3e0;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle}
 .gt-fitem .fi-note{color:var(--muted);font-size:.78rem}
 .gt-fitem .fi-actions{display:none;margin-top:8px;gap:8px}
@@ -4654,20 +4653,13 @@ function gtRenderLive(view, gameId) {
 }
 function gtFeedItem(g, e, canEdit) {
   var t = gtEventType(e.event_type);
-  var min = gtNominalMinute(g, e.period, e.game_clock_seconds);
   var who = e.event_type === 'opponent_goal' ? gtEsc(gtTheirName(g)) : gtEsc(gtPlayerShort(e.player_id));
   var open = GT.openFeedItem === e.id;
   var yt = gtYtId(e.youtube_url);
-  var wallTime = '';
-  if (e.created_at && e.created_at.toDate) {
-    var d = e.created_at.toDate();
-    var hh = d.getHours(), mm = d.getMinutes();
-    var ap = hh >= 12 ? 'PM' : 'AM';
-    hh = hh % 12 || 12;
-    wallTime = ' <span class="fi-wall">@ ' + hh + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap + '</span>';
-  }
+  var cumSec = gtCumSec(g, e.period, e.game_clock_seconds);
+  var gameClockStr = gtFmtMMSS(cumSec);
   return '<div class="gt-fitem' + (open ? ' open' : '') + '" onclick="gtToggleFeedItem(\'' + e.id + '\')">' +
-    '<span class="fi-min">[' + min + '&prime;]</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label + wallTime +
+    '<span class="fi-min">[' + gameClockStr + ']</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label +
     (e.notes ? ' <span class="fi-note">· ' + gtEsc(e.notes) + '</span>' : '') +
     (yt ? '<br><a class="gt-yt-thumb" href="' + gtAttr(e.youtube_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://img.youtube.com/vi/' + yt + '/default.jpg" alt=""/>▶ Highlight</a>' : '') +
     (canEdit ? '<div class="fi-actions">' +
