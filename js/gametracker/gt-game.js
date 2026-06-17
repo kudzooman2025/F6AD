@@ -289,12 +289,17 @@ function gtRenderLive(view, gameId) {
       if (st.tackle) badges += '<span class="gt-pbadge">🛡️' + st.tackle + '</span>';
       if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
       if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
-      var off = onField[p.id] === false;
-      return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + (off ? ' off' : '') + '"' +
-        (canEdit ? ' onclick="' + (g.status === 'setup' ? 'gtOpenStarterPopup' : 'gtOpenEventPopup') + '(\'' + g.id + '\',\'' + p.id + '\')"' : '') + '>' +
+      var setup = g.status === 'setup';
+      var ae = gtGameAvailEntry(g.id, p.id) || {};
+      var off = setup ? !ae.started : (onField[p.id] === false);
+      var starterCls = (setup && ae.started) ? ' starter' : '';
+      var posShow = setup ? (p.default_position || '') : gtLastPosition(g.id, p.id);
+      var statusLabel = setup ? (ae.started ? 'START' : 'BENCH') : gtStatusShort(gtPlayerGameStatus(g.id, p.id));
+      return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + '"' +
+        (canEdit ? ' onclick="' + (setup ? 'gtToggleStarter' : 'gtOpenEventPopup') + '(\'' + g.id + '\',\'' + p.id + '\')"' : '') + '>' +
         '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
         '<span class="pc-name">' + gtEsc(gtPlayerShort(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</span>' +
-        '<span class="pc-pos">' + (gtLastPosition(g.id, p.id) ? gtEsc(gtLastPosition(g.id, p.id)) + ' · ' : '') + gtStatusShort(gtPlayerGameStatus(g.id, p.id)) + '</span>' +
+        '<span class="pc-pos">' + (posShow ? gtEsc(posShow) + ' · ' : '') + statusLabel + '</span>' +
         '<span class="pc-badges">' + badges + '</span></button>';
     }).join('') + '</div>';
   }
@@ -476,7 +481,7 @@ function gtOpenEventPopup(gid, pid) {
   var p = gtP(pid);
   var ae = gtGameAvailEntry(gid, pid);
   var started = !!(ae && ae.started);
-  var startPos = ae && ae.start_position ? ae.start_position : '';
+  var startPos = ae && ae.start_position ? ae.start_position : ((p && p.default_position) || '');
   GT.pendingEvent = { gameId: gid, playerId: pid, clock: gtClockSeconds(g), period: g.current_period || 1, type: null };
   // Use the same available-player list the live game grid uses, minus the scorer
   var assistPlayers = gtAvailIds(gid)
@@ -682,7 +687,7 @@ function gtOpenSubForm(gid, outPid) {
 function gtSubInChanged(gid) {
   var inPid = document.getElementById('gt-sub-in').value;
   var posSel = document.getElementById('gt-sub-pos');
-  if (inPid && posSel && !posSel.value) posSel.value = gtLastPosition(gid, inPid);
+  if (inPid && posSel) { var ip = gtP(inPid); posSel.value = (ip && ip.default_position) || gtLastPosition(gid, inPid) || ''; }
 }
 function gtSaveSub(gid, outPid, clock, period) {
   var inPid = document.getElementById('gt-sub-in').value;
@@ -712,20 +717,15 @@ function gtSetStarter(gid, pid, started, pos) {
   }
   op.catch(function(e){ showToast('Error: ' + e.message); });
 }
-function gtOpenStarterPopup(gid, pid) {
+function gtToggleStarter(gid, pid) {
+  // Fast lineup: tap toggles a player in/out of the starting XI, using their
+  // pre-set default lineup position (overridable in-game via the event popup).
   if (!gtCanEdit()) return;
-  var g = gtGame(gid); if (!g) return;
-  var p = gtP(pid);
   var ae = gtGameAvailEntry(gid, pid);
-  var started = !!(ae && ae.started);
-  var startPos = ae && ae.start_position ? ae.start_position : gtLastPosition(gid, pid);
-  gtOpenModal(
-    '<h3><span>' + (p && p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pid)) + '</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<p style="font-size:.85rem;color:var(--muted);margin:0 0 10px">Set your starting lineup. You can change this any time, including after the clock starts.</p>' +
-    '<label style="display:flex;align-items:center;gap:8px;text-transform:none"><input type="checkbox" id="gt-st-cb"' + (started ? ' checked' : '') + ' onchange="document.getElementById(\'gt-st-pos\').style.display=this.checked?\'\':\'none\';gtSetStarter(\'' + gid + '\',\'' + pid + '\',this.checked,document.getElementById(\'gt-st-pos\').value)"/> Started this game (starting XI)</label>' +
-    '<select id="gt-st-pos" style="display:' + (started ? '' : 'none') + ';margin-top:8px" onchange="gtSetStarter(\'' + gid + '\',\'' + pid + '\',document.getElementById(\'gt-st-cb\').checked,this.value)">' + gtPositionOptions(startPos) + '</select>' +
-    '<div class="gm-actions"><button class="btn-primary" onclick="gtCloseModal()">Done</button></div>'
-  );
+  var nowStarted = !(ae && ae.started);
+  var p = gtP(pid);
+  var pos = nowStarted ? ((p && p.default_position) || (ae && ae.start_position) || '') : '';
+  gtSetStarter(gid, pid, nowStarted, pos);
 }
 function gtStatusShort(st) {
   return { STARTER: 'START', ON_FIELD: 'ON', BENCHED: 'BENCH', NOT_USED: 'BENCH' }[st] || '';

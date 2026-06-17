@@ -87,6 +87,7 @@ function gtOpenGuestForm(pid) {
     '<div><label>Last Name</label><input type="text" id="gt-gf2-last" value="' + gtAttr(p ? p.last_name : '') + '"/></div></div>' +
     '<div class="gm-row"><div><label>Jersey #</label><input type="number" id="gt-gf2-num" value="' + (p && p.jersey_number != null ? p.jersey_number : '') + '" min="0" max="99"/></div>' +
     '<div><label>Position</label><input type="text" id="gt-gf2-pos" value="' + gtAttr(p ? p.position : '') + '" placeholder="GK, DEF, MID, FWD"/></div></div>' +
+    '<label>Default Lineup Position</label><select id="gt-gf2-defpos">' + gtPositionOptions(p ? p.default_position : '') + '</select>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveGuest(' + (p ? '\'' + p.id + '\'' : 'null') + ')">Save Guest</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
@@ -101,6 +102,7 @@ function gtSaveGuest(pid) {
     last_name: document.getElementById('gt-gf2-last').value.trim(),
     jersey_number: numV === '' ? null : parseInt(numV, 10),
     position: document.getElementById('gt-gf2-pos').value.trim(),
+    default_position: document.getElementById('gt-gf2-defpos').value,
     is_guest: true, updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   var op;
@@ -178,6 +180,7 @@ function gtOpenPlayerForm(rid, pid) {
     '<div><label>Last Name</label><input type="text" id="gt-pf-last" value="' + gtAttr(p ? p.last_name : '') + '"/></div></div>' +
     '<div class="gm-row"><div><label>Jersey #</label><input type="number" id="gt-pf-num" value="' + (p && p.jersey_number != null ? p.jersey_number : '') + '" min="0" max="99"/></div>' +
     '<div><label>Position</label><input type="text" id="gt-pf-pos" value="' + gtAttr(p ? p.position : '') + '" placeholder="GK, DEF, MID, FWD"/></div></div>' +
+    '<label>Default Lineup Position (used for starters &amp; subs)</label><select id="gt-pf-defpos">' + gtPositionOptions(p ? p.default_position : '') + '</select>' +
     '<label>Parent / Guardian Name</label><input type="text" id="gt-pf-pname" value="' + gtAttr(p ? p.parent_name : '') + '"/>' +
     '<label>Parent Phone (E.164, e.g. +12155551234)</label><input type="tel" id="gt-pf-pphone" value="' + gtAttr(p ? p.parent_phone : '') + '" placeholder="+1XXXXXXXXXX"/>' +
     '<div class="gt-checkrow" style="margin-top:12px"><input type="checkbox" id="gt-pf-optin"' + (p && p.whatsapp_opt_in ? ' checked' : '') + '/>' +
@@ -207,6 +210,7 @@ function gtWirePlayerAutocomplete() {
     el = document.getElementById('gt-pf-last');  if(el) el.value = pl.last_name || '';
     el = document.getElementById('gt-pf-num');   if(el) el.value = pl.jersey_number != null ? pl.jersey_number : '';
     el = document.getElementById('gt-pf-pos');   if(el) el.value = pl.position || '';
+    el = document.getElementById('gt-pf-defpos'); if(el) el.value = pl.default_position || '';
     el = document.getElementById('gt-pf-pname'); if(el) el.value = pl.parent_name || '';
     el = document.getElementById('gt-pf-pphone');if(el) el.value = pl.parent_phone || '';
     el = document.getElementById('gt-pf-optin'); if(el) el.checked = !!pl.whatsapp_opt_in;
@@ -273,6 +277,7 @@ function gtSavePlayer(rid, pid) {
     roster_id: rid, first_name: first, last_name: last,
     jersey_number: numV === '' ? null : parseInt(numV, 10),
     position: document.getElementById('gt-pf-pos').value.trim(),
+    default_position: document.getElementById('gt-pf-defpos').value,
     parent_name: document.getElementById('gt-pf-pname').value.trim(),
     parent_phone: phone, whatsapp_opt_in: optin,
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
