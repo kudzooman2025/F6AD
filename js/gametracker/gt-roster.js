@@ -30,7 +30,8 @@ function gtRenderRoster(view) {
         '<button class="gt-minibtn" onclick="gtOpenRosterForm(\'' + r.id + '\')">Edit</button>' +
         (!r.is_active && !r.archived ? '<button class="gt-minibtn" onclick="gtSetActiveRoster(\'' + r.id + '\')">Set Active</button>' : '') +
         (!r.archived ? '<button class="gt-minibtn" onclick="gtArchiveRoster(\'' + r.id + '\',true)">Archive</button>'
-          : '<button class="gt-minibtn" onclick="gtArchiveRoster(\'' + r.id + '\',false)">Unarchive</button>')
+          : '<button class="gt-minibtn" onclick="gtArchiveRoster(\'' + r.id + '\',false)">Unarchive</button>') +
+        '<button class="gt-minibtn danger" onclick="gtDeleteRoster(\'' + r.id + '\')">Delete</button>'
       ) : '') +
       '</div>';
   }).join('');
@@ -153,6 +154,20 @@ function gtArchiveRoster(rid, val) {
   db.collection('gt_rosters').doc(rid).set({ archived: val, is_active: false }, { merge: true })
     .then(function(){ showToast(val ? 'Roster archived.' : 'Roster restored.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtDeleteRoster(rid) {
+  if (!gtCanEdit()) return;
+  var r = gtRoster(rid); if (!r) return;
+  var players = gtRosterPlayers(rid);
+  if (!confirm('Delete roster "' + (r.name || '') + '"' + (players.length ? ' and its ' + players.length + ' player record(s)' : '') + '?\n\nThis cannot be undone. Any game events already logged for these players will remain but show as "Unknown".')) return;
+  var batch = db.batch();
+  players.forEach(function(p){ batch.delete(db.collection('gt_players').doc(p.id)); });
+  batch.delete(db.collection('gt_rosters').doc(rid));
+  batch.commit().then(function() {
+    if (GT.rosterSel === rid) GT.rosterSel = null;
+    showToast('Roster deleted.');
+    gtRerender(true);
+  }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtOpenPlayerForm(rid, pid) {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }
