@@ -198,7 +198,7 @@ function gtStartTournamentGame(tid) {
     num_periods: 2, period_duration_minutes: 35,
     roster_id: t.base_roster_id,
     avail: avail, notes: {}, guests: [], guestIds: guestIds,
-    tournament_id: tid,
+    tournament_id: tid, season_id: null,
     started: {}, startPos: {}, team_name: t.team_name || (ros ? ros.name : 'F6AD')
   };
   gtGo('/gametracker/new');

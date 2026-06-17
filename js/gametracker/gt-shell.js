@@ -5,7 +5,7 @@ function gtListen() {
   var defs = [
     ['gt_rosters', 'rosters'], ['gt_players', 'players'], ['gt_games', 'games'],
     ['gt_events', 'events'], ['gt_subs', 'subs'], ['gt_availability', 'avail'],
-    ['gt_tournaments', 'tournaments']
+    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons']
   ];
   defs.forEach(function(def) {
     db.collection(def[0]).onSnapshot(function(snap) {
@@ -88,6 +88,7 @@ function gtRerender(force) {
   else if (page === 'season') gtRenderSeason(view);
   else if (page === 'tournaments') gtRenderTournaments(view);
   else if (page === 'tournament') gtRenderTournament(view, GT.route.arg);
+  else if (page === 'seasons') { if (GT.route.arg) gtRenderSeasonEntity(view, GT.route.arg); else gtRenderSeasons(view); }
   else if (page === 'roster') gtRenderRoster(view);
   else if (page === 'player') gtRenderPlayerProfile(view, GT.route.arg);
   else gtRenderHome(view);
@@ -100,6 +101,7 @@ function gtRenderNav() {
     ['home', '#/gametracker', '⚽ GameTracker'],
     ['season', '#/gametracker/season', '📊 Season Stats'],
     ['tournaments', '#/gametracker/tournaments', '🏆 Tournaments'],
+    ['seasons', '#/gametracker/seasons', '📅 Seasons'],
     ['roster', '#/gametracker/roster', '👥 Roster'],
     ['site', '#/home', '🏠 Team Site']
   ];
@@ -177,6 +179,7 @@ function gtRenderHome(view) {
     (gtCanEdit() ? '<button class="gt-bigbtn" onclick="gtStartSetup()"><span class="bb-icon">➕</span><span class="bb-label">Create New Game</span><span class="bb-desc">Set up teams, format &amp; roster</span></button>' : '') +
     '<button class="gt-bigbtn" onclick="gtGo(\'/gametracker/season\')"><span class="bb-icon">📊</span><span class="bb-label">Season Stats</span><span class="bb-desc">Game log &amp; player leaderboard</span></button>' +
     '<button class="gt-bigbtn" onclick="gtGo(\'/gametracker/tournaments\')"><span class="bb-icon">🏆</span><span class="bb-label">Tournaments</span><span class="bb-desc">Rosters, availability &amp; fees</span></button>' +
+    '<button class="gt-bigbtn" onclick="gtGo(\'/gametracker/seasons\')"><span class="bb-icon">📅</span><span class="bb-label">Seasons</span><span class="bb-desc">Group league games &amp; track record</span></button>' +
     '<button class="gt-bigbtn" onclick="gtGo(\'/gametracker/roster\')"><span class="bb-icon">👥</span><span class="bb-label">Roster Manager</span><span class="bb-desc">Players, parents &amp; contact info</span></button>' +
     '</div>';
   if (live.length) {
