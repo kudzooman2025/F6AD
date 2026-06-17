@@ -26,6 +26,7 @@ function gtRenderReview(view, gameId) {
     '<div class="gt-stat-box"><div class="sb-num">' + totals.tackle + '</div><div class="sb-label">Tackles</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + (totals.yellow_card + totals.red_card) + '</div><div class="sb-label">Cards</div></div>' +
     '</div>';
+  html += gtStartingXiHtml(g.id);
   // timeline with period markers
   html += '<div class="section-title" style="margin-bottom:12px">⏱ Event Timeline</div>';
   if (!events.length) html += '<div class="gt-empty">No events were logged in this game.</div>';

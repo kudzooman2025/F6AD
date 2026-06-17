@@ -275,6 +275,7 @@ function gtRenderLive(view, gameId) {
     var an = a.jersey_number == null ? 999 : a.jersey_number, bn = b.jersey_number == null ? 999 : b.jersey_number;
     return an - bn;
   });
+  html += gtStartingXiHtml(g.id);
   html += '<div class="section-title" style="margin-bottom:12px">👕 Players' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters &amp; positions' : 'tap to log an event or sub') + '</span>' : '') + '</div>';
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {

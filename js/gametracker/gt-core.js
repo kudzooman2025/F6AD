@@ -273,6 +273,27 @@ function gtPlayerGameStatus(gid, pid) {
   }
   return 'BENCHED';
 }
+function gtStarters(gid) {
+  // players who started, ordered by position (formation order) then jersey
+  return gtGameAvail(gid).filter(function(a){ return a.available && a.started; })
+    .map(function(a){ return { pid: a.player_id, pos: a.start_position || '' }; })
+    .sort(function(x, y) {
+      var xi = GT_POSITIONS.indexOf(x.pos); if (xi < 0) xi = 99;
+      var yi = GT_POSITIONS.indexOf(y.pos); if (yi < 0) yi = 99;
+      if (xi !== yi) return xi - yi;
+      var xp = gtP(x.pid), yp = gtP(y.pid);
+      return (xp && xp.jersey_number != null ? xp.jersey_number : 999) - (yp && yp.jersey_number != null ? yp.jersey_number : 999);
+    });
+}
+function gtStartingXiHtml(gid) {
+  var starters = gtStarters(gid);
+  if (!starters.length) return '';
+  return '<div class="gt-xi"><span class="gt-xi-label">⭐ Starting XI (' + starters.length + ')</span> ' +
+    starters.map(function(s) {
+      var p = gtP(s.pid);
+      return '<span class="gt-xi-item">' + (p && p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(s.pid)) + (s.pos ? ' <span class="gt-xi-pos">' + gtEsc(s.pos) + '</span>' : '') + '</span>';
+    }).join('') + '</div>';
+}
 function gtStatLine(pid, events) {
   var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0, tackle: 0 };
   events.forEach(function(e){ if (e.player_id === pid && st[e.event_type] !== undefined) st[e.event_type]++; });
