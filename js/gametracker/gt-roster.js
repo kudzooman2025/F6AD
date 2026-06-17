@@ -51,7 +51,7 @@ function gtRenderRoster(view) {
           '<td>' + gtEsc(p.parent_phone || '—') + '</td>' +
           '<td class="num">' + (p.whatsapp_opt_in ? '✅' : '—') + '</td>' +
           (canEdit ? '<td style="white-space:nowrap"><button class="gt-minibtn" onclick="gtOpenPlayerForm(\'' + sel.id + '\',\'' + p.id + '\')">Edit</button> ' +
-            (p.is_guest ? '<button class="gt-minibtn" onclick="gtConvertGuest(\'' + p.id + '\')">⬆ Full Player</button> ' : '') +
+            (p.is_guest ? '<button class="gt-minibtn" onclick="gtConvertGuest(\'' + p.id + '\')">⬆ Full Player</button> ' : '<button class="gt-minibtn" onclick="gtMakeGuest(\'' + p.id + '\')">⬇ Make Guest</button> ') +
             '<button class="gt-minibtn danger" onclick="gtDeletePlayer(\'' + p.id + '\')">Remove</button></td>' : '') +
           '</tr>';
       });
@@ -278,6 +278,13 @@ function gtConvertGuest(pid) {
   if (!gtCanEdit()) return;
   db.collection('gt_players').doc(pid).set({ is_guest: false }, { merge: true })
     .then(function(){ showToast(gtPlayerName(pid) + ' converted to full player ✓'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtMakeGuest(pid) {
+  if (!gtCanEdit()) return;
+  if (!confirm('Move ' + gtPlayerName(pid) + ' into the Guest Players pool? Their info, stats and game history are kept.')) return;
+  db.collection('gt_players').doc(pid).set({ is_guest: true, roster_id: '__guests__', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .then(function(){ showToast(gtPlayerName(pid) + ' moved to guest pool ✓'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtDeletePlayer(pid) {
