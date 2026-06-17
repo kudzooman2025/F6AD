@@ -199,7 +199,7 @@ function gtStartTournamentGame(tid) {
     away_team: '', f6ad_side: 'home', game_type: 'tournament', venue: t.venue || '',
     num_periods: 2, period_duration_minutes: 35, players_per_side: t.players_per_side || 11,
     roster_id: t.base_roster_id,
-    avail: avail, notes: {}, guests: [], guestIds: guestIds,
+    avail: avail, notes: {}, guests: [], guestIds: guestIds, kickoff_time: '',
     tournament_id: tid, season_id: null,
     started: {}, startPos: {}, team_name: t.team_name || (ros ? ros.name : 'F6AD')
   };

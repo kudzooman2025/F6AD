@@ -130,7 +130,7 @@ function gtStartSeasonGame(sid) {
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: '',
     num_periods: 2, period_duration_minutes: 35, players_per_side: se.players_per_side || 11,
     roster_id: se.base_roster_id,
-    avail: {}, notes: {}, guests: [], guestIds: {},
+    avail: {}, notes: {}, guests: [], guestIds: {}, kickoff_time: '',
     tournament_id: null, season_id: sid,
     started: {}, startPos: {}, team_name: se.team_name || (ros ? ros.name : 'F6AD')
   };

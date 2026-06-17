@@ -58,6 +58,13 @@ function gtFmtDate(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function gtTsMillis(ts) { return ts && ts.toMillis ? ts.toMillis() : (ts ? new Date(ts).getTime() : 0); }
+function gtFmtKickoff(t) {
+  if (!t || typeof t !== 'string' || t.indexOf(':') < 0) return '';
+  var parts = t.split(':'), h = parseInt(parts[0], 10), m = parts[1];
+  if (isNaN(h)) return '';
+  var ap = h < 12 ? 'AM' : 'PM', h12 = h % 12; if (h12 === 0) h12 = 12;
+  return h12 + ':' + m + ' ' + ap;
+}
 function gtCanEdit() { return isCoachLoggedIn() || isAdminUnlocked(); }
 
 // ---------- data helpers ----------
