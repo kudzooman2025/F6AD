@@ -19,12 +19,12 @@ function gtRenderTournaments(view) {
   html += '<div class="gt-glist">' + list.map(function(t) {
     var lu = gtTournLineup(t), ids = Object.keys(lu);
     var avail = ids.filter(function(id){ return lu[id].available; }).length;
-    var paid = ids.filter(function(id){ return lu[id].paid; }).length;
+    var paid = ids.filter(function(id){ return lu[id].available && lu[id].paid; }).length;
     var games = gtTournamentGames(t.id).length;
     return '<div class="gt-gitem" onclick="gtGo(\'/gametracker/tournament/' + t.id + '\')">' +
       '<span class="gi-teams">' + gtEsc(t.name) + '</span>' +
       '<span class="gi-meta">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') +
-        ' · ' + avail + ' available · ' + paid + '/' + ids.length + ' paid · ' + games + ' game' + (games === 1 ? '' : 's') + '</span>' +
+        ' · ' + avail + ' available · ' + paid + '/' + avail + ' paid · ' + games + ' game' + (games === 1 ? '' : 's') + '</span>' +
       '</div>';
   }).join('') + '</div>';
   view.innerHTML = html;
@@ -95,14 +95,14 @@ function gtRenderTournament(view, tid) {
       return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id));
     });
   var availCount = entries.filter(function(x){ return x.e.available; }).length;
-  var paidCount = entries.filter(function(x){ return x.e.paid; }).length;
+  var paidCount = entries.filter(function(x){ return x.e.available && x.e.paid; }).length;
   var html = gtLockBanner() +
     '<div class="gt-title">🏆 ' + gtEsc(t.name) + '</div>' +
     '<div class="gt-sub">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') + '</div>';
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + availCount + '</div><div class="sb-label">Available</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + (entries.length - availCount) + '</div><div class="sb-label">Out</div></div>' +
-    '<div class="gt-stat-box"><div class="sb-num">' + paidCount + '/' + entries.length + '</div><div class="sb-label">Paid</div></div>' +
+    '<div class="gt-stat-box"><div class="sb-num">' + paidCount + '/' + availCount + '</div><div class="sb-label">Paid</div></div>' +
     '</div>';
   if (canEdit) html += '<div style="margin:4px 0 16px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="gt-minibtn" onclick="gtOpenTournamentForm(\'' + t.id + '\')">✏️ Edit Details</button>' +
