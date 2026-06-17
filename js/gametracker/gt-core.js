@@ -25,7 +25,8 @@ var GT_EVENT_TYPES = [
   { id: 'highlight',      label: 'Highlight',      emoji: '⭐' },
   { id: 'yellow_card',    label: 'Yellow Card',    emoji: '🟨' },
   { id: 'red_card',       label: 'Red Card',       emoji: '🟥' },
-  { id: 'save',           label: 'Save',           emoji: '🧤' }
+  { id: 'save',           label: 'Save',           emoji: '🧤' },
+  { id: 'tackle',         label: 'Tackle',         emoji: '🛡️' }
 ];
 // Fixed position list (primary formation 5-3-2). Order is intentional.
 var GT_POSITIONS = ['GK', 'LST', 'RST', 'LWB', 'RWB', 'CDM', 'LCB', 'CB', 'RCB', 'CMID', 'LMID', 'RMID', 'CAM', 'FWD'];
@@ -273,7 +274,7 @@ function gtPlayerGameStatus(gid, pid) {
   return 'BENCHED';
 }
 function gtStatLine(pid, events) {
-  var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0 };
+  var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0, tackle: 0 };
   events.forEach(function(e){ if (e.player_id === pid && st[e.event_type] !== undefined) st[e.event_type]++; });
   return st;
 }

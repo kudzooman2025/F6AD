@@ -286,6 +286,7 @@ function gtRenderLive(view, gameId) {
       if (st.shot_on_target) badges += '<span class="gt-pbadge">🎯' + st.shot_on_target + '</span>';
       if (st.shot) badges += '<span class="gt-pbadge">💨' + st.shot + '</span>';
       if (st.save) badges += '<span class="gt-pbadge">🧤' + st.save + '</span>';
+      if (st.tackle) badges += '<span class="gt-pbadge">🛡️' + st.tackle + '</span>';
       if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
       if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
       var off = onField[p.id] === false;

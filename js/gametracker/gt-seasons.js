@@ -110,10 +110,10 @@ function gtRenderSeasonEntity(view, sid) {
   if (stats.length) {
     stats.sort(function(a, b){ return (b.goals - a.goals) || (b.assists - a.assists) || a.name.localeCompare(b.name); });
     html += '<div class="section-title" style="margin:26px 0 12px">🏆 Player Stats</div>' +
-      '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Player</th><th class="num">GP</th><th class="num">⚽</th><th class="num">🅰️</th><th class="num">🎯</th><th class="num">💨</th><th class="num">🧤</th><th class="num">Min</th></tr></thead><tbody>';
+      '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Player</th><th class="num">GP</th><th class="num">⚽</th><th class="num">🅰️</th><th class="num">🎯</th><th class="num">💨</th><th class="num">🧤</th><th class="num">🛡️</th><th class="num">Min</th></tr></thead><tbody>';
     stats.forEach(function(st) {
       html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + st.id + '\')">' + gtEsc(st.name) + '</span>' + (st.guest ? '<span class="gt-guest-badge">Guest</span>' : '') + '</td>' +
-        '<td class="num">' + st.gp + '</td><td class="num">' + st.goals + '</td><td class="num">' + st.assists + '</td><td class="num">' + st.sot + '</td><td class="num">' + st.sh + '</td><td class="num">' + st.saves + '</td><td class="num">' + st.min + '</td></tr>';
+        '<td class="num">' + st.gp + '</td><td class="num">' + st.goals + '</td><td class="num">' + st.assists + '</td><td class="num">' + st.sot + '</td><td class="num">' + st.sh + '</td><td class="num">' + st.saves + '</td><td class="num">' + (st.tackles || 0) + '</td><td class="num">' + st.min + '</td></tr>';
     });
     html += '</tbody></table></div>';
   }
