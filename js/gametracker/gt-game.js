@@ -267,7 +267,7 @@ function gtRenderLive(view, gameId) {
     var an = a.jersey_number == null ? 999 : a.jersey_number, bn = b.jersey_number == null ? 999 : b.jersey_number;
     return an - bn;
   });
-  html += '<div class="section-title" style="margin-bottom:12px">👕 Players' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap a player to log an event</span>' : '') + '</div>';
+  html += '<div class="section-title" style="margin-bottom:12px">👕 Players' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters &amp; positions' : 'tap to log an event or sub') + '</span>' : '') + '</div>';
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {
     html += '<div class="gt-pgrid">' + players.map(function(p) {
@@ -282,7 +282,7 @@ function gtRenderLive(view, gameId) {
       if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
       var off = onField[p.id] === false;
       return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + (off ? ' off' : '') + '"' +
-        (canEdit ? ' onclick="gtOpenEventPopup(\'' + g.id + '\',\'' + p.id + '\')"' : '') + '>' +
+        (canEdit ? ' onclick="' + (g.status === 'setup' ? 'gtOpenStarterPopup' : 'gtOpenEventPopup') + '(\'' + g.id + '\',\'' + p.id + '\')"' : '') + '>' +
         '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
         '<span class="pc-name">' + gtEsc(gtPlayerShort(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</span>' +
         '<span class="pc-pos">' + (gtLastPosition(g.id, p.id) ? gtEsc(gtLastPosition(g.id, p.id)) + ' · ' : '') + gtStatusShort(gtPlayerGameStatus(g.id, p.id)) + '</span>' +
@@ -658,6 +658,21 @@ function gtSetStarter(gid, pid, started, pos) {
     op = db.collection('gt_availability').add(data);
   }
   op.catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtOpenStarterPopup(gid, pid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var p = gtP(pid);
+  var ae = gtGameAvailEntry(gid, pid);
+  var started = !!(ae && ae.started);
+  var startPos = ae && ae.start_position ? ae.start_position : gtLastPosition(gid, pid);
+  gtOpenModal(
+    '<h3><span>' + (p && p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pid)) + '</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted);margin:0 0 10px">Set your starting lineup. You can change this any time, including after the clock starts.</p>' +
+    '<label style="display:flex;align-items:center;gap:8px;text-transform:none"><input type="checkbox" id="gt-st-cb"' + (started ? ' checked' : '') + ' onchange="document.getElementById(\'gt-st-pos\').style.display=this.checked?\'\':\'none\';gtSetStarter(\'' + gid + '\',\'' + pid + '\',this.checked,document.getElementById(\'gt-st-pos\').value)"/> Started this game (starting XI)</label>' +
+    '<select id="gt-st-pos" style="display:' + (started ? '' : 'none') + ';margin-top:8px" onchange="gtSetStarter(\'' + gid + '\',\'' + pid + '\',document.getElementById(\'gt-st-cb\').checked,this.value)">' + gtPositionOptions(startPos) + '</select>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtCloseModal()">Done</button></div>'
+  );
 }
 function gtStatusShort(st) {
   return { STARTER: 'START', ON_FIELD: 'ON', BENCHED: 'BENCH', NOT_USED: 'BENCH' }[st] || '';
