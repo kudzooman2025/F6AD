@@ -199,7 +199,7 @@ function gtStartTournamentGame(tid) {
     roster_id: t.base_roster_id,
     avail: avail, notes: {}, guests: [], guestIds: guestIds,
     tournament_id: tid,
-    started: {}, startPos: {}
+    started: {}, startPos: {}, team_name: t.team_name || (ros ? ros.name : 'F6AD')
   };
   gtGo('/gametracker/new');
 }

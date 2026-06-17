@@ -9,7 +9,7 @@ function gtStartSetup() {
     num_periods: 2, period_duration_minutes: 35,
     roster_id: act ? act.id : '',
     avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null,
-    started: {}, startPos: {}
+    started: {}, startPos: {}, team_name: ''
   };
   gtGo('/gametracker/new');
 }
@@ -49,6 +49,8 @@ function gtRenderNew(view) {
       '<input type="text" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" id="gt-su-them" value="' + gtAttr(currentOpp) + '" list="gt-opp-datalist" placeholder="FC Pennsylvania" autocomplete="off"/>' +
       '<datalist id="gt-opp-datalist">' + oppNames.map(function(n){ return '<option value="' + gtEsc(n) + '">'; }).join('') + '</datalist>' +
       '</div></div>' +
+      '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Team Name (shown in game)</label>' +
+      '<input type="text" id="gt-su-teamname" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.team_name || '') + '" placeholder="' + (gtRoster(s.roster_id) ? gtAttr(gtRoster(s.roster_id).name) : 'F6AD') + '" onchange="gtSetupCapture()"/>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">We are playing</label>' +
       '<div class="gt-avail-toggle"><button class="' + (s.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="gtSetupField(\'f6ad_side\',\'home\');gtSetupCapture();gtRerender(true)">🏠 Home</button>' +
       '<button class="' + (s.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="gtSetupField(\'f6ad_side\',\'away\');gtSetupCapture();gtRerender(true)">✈️ Away</button></div>' +
@@ -139,6 +141,9 @@ function gtSetupCapture() {
     } else {
       usName = us.value.trim();
     }
+    var tn = document.getElementById('gt-su-teamname');
+    if (tn) s.team_name = tn.value.trim();
+    if (s.team_name) usName = s.team_name;
     if (s.f6ad_side === 'home') { s.home_team = usName; s.away_team = them.value.trim(); }
     else { s.away_team = usName; s.home_team = them.value.trim(); }
   }
