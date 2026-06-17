@@ -313,7 +313,7 @@ function gtRenderLive(view, gameId) {
       outs.map(function(a){ return gtEsc(gtPlayerShort(a.player_id)) + (a.notes ? ' (' + gtEsc(a.notes) + ')' : ''); }).join(', ') + '</p>';
   }
   if (canEdit) {
-    html += '<div style="margin-top:26px;text-align:right"><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
+    html += '<div style="margin-top:26px;display:flex;gap:10px;justify-content:flex-end"><button class="gt-minibtn" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
   }
   view.innerHTML = html;
   // ticking clock
@@ -383,6 +383,47 @@ function gtEndPeriod(gid) {
 }
 function gtStartNextPeriod(gid) {
   gtGameUpdate(gid, { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: firebase.firestore.FieldValue.serverTimestamp() });
+}
+function gtOpenGameEdit(gid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var g = gtGame(gid); if (!g) return;
+  var opp = gtTheirName(g);
+  var d = g.played_at ? (g.played_at.toDate ? g.played_at.toDate() : new Date(g.played_at)) : null;
+  var dateVal = (d && !isNaN(d.getTime())) ? (d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2)) : '';
+  gtOpenModal(
+    '<h3>✏️ Edit Game<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<label>Opponent</label><input type="text" id="gt-ge-opp" value="' + gtAttr(opp) + '"/>' +
+    '<label>We are playing</label><div class="gt-avail-toggle"><button type="button" id="gt-ge-home" class="' + (g.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-away\').classList.remove(\'on-yes\')">🏠 Home</button><button type="button" id="gt-ge-away" class="' + (g.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-home\').classList.remove(\'on-yes\')">✈️ Away</button></div>' +
+    '<div class="gm-row"><div><label>Game Type</label><select id="gt-ge-type">' + ['league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (g.game_type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label>Date</label><input type="date" id="gt-ge-date" value="' + dateVal + '"/></div></div>' +
+    '<label>Venue</label><input type="text" id="gt-ge-venue" value="' + gtAttr(g.venue || '') + '"/>' +
+    '<div class="gm-row"><div><label>Periods</label><select id="gt-ge-periods">' + [1, 2, 3, 4].map(function(n){ return '<option value="' + n + '"' + ((g.num_periods || 2) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
+    '<div><label>Minutes per period</label><input type="number" id="gt-ge-dur" min="1" max="60" value="' + (g.period_duration_minutes || 35) + '"/></div></div>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveGameEdit(\'' + gid + '\')">Save Changes</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtSaveGameEdit(gid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var opp = document.getElementById('gt-ge-opp').value.trim();
+  if (!opp) { showToast('Enter an opponent.'); return; }
+  var side = document.getElementById('gt-ge-home').classList.contains('on-yes') ? 'home' : 'away';
+  var ourName = gtOurName(g);
+  var data = {
+    f6ad_side: side,
+    home_team: side === 'home' ? ourName : opp,
+    away_team: side === 'home' ? opp : ourName,
+    game_type: document.getElementById('gt-ge-type').value,
+    venue: document.getElementById('gt-ge-venue').value.trim(),
+    num_periods: parseInt(document.getElementById('gt-ge-periods').value, 10) || 2,
+    period_duration_minutes: Math.max(1, parseInt(document.getElementById('gt-ge-dur').value, 10) || 35),
+    updated_at: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  var dateStr = document.getElementById('gt-ge-date').value;
+  if (dateStr) data.played_at = firebase.firestore.Timestamp.fromDate(new Date(dateStr + 'T12:00:00'));
+  db.collection('gt_games').doc(gid).set(data, { merge: true })
+    .then(function(){ showToast('Game updated ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtDeleteGame(gid) {
   if (!gtCanEdit()) return;
