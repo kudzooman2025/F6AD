@@ -58,6 +58,10 @@ function gtFmtDate(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function gtTsMillis(ts) { return ts && ts.toMillis ? ts.toMillis() : (ts ? new Date(ts).getTime() : 0); }
+function gtTodayStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
 function gtFmtKickoff(t) {
   if (!t || typeof t !== 'string' || t.indexOf(':') < 0) return '';
   var parts = t.split(':'), h = parseInt(parts[0], 10), m = parts[1];

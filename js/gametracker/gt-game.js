@@ -5,7 +5,7 @@ function gtStartSetup() {
   GT.setup = {
     step: 1,
     home_team: act ? act.name : 'F6AD',
-    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', kickoff_time: '',
+    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', kickoff_time: '', game_date: gtTodayStr(),
     num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
     roster_id: act ? act.id : '',
     avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null, season_id: null,
@@ -67,7 +67,9 @@ function gtRenderNew(view) {
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Players per side</label>' +
       '<input type="number" id="gt-su-side" min="1" max="11" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + (s.players_per_side || 11) + '"/>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Start Time (kickoff)</label>' +
-      '<input type="time" id="gt-su-time" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.kickoff_time || '') + '"/>';
+      '<input type="time" id="gt-su-time" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.kickoff_time || '') + '"/>' +
+      '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Game Date</label>' +
+      '<input type="date" id="gt-su-date" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.game_date || '') + '"/>';
   } else if (s.step === 2) {
     var rosters = GT.rosters.filter(function(r){ return !r.archived; });
     html += '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Roster</label>' +
@@ -156,6 +158,7 @@ function gtSetupCapture() {
   var d = document.getElementById('gt-su-dur'); if (d) s.period_duration_minutes = Math.max(1, parseInt(d.value, 10) || 35);
   var sd = document.getElementById('gt-su-side'); if (sd) s.players_per_side = Math.max(1, Math.min(11, parseInt(sd.value, 10) || 11));
   var kt = document.getElementById('gt-su-time'); if (kt) s.kickoff_time = kt.value || '';
+  var gd = document.getElementById('gt-su-date'); if (gd) s.game_date = gd.value || '';
 }
 function gtSetupNav(dir) {
   var s = GT.setup;
@@ -192,7 +195,7 @@ function gtCreateGame() {
     period_duration_minutes: s.period_duration_minutes, players_per_side: s.players_per_side || 11, kickoff_time: s.kickoff_time || '',
     status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
     period_elapsed: {}, home_score: 0, away_score: 0,
-    played_at: null, created_at: ts, updated_at: ts
+    played_at: s.game_date ? firebase.firestore.Timestamp.fromDate(new Date(s.game_date + 'T12:00:00')) : null, created_at: ts, updated_at: ts
   });
   var guestRefs = [];
   s.guests.forEach(function(g) {
