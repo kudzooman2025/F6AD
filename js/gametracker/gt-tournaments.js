@@ -47,6 +47,7 @@ function gtOpenTournamentForm(tid) {
     '<div class="gm-row"><div><label>Start Date</label><input type="date" id="gt-tf-start" value="' + gtAttr(t ? t.start_date : '') + '"/></div>' +
     '<div><label>End Date</label><input type="date" id="gt-tf-end" value="' + gtAttr(t ? t.end_date : '') + '"/></div></div>' +
     '<label>Venue</label><input type="text" id="gt-tf-venue" value="' + gtAttr(t ? t.venue : '') + '" placeholder="Maryland SoccerPlex"/>' +
+    '<label>Players per side</label><input type="number" id="gt-tf-side" min="1" max="11" value="' + (t && t.players_per_side ? t.players_per_side : 11) + '"/>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveTournament(' + (t ? '\'' + t.id + '\'' : 'null') + ')">Save</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
@@ -61,6 +62,7 @@ function gtSaveTournament(tid) {
     start_date: document.getElementById('gt-tf-start').value || '',
     end_date: document.getElementById('gt-tf-end').value || '',
     venue: document.getElementById('gt-tf-venue').value.trim(),
+    players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-tf-side').value, 10) || 11)),
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (tid) {
@@ -195,7 +197,7 @@ function gtStartTournamentGame(tid) {
     step: 1,
     home_team: t.team_name || (ros ? ros.name : 'F6AD'),
     away_team: '', f6ad_side: 'home', game_type: 'tournament', venue: t.venue || '',
-    num_periods: 2, period_duration_minutes: 35,
+    num_periods: 2, period_duration_minutes: 35, players_per_side: t.players_per_side || 11,
     roster_id: t.base_roster_id,
     avail: avail, notes: {}, guests: [], guestIds: guestIds,
     tournament_id: tid, season_id: null,

@@ -52,6 +52,7 @@ function gtOpenSeasonForm(sid) {
       rosters.map(function(r){ return '<option value="' + r.id + '"' + (defRid === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') + '</select>') +
     '<div class="gm-row"><div><label>Start Date</label><input type="date" id="gt-sf-start" value="' + gtAttr(se ? se.start_date : '') + '"/></div>' +
     '<div><label>End Date</label><input type="date" id="gt-sf-end" value="' + gtAttr(se ? se.end_date : '') + '"/></div></div>' +
+    '<label>Players per side</label><input type="number" id="gt-sf-side" min="1" max="11" value="' + (se && se.players_per_side ? se.players_per_side : 11) + '"/>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveSeason(' + (se ? '\'' + se.id + '\'' : 'null') + ')">Save</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
@@ -65,6 +66,7 @@ function gtSaveSeason(sid) {
     team_name: document.getElementById('gt-sf-team').value.trim(),
     start_date: document.getElementById('gt-sf-start').value || '',
     end_date: document.getElementById('gt-sf-end').value || '',
+    players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-sf-side').value, 10) || 11)),
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (sid) {
@@ -126,7 +128,7 @@ function gtStartSeasonGame(sid) {
     step: 1,
     home_team: se.team_name || (ros ? ros.name : 'F6AD'),
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: '',
-    num_periods: 2, period_duration_minutes: 35,
+    num_periods: 2, period_duration_minutes: 35, players_per_side: se.players_per_side || 11,
     roster_id: se.base_roster_id,
     avail: {}, notes: {}, guests: [], guestIds: {},
     tournament_id: null, season_id: sid,

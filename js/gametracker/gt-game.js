@@ -6,7 +6,7 @@ function gtStartSetup() {
     step: 1,
     home_team: act ? act.name : 'F6AD',
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: '',
-    num_periods: 2, period_duration_minutes: 35,
+    num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
     roster_id: act ? act.id : '',
     avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null, season_id: null,
     started: {}, startPos: {}, team_name: ''
@@ -63,7 +63,9 @@ function gtRenderNew(view) {
       '<div class="gm-row" style="margin-top:14px"><div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Periods</label>' +
       '<div class="gt-avail-toggle">' + [1, 2, 3, 4].map(function(n){ return '<button class="' + (s.num_periods === n ? 'on-yes' : '') + '" onclick="gtSetupField(\'num_periods\',' + n + ');gtSetupCapture();gtRerender(true)">' + n + '</button>'; }).join('') + '</div></div>' +
       '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Minutes per period</label>' +
-      '<input type="number" id="gt-su-dur" min="1" max="60" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + s.period_duration_minutes + '"/></div></div>';
+      '<input type="number" id="gt-su-dur" min="1" max="60" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + s.period_duration_minutes + '"/></div></div>' +
+      '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Players per side</label>' +
+      '<input type="number" id="gt-su-side" min="1" max="11" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + (s.players_per_side || 11) + '"/>';
   } else if (s.step === 2) {
     var rosters = GT.rosters.filter(function(r){ return !r.archived; });
     html += '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Roster</label>' +
@@ -150,6 +152,7 @@ function gtSetupCapture() {
   var t = document.getElementById('gt-su-type'); if (t) s.game_type = t.value;
   var v = document.getElementById('gt-su-venue'); if (v) s.venue = v.value.trim();
   var d = document.getElementById('gt-su-dur'); if (d) s.period_duration_minutes = Math.max(1, parseInt(d.value, 10) || 35);
+  var sd = document.getElementById('gt-su-side'); if (sd) s.players_per_side = Math.max(1, Math.min(11, parseInt(sd.value, 10) || 11));
 }
 function gtSetupNav(dir) {
   var s = GT.setup;
@@ -183,7 +186,7 @@ function gtCreateGame() {
   batch.set(gameRef, {
     roster_id: s.roster_id, tournament_id: s.tournament_id || null, season_id: s.season_id || null, home_team: s.home_team, away_team: s.away_team, f6ad_side: s.f6ad_side,
     game_type: s.game_type, venue: s.venue, num_periods: s.num_periods,
-    period_duration_minutes: s.period_duration_minutes,
+    period_duration_minutes: s.period_duration_minutes, players_per_side: s.players_per_side || 11,
     status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
     period_elapsed: {}, home_score: 0, away_score: 0,
     played_at: null, created_at: ts, updated_at: ts
@@ -405,6 +408,7 @@ function gtOpenGameEdit(gid) {
     '<label>Venue</label><input type="text" id="gt-ge-venue" value="' + gtAttr(g.venue || '') + '"/>' +
     '<div class="gm-row"><div><label>Periods</label><select id="gt-ge-periods">' + [1, 2, 3, 4].map(function(n){ return '<option value="' + n + '"' + ((g.num_periods || 2) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Minutes per period</label><input type="number" id="gt-ge-dur" min="1" max="60" value="' + (g.period_duration_minutes || 35) + '"/></div></div>' +
+    '<label>Players per side</label><input type="number" id="gt-ge-side" min="1" max="11" value="' + (g.players_per_side || 11) + '"/>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveGameEdit(\'' + gid + '\')">Save Changes</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
 }
@@ -423,6 +427,7 @@ function gtSaveGameEdit(gid) {
     venue: document.getElementById('gt-ge-venue').value.trim(),
     num_periods: parseInt(document.getElementById('gt-ge-periods').value, 10) || 2,
     period_duration_minutes: Math.max(1, parseInt(document.getElementById('gt-ge-dur').value, 10) || 35),
+    players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-ge-side').value, 10) || 11)),
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   var dateStr = document.getElementById('gt-ge-date').value;
