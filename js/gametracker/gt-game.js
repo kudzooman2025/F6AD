@@ -8,7 +8,7 @@ function gtStartSetup() {
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: '',
     num_periods: 2, period_duration_minutes: 35,
     roster_id: act ? act.id : '',
-    avail: {}, notes: {}, guests: [], guestIds: {}
+    avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null
   };
   gtGo('/gametracker/new');
 }
@@ -173,7 +173,7 @@ function gtCreateGame() {
   var batch = db.batch();
   var gameRef = db.collection('gt_games').doc();
   batch.set(gameRef, {
-    roster_id: s.roster_id, home_team: s.home_team, away_team: s.away_team, f6ad_side: s.f6ad_side,
+    roster_id: s.roster_id, tournament_id: s.tournament_id || null, home_team: s.home_team, away_team: s.away_team, f6ad_side: s.f6ad_side,
     game_type: s.game_type, venue: s.venue, num_periods: s.num_periods,
     period_duration_minutes: s.period_duration_minutes,
     status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,

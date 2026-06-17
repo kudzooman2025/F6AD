@@ -3,7 +3,7 @@
 // gt_rosters, gt_players, gt_games, gt_availability, gt_events, gt_subs
 
 var GT = {
-  rosters: [], players: [], games: [], events: [], subs: [], avail: [],
+  rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [],
   loaded: {},
   listening: false,
   route: { page: 'home', arg: null },

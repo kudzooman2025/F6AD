@@ -51,6 +51,7 @@ service cloud.firestore {
     match /gt_availability/{doc} { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /gt_events/{doc}       { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /gt_subs/{doc}         { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /gt_tournaments/{doc}  { allow read: if true; allow write: if isStaff() || isAdmin(); }
 
     // ---- Legacy coach PIN collection: locked down, no longer used ----
     match /coaches/{doc} { allow read, write: if isAdmin(); }
