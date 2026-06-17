@@ -8,7 +8,8 @@ function gtStartSetup() {
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: '',
     num_periods: 2, period_duration_minutes: 35,
     roster_id: act ? act.id : '',
-    avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null
+    avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null,
+    started: {}, startPos: {}
   };
   gtGo('/gametracker/new');
 }
@@ -76,6 +77,8 @@ function gtRenderNew(view) {
           return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--purple);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + '</span>' +
             '<span class="gt-avail-toggle"><button class="' + (av ? 'on-yes' : '') + '" onclick="GT.setup.avail[\'' + p.id + '\']=true;gtRerender(true)">Available</button>' +
             '<button class="' + (!av ? 'on-no' : '') + '" onclick="GT.setup.avail[\'' + p.id + '\']=false;gtRerender(true)">Out</button></span>' +
+            (av ? '<label style="display:inline-flex;align-items:center;gap:5px;font-size:.78rem;text-transform:none;margin:0 0 0 4px"><input type="checkbox"' + (s.started[p.id] ? ' checked' : '') + ' onchange="GT.setup.started[\'' + p.id + '\']=this.checked;gtRerender(true)"/> Started</label>' +
+              (s.started[p.id] ? '<select onchange="GT.setup.startPos[\'' + p.id + '\']=this.value">' + gtPositionOptions(s.startPos[p.id] || '') + '</select>' : '') : '') +
             (!av ? '<input type="text" class="gt-avail-note" placeholder="Reason (injured, school event…)" value="' + gtAttr(s.notes[p.id] || '') + '" onchange="GT.setup.notes[\'' + p.id + '\']=this.value"/>' : '') +
             '</div>';
         }).join('') + '</div>';
@@ -196,6 +199,8 @@ function gtCreateGame() {
     batch.set(ref, {
       game_id: gameRef.id, player_id: p.id,
       available: s.avail[p.id] !== false,
+      started: s.avail[p.id] !== false && !!s.started[p.id],
+      start_position: (s.avail[p.id] !== false && s.started[p.id]) ? (s.startPos[p.id] || '') : '',
       notes: s.avail[p.id] === false ? (s.notes[p.id] || '') : '', created_at: ts
     });
   });
@@ -280,7 +285,7 @@ function gtRenderLive(view, gameId) {
         (canEdit ? ' onclick="gtOpenEventPopup(\'' + g.id + '\',\'' + p.id + '\')"' : '') + '>' +
         '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
         '<span class="pc-name">' + gtEsc(gtPlayerShort(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</span>' +
-        (p.position ? '<span class="pc-pos">' + gtEsc(p.position) + (off ? ' · OFF' : '') + '</span>' : (off ? '<span class="pc-pos">OFF</span>' : '')) +
+        '<span class="pc-pos">' + (gtLastPosition(g.id, p.id) ? gtEsc(gtLastPosition(g.id, p.id)) + ' · ' : '') + gtStatusShort(gtPlayerGameStatus(g.id, p.id)) + '</span>' +
         '<span class="pc-badges">' + badges + '</span></button>';
     }).join('') + '</div>';
   }
@@ -293,6 +298,14 @@ function gtRenderLive(view, gameId) {
   var feedEvents = events.slice().reverse();
   if (!feedEvents.length) html += '<div class="gt-empty">No events logged yet.</div>';
   else html += '<div class="gt-feed">' + feedEvents.map(function(e){ return gtFeedItem(g, e, canEdit); }).join('') + '</div>';
+  // substitution log
+  var subLog = gtGameSubs(g.id);
+  if (subLog.length) {
+    html += '<div class="section-title" style="margin:22px 0 12px">🔄 Substitutions</div><div class="gt-feed">' +
+      subLog.slice().reverse().map(function(sb) {
+        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>🔄 <strong>' + gtEsc(gtPlayerShort(sb.player_in_id)) + '</strong>' + (sb.position ? ' (' + gtEsc(sb.position) + ')' : '') + ' ← ' + gtEsc(gtPlayerShort(sb.player_out_id)) + '</div>';
+      }).join('') + '</div>';
+  }
   // unavailable footnote
   var outs = gtGameAvail(g.id).filter(function(a){ return !a.available; });
   if (outs.length) {
@@ -408,6 +421,9 @@ function gtOpenEventPopup(gid, pid) {
   var g = gtGame(gid); if (!g) return;
   if (g.status === 'setup') { showToast('Start the game clock first.'); return; }
   var p = gtP(pid);
+  var ae = gtGameAvailEntry(gid, pid);
+  var started = !!(ae && ae.started);
+  var startPos = ae && ae.start_position ? ae.start_position : '';
   GT.pendingEvent = { gameId: gid, playerId: pid, clock: gtClockSeconds(g), period: g.current_period || 1, type: null };
   // Use the same available-player list the live game grid uses, minus the scorer
   var assistPlayers = gtAvailIds(gid)
@@ -428,6 +444,8 @@ function gtOpenEventPopup(gid, pid) {
     '<div class="gt-evtypes">' + GT_EVENT_TYPES.map(function(t) {
       return '<button class="gt-evtype" id="gt-et-' + t.id + '" onclick="gtSelEventType(\'' + t.id + '\')"><span class="et-emoji">' + t.emoji + '</span>' + t.label + '</button>';
     }).join('') + '</div>' +
+    '<label style="display:flex;align-items:center;gap:8px;text-transform:none;margin-top:4px"><input type="checkbox" id="gt-starter-cb"' + (started ? ' checked' : '') + ' onchange="document.getElementById(\'gt-starter-pos\').style.display=this.checked?\'\':\'none\';gtSetStarter(\'' + gid + '\',\'' + pid + '\',this.checked,document.getElementById(\'gt-starter-pos\').value)"/> Started this game</label>' +
+    '<select id="gt-starter-pos" style="display:' + (started ? '' : 'none') + '" onchange="gtSetStarter(\'' + gid + '\',\'' + pid + '\',document.getElementById(\'gt-starter-cb\').checked,this.value)">' + gtPositionOptions(startPos) + '</select>' +
     '<label>Notes</label><textarea id="gt-ev-notes" placeholder="Top corner off a cross…"></textarea>' +
     '<div class="gt-override-row"><input type="checkbox" id="gt-ev-override" onchange="document.getElementById(\'gt-ev-time\').style.display=this.checked?\'inline-block\':\'none\'"/>' +
     '<label for="gt-ev-override" style="margin:0;text-transform:none">Adjust time</label>' +
@@ -597,26 +615,51 @@ function gtOpenSubForm(gid, outPid) {
     '<h3><span>🔄 Substitution</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<div class="gm-clock">🕐 ' + gtEsc(gtPeriodLabel(g, period, 'in_progress')) + ' · ' + gtFmtMMSS(clock) + '</div>' +
     '<label>Player Out</label><input type="text" disabled value="' + gtAttr(gtPlayerName(outPid)) + '"/>' +
-    '<label>Player In</label><select id="gt-sub-in">' +
+    '<label>Player In</label><select id="gt-sub-in" onchange="gtSubInChanged(\'' + gid + '\')">' +
     '<option value="">— Select player —</option>' +
     candidates.map(function(pid) {
       var p = gtP(pid);
       return '<option value="' + pid + '">' + gtEsc((p && p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtPlayerName(pid)) + (onField[pid] === false ? ' (off field)' : ' (on field)') + '</option>';
     }).join('') + '</select>' +
+    '<label>Position (in)</label><select id="gt-sub-pos">' + gtPositionOptions('') + '</select>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveSub(\'' + gid + '\',\'' + outPid + '\',' + clock + ',' + period + ')">Save Substitution</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
 }
+function gtSubInChanged(gid) {
+  var inPid = document.getElementById('gt-sub-in').value;
+  var posSel = document.getElementById('gt-sub-pos');
+  if (inPid && posSel && !posSel.value) posSel.value = gtLastPosition(gid, inPid);
+}
 function gtSaveSub(gid, outPid, clock, period) {
   var inPid = document.getElementById('gt-sub-in').value;
   if (!inPid) { showToast('Select the player coming in.'); return; }
+  var position = document.getElementById('gt-sub-pos').value;
+  if (!position) { showToast('Pick the position for the player coming in.'); return; }
   db.collection('gt_subs').add({
     game_id: gid, player_out_id: outPid, player_in_id: inPid,
+    position: position,
     game_clock_seconds: clock, period: period,
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function() {
-    showToast('🔄 ' + gtPlayerShort(inPid) + ' on for ' + gtPlayerShort(outPid));
+    showToast('🔄 ' + gtPlayerShort(inPid) + ' on (' + position + ') for ' + gtPlayerShort(outPid));
     gtCloseModal();
   }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtSetStarter(gid, pid, started, pos) {
+  if (!gtCanEdit()) return;
+  var ae = gtGameAvailEntry(gid, pid);
+  var data = { started: !!started, start_position: started ? (pos || '') : '' };
+  var op;
+  if (ae) op = db.collection('gt_availability').doc(ae.id).set(data, { merge: true });
+  else {
+    data.game_id = gid; data.player_id = pid; data.available = true; data.notes = '';
+    data.created_at = firebase.firestore.FieldValue.serverTimestamp();
+    op = db.collection('gt_availability').add(data);
+  }
+  op.catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtStatusShort(st) {
+  return { STARTER: 'START', ON_FIELD: 'ON', BENCHED: 'BENCH', NOT_USED: 'BENCH' }[st] || '';
 }
 

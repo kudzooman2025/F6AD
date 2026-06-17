@@ -40,6 +40,14 @@ function gtRenderReview(view, gameId) {
     });
     html += '</div>';
   }
+  // substitution log
+  var subLog = gtGameSubs(g.id);
+  if (subLog.length) {
+    html += '<div class="section-title" style="margin:22px 0 12px">🔄 Substitutions</div><div class="gt-feed">' +
+      subLog.map(function(sb) {
+        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>🔄 <strong>' + gtEsc(gtPlayerShort(sb.player_in_id)) + '</strong>' + (sb.position ? ' (' + gtEsc(sb.position) + ')' : '') + ' ← ' + gtEsc(gtPlayerShort(sb.player_out_id)) + '</div>';
+      }).join('') + '</div>';
+  }
   // player stat table
   html += '<div class="section-title" style="margin:26px 0 12px">📊 Player Stats</div>';
   var availIds = gtAvailIds(g.id);

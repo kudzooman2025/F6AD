@@ -27,6 +27,13 @@ var GT_EVENT_TYPES = [
   { id: 'red_card',       label: 'Red Card',       emoji: '🟥' },
   { id: 'save',           label: 'Save',           emoji: '🧤' }
 ];
+// Fixed position list (primary formation 5-3-2). Order is intentional.
+var GT_POSITIONS = ['GK', 'LST', 'RST', 'LWB', 'RWB', 'CDM', 'LCB', 'CB', 'RCB', 'CMID', 'LMID', 'RMID', 'CAM', 'FWD'];
+function gtPositionOptions(sel) {
+  return '<option value="">— Position —</option>' + GT_POSITIONS.map(function(p) {
+    return '<option value="' + p + '"' + (p === sel ? ' selected' : '') + '>' + p + '</option>';
+  }).join('');
+}
 function gtEventType(id) {
   if (id === 'opponent_goal') return { id: 'opponent_goal', label: 'Opponent Goal', emoji: '😣' };
   return GT_EVENT_TYPES.find(function(t){ return t.id === id; }) || { id: id, label: id, emoji: '•' };
@@ -97,6 +104,7 @@ function gtGameSubs(gid) {
   });
 }
 function gtGameAvail(gid) { return GT.avail.filter(function(a){ return a.game_id === gid; }); }
+function gtGameAvailEntry(gid, pid) { return gtGameAvail(gid).find(function(a){ return a.player_id === pid; }); }
 function gtAvailIds(gid) {
   return gtGameAvail(gid).filter(function(a){ return a.available; }).map(function(a){ return a.player_id; });
 }
@@ -196,13 +204,23 @@ function gtPeriodLabel(g, period, status) {
 function gtSubEvents(gid) {
   var g = gtGame(gid);
   return gtGameSubs(gid).map(function(s) {
-    return { t: gtCumSec(g, s.period, s.game_clock_seconds), out: s.player_out_id, inn: s.player_in_id };
+    return { t: gtCumSec(g, s.period, s.game_clock_seconds), out: s.player_out_id, inn: s.player_in_id, position: s.position || '' };
   });
 }
-function gtOnField(gid) {
-  // pid -> bool: available players start on; subs toggle
+function gtKickoffOn(gid) {
+  // Who is on the field at kickoff. If any starters were explicitly designated,
+  // only those start; otherwise (legacy games) all available players start.
+  var startedSet = {}, anyStarter = false;
+  gtGameAvail(gid).forEach(function(a) {
+    if (a.available && a.started) { startedSet[a.player_id] = true; anyStarter = true; }
+  });
   var on = {};
-  gtAvailIds(gid).forEach(function(pid){ on[pid] = true; });
+  gtAvailIds(gid).forEach(function(pid){ on[pid] = anyStarter ? !!startedSet[pid] : true; });
+  return on;
+}
+function gtOnField(gid) {
+  // pid -> bool currently on the field; kickoff XI then sub toggles (free re-subs)
+  var on = gtKickoffOn(gid);
   gtSubEvents(gid).forEach(function(s) {
     if (s.out && on[s.out] !== undefined) on[s.out] = false;
     if (s.inn && on[s.inn] !== undefined) on[s.inn] = true;
@@ -213,8 +231,9 @@ function gtMinutesMap(gid) {
   // pid -> seconds on field (approx.: available players on from kickoff unless subbed out)
   var g = gtGame(gid);
   var total = gtTotalSeconds(g);
+  var kick = gtKickoffOn(gid);
   var secs = {}, onAt = {};
-  gtAvailIds(gid).forEach(function(pid){ secs[pid] = 0; onAt[pid] = 0; });
+  gtAvailIds(gid).forEach(function(pid){ secs[pid] = 0; onAt[pid] = kick[pid] ? 0 : null; });
   gtSubEvents(gid).forEach(function(s) {
     if (s.out && onAt[s.out] != null) { secs[s.out] += Math.max(0, s.t - onAt[s.out]); onAt[s.out] = null; }
     if (s.inn && secs[s.inn] !== undefined && onAt[s.inn] == null) onAt[s.inn] = s.t;
@@ -223,6 +242,35 @@ function gtMinutesMap(gid) {
     if (onAt[pid] != null) secs[pid] += Math.max(0, total - onAt[pid]);
   });
   return secs;
+}
+function gtPlayerStints(gid, pid) {
+  // ordered list of on-field stints: { inT, position, outT } (outT null = still on)
+  var kick = gtKickoffOn(gid);
+  var ae = gtGameAvailEntry(gid, pid);
+  var startPos = ae && ae.start_position ? ae.start_position : '';
+  var stints = [], cur = null;
+  if (kick[pid]) cur = { inT: 0, position: startPos, outT: null };
+  gtSubEvents(gid).forEach(function(s) {
+    if (s.out === pid && cur) { cur.outT = s.t; stints.push(cur); cur = null; }
+    if (s.inn === pid) { if (cur) { cur.outT = s.t; stints.push(cur); } cur = { inT: s.t, position: s.position || '', outT: null }; }
+  });
+  if (cur) stints.push(cur);
+  return stints;
+}
+function gtLastPosition(gid, pid) {
+  var st = gtPlayerStints(gid, pid);
+  if (st.length && st[st.length - 1].position) return st[st.length - 1].position;
+  var ae = gtGameAvailEntry(gid, pid);
+  return ae && ae.start_position ? ae.start_position : '';
+}
+function gtPlayerGameStatus(gid, pid) {
+  // STARTER | ON_FIELD | BENCHED | NOT_USED
+  var stints = gtPlayerStints(gid, pid);
+  if (!stints.length) return 'NOT_USED';
+  if (gtOnField(gid)[pid]) {
+    return (gtKickoffOn(gid)[pid] && stints.length === 1) ? 'STARTER' : 'ON_FIELD';
+  }
+  return 'BENCHED';
 }
 function gtStatLine(pid, events) {
   var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0 };

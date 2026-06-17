@@ -195,7 +195,8 @@ function gtStartTournamentGame(tid) {
     num_periods: 2, period_duration_minutes: 35,
     roster_id: t.base_roster_id,
     avail: avail, notes: {}, guests: [], guestIds: guestIds,
-    tournament_id: tid
+    tournament_id: tid,
+    started: {}, startPos: {}
   };
   gtGo('/gametracker/new');
 }
