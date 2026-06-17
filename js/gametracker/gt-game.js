@@ -392,6 +392,7 @@ function gtOpenGameEdit(gid) {
   var dateVal = (d && !isNaN(d.getTime())) ? (d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2)) : '';
   gtOpenModal(
     '<h3>✏️ Edit Game<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<label>Our Team Name</label><input type="text" id="gt-ge-us" value="' + gtAttr(gtOurName(g)) + '" placeholder="F6AD"/>' +
     '<label>Opponent</label><input type="text" id="gt-ge-opp" value="' + gtAttr(opp) + '"/>' +
     '<label>We are playing</label><div class="gt-avail-toggle"><button type="button" id="gt-ge-home" class="' + (g.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-away\').classList.remove(\'on-yes\')">🏠 Home</button><button type="button" id="gt-ge-away" class="' + (g.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-home\').classList.remove(\'on-yes\')">✈️ Away</button></div>' +
     '<div class="gm-row"><div><label>Game Type</label><select id="gt-ge-type">' + ['league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (g.game_type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') + '</select></div>' +
@@ -408,7 +409,7 @@ function gtSaveGameEdit(gid) {
   var opp = document.getElementById('gt-ge-opp').value.trim();
   if (!opp) { showToast('Enter an opponent.'); return; }
   var side = document.getElementById('gt-ge-home').classList.contains('on-yes') ? 'home' : 'away';
-  var ourName = gtOurName(g);
+  var ourName = document.getElementById('gt-ge-us').value.trim() || gtOurName(g);
   var data = {
     f6ad_side: side,
     home_team: side === 'home' ? ourName : opp,

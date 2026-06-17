@@ -35,9 +35,11 @@ function gtOpenTournamentForm(tid) {
   var t = tid ? gtTournament(tid) : null;
   var rosters = GT.rosters.filter(function(r){ return !r.archived; });
   var defRid = t ? t.base_roster_id : (gtActiveRoster() ? gtActiveRoster().id : (rosters[0] ? rosters[0].id : ''));
+  var defName = t ? (t.team_name || '') : (gtRoster(defRid) ? gtRoster(defRid).name : 'F6AD');
   gtOpenModal(
     '<h3>' + (t ? '✏️ Edit Tournament' : '➕ Create Tournament') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<label>Tournament Name</label><input type="text" id="gt-tf-name" value="' + gtAttr(t ? t.name : '') + '" placeholder="Memorial Day Classic 2026"/>' +
+    '<label>Team Name (how your team is shown in games)</label><input type="text" id="gt-tf-team" value="' + gtAttr(defName) + '" placeholder="F6AD"/>' +
     (t ? '' :
       '<label>Base Roster (squad to pull players from)</label><select id="gt-tf-roster">' +
       (rosters.length ? '' : '<option value="">No rosters yet</option>') +
@@ -55,6 +57,7 @@ function gtSaveTournament(tid) {
   if (!name) { showToast('Tournament name is required.'); return; }
   var data = {
     name: name,
+    team_name: document.getElementById('gt-tf-team').value.trim(),
     start_date: document.getElementById('gt-tf-start').value || '',
     end_date: document.getElementById('gt-tf-end').value || '',
     venue: document.getElementById('gt-tf-venue').value.trim(),
@@ -190,7 +193,7 @@ function gtStartTournamentGame(tid) {
   });
   GT.setup = {
     step: 1,
-    home_team: ros ? ros.name : 'F6AD',
+    home_team: t.team_name || (ros ? ros.name : 'F6AD'),
     away_team: '', f6ad_side: 'home', game_type: 'tournament', venue: t.venue || '',
     num_periods: 2, period_duration_minutes: 35,
     roster_id: t.base_roster_id,
