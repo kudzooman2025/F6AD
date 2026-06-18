@@ -181,9 +181,11 @@ function gtOpenPlayerForm(rid, pid) {
     '<div><label>Position</label><input type="text" id="gt-pf-pos" value="' + gtAttr(p ? p.position : '') + '" placeholder="GK, DEF, MID, FWD"/></div></div>' +
     '<label>Default Lineup Position (used for starters &amp; subs)</label><select id="gt-pf-defpos">' + gtPositionOptions(p ? p.default_position : '') + '</select>' +
     '<div class="gm-row"><div><label>Mom / Guardian</label><input type="text" id="gt-pf-mom" value="' + gtAttr(p ? (p.mom_name || p.parent_name || '') : '') + '"/></div>' +
-    '<div><label>Mom Phone (E.164)</label><input type="tel" id="gt-pf-momphone" value="' + gtAttr(p ? (p.mom_phone || p.parent_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div></div>' +
+    '<div><label>Mom Phone (E.164)</label><input type="tel" id="gt-pf-momphone" value="' + gtAttr(p ? (p.mom_phone || p.parent_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div>' +
+    '<div><label>Mom Email</label><input type="email" id="gt-pf-momemail" value="' + gtAttr(p ? (p.mom_email || '') : '') + '" placeholder="mom@email.com"/></div></div>' +
     '<div class="gm-row"><div><label>Dad / Guardian</label><input type="text" id="gt-pf-dad" value="' + gtAttr(p ? (p.dad_name || '') : '') + '"/></div>' +
-    '<div><label>Dad Phone (E.164)</label><input type="tel" id="gt-pf-dadphone" value="' + gtAttr(p ? (p.dad_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div></div>' +
+    '<div><label>Dad Phone (E.164)</label><input type="tel" id="gt-pf-dadphone" value="' + gtAttr(p ? (p.dad_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div>' +
+    '<div><label>Dad Email</label><input type="email" id="gt-pf-dademail" value="' + gtAttr(p ? (p.dad_email || '') : '') + '" placeholder="dad@email.com"/></div></div>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSavePlayer(\'' + rid + '\',' + (p ? '\'' + p.id + '\'' : 'null') + ')">Save Player</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
@@ -212,8 +214,10 @@ function gtWirePlayerAutocomplete() {
     el = document.getElementById('gt-pf-defpos'); if(el) el.value = pl.default_position || '';
     el = document.getElementById('gt-pf-mom'); if(el) el.value = pl.mom_name || pl.parent_name || '';
     el = document.getElementById('gt-pf-momphone'); if(el) el.value = pl.mom_phone || pl.parent_phone || '';
+    el = document.getElementById('gt-pf-momemail'); if(el) el.value = pl.mom_email || '';
     el = document.getElementById('gt-pf-dad'); if(el) el.value = pl.dad_name || '';
     el = document.getElementById('gt-pf-dadphone'); if(el) el.value = pl.dad_phone || '';
+    el = document.getElementById('gt-pf-dademail'); if(el) el.value = pl.dad_email || '';
     sug.style.display = 'none'; activeIdx = -1;
   }
   function positionSug() {
@@ -274,6 +278,8 @@ function gtSavePlayer(rid, pid) {
   var reE164 = /^\+[1-9]\d{6,14}$/;
   if (momPhone && !reE164.test(momPhone)) { showToast('Mom phone must be E.164 format, e.g. +12155551234'); return; }
   if (dadPhone && !reE164.test(dadPhone)) { showToast('Dad phone must be E.164 format, e.g. +12155551234'); return; }
+  var momEmail = document.getElementById('gt-pf-momemail').value.trim();
+  var dadEmail = document.getElementById('gt-pf-dademail').value.trim();
   var momName = document.getElementById('gt-pf-mom').value.trim();
   var dadName = document.getElementById('gt-pf-dad').value.trim();
   var data = {
@@ -281,7 +287,7 @@ function gtSavePlayer(rid, pid) {
     jersey_number: numV === '' ? null : parseInt(numV, 10),
     position: document.getElementById('gt-pf-pos').value.trim(),
     default_position: document.getElementById('gt-pf-defpos').value,
-    mom_name: momName, mom_phone: momPhone, dad_name: dadName, dad_phone: dadPhone,
+    mom_name: momName, mom_phone: momPhone, mom_email: momEmail, dad_name: dadName, dad_phone: dadPhone, dad_email: dadEmail,
     parent_name: momName || dadName, parent_phone: momPhone || dadPhone,
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
