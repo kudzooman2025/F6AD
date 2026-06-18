@@ -143,6 +143,52 @@ function renderAdminSchedule() {
     </div>`).join('');
 }
 
+function renderVenueDatalist() {
+  var dl = document.getElementById('venue-datalist');
+  if (!dl) return;
+  dl.innerHTML = venueItems.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); })
+    .map(function(v){ var addr=[v.address,v.city,v.state].filter(Boolean).join(', '); return '<option value="' + gtAttr(v.name||'') + '">' + gtEsc(addr) + '</option>'; }).join('');
+}
+function renderVenuesAdmin() {
+  var el = document.getElementById('admin-venues-list');
+  if (!el) return;
+  var items = venueItems.slice().sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+  el.innerHTML = items.length ? items.map(function(v){
+    var addr=[v.address,v.city,v.state,v.zip].filter(Boolean).join(', ');
+    return '<div class="admin-item"><div class="admin-item-info"><strong>'+gtEsc(v.name||'')+'</strong><span>'+gtEsc(addr)+'</span></div>'+
+      '<div class="admin-item-actions"><button class="btn-edit" onclick="editVenue(\''+v.id+'\')">Edit</button>'+
+      '<button class="btn-danger" onclick="deleteVenue(\''+v.id+'\')">Delete</button></div></div>';
+  }).join('') : '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No venues yet.</p>';
+}
+function saveVenue() {
+  var name = document.getElementById('vn-name').value.trim();
+  if (!name) { showToast('Venue name is required.'); return; }
+  var data = { name:name, address:document.getElementById('vn-address').value.trim(), city:document.getElementById('vn-city').value.trim(), state:document.getElementById('vn-state').value.trim(), zip:document.getElementById('vn-zip').value.trim() };
+  var p = editingVenueId ? db.collection('venues').doc(editingVenueId).set(data) : db.collection('venues').add(data);
+  p.then(function(){ cancelVenueEdit(); showToast('✅ Venue saved!'); }).catch(function(e){ showToast('Error: '+e.message); });
+}
+function editVenue(id) {
+  var v = venueItems.find(function(x){ return x.id===id; });
+  if (!v) return;
+  editingVenueId = id;
+  document.getElementById('vn-name').value = v.name||'';
+  document.getElementById('vn-address').value = v.address||'';
+  document.getElementById('vn-city').value = v.city||'';
+  document.getElementById('vn-state').value = v.state||'';
+  document.getElementById('vn-zip').value = v.zip||'';
+  var t=document.getElementById('venue-form-title'); if(t) t.textContent='✏️ Edit Venue';
+  var c=document.getElementById('cancel-vn-btn'); if(c) c.style.display='';
+}
+function cancelVenueEdit() {
+  editingVenueId = null;
+  ['vn-name','vn-address','vn-city','vn-state','vn-zip'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  var t=document.getElementById('venue-form-title'); if(t) t.textContent='➕ Add Venue';
+  var c=document.getElementById('cancel-vn-btn'); if(c) c.style.display='none';
+}
+function deleteVenue(id) {
+  if (!confirm('Delete this venue?')) return;
+  db.collection('venues').doc(id).delete().then(function(){ showToast('Venue deleted.'); }).catch(function(e){ showToast('Error: '+e.message); });
+}
 function saveEvent() {
   const name = document.getElementById('ev-name').value.trim();
   const type = document.getElementById('ev-type').value;
@@ -425,6 +471,7 @@ function showAdminPanel() {
 }
 
 function switchTab(tab, btn) {
+  if(tab==='venues') renderVenuesAdmin();
   if(tab==='camps') renderAdminCamps();
   if(tab==='players') renderAdminPlayers();
   if(tab==='sessions') renderAdminSessions();

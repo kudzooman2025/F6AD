@@ -130,6 +130,7 @@ const SUMMER27_TOURNAMENTS = [
 // ===================== LIVE DATA =====================
 let scheduleItems = [];
 let announcementItems = [];
+let venueItems = [];
 let allVotesFall = {}, allNotesFall = {};
 let allVotesWinter = {}, allNotesWinter = {};
 let allVotesSpring = {}, allNotesSpring = {};
@@ -141,6 +142,7 @@ let _summerFilter = 'all', _summerSort = 'date';
 let seasonSorts = {fall:'date', winter:'date', spring:'date', summer27:'date'};
 let editingEventId = null;
 let editingAnnId = null;
+let editingVenueId = null;
 const TOTAL_CREDITS = 1000;
 const MAX_PER_TOURNAMENT = 200;
 let localCreditsFall = {}, localCreditsWinter = {}, localCreditsSpring = {}, localCreditsSummer27 = {};

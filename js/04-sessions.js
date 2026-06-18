@@ -560,6 +560,11 @@ function startListeners() {
     renderSchedule();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminSchedule();
   });
+  db.collection('venues').onSnapshot(snap => {
+    venueItems=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(typeof renderVenueDatalist==='function') renderVenueDatalist();
+    if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVenuesAdmin();
+  });
   db.collection('announcements').onSnapshot(snap => {
     announcementItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderAnnouncements();

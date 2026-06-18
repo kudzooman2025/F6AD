@@ -46,7 +46,7 @@ function gtOpenTournamentForm(tid) {
       rosters.map(function(r){ return '<option value="' + r.id + '"' + (defRid === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') + '</select>') +
     '<div class="gm-row"><div><label>Start Date</label><input type="date" id="gt-tf-start" value="' + gtAttr(t ? t.start_date : '') + '"/></div>' +
     '<div><label>End Date</label><input type="date" id="gt-tf-end" value="' + gtAttr(t ? t.end_date : '') + '"/></div></div>' +
-    '<label>Venue</label><input type="text" id="gt-tf-venue" value="' + gtAttr(t ? t.venue : '') + '" placeholder="Maryland SoccerPlex"/>' +
+    '<label>Venue</label><input type="text" id="gt-tf-venue" list="venue-datalist" value="' + gtAttr(t ? t.venue : '') + '" placeholder="Maryland SoccerPlex"/>' +
     '<label>Players per side</label><input type="number" id="gt-tf-side" min="1" max="11" value="' + (t && t.players_per_side ? t.players_per_side : 11) + '"/>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveTournament(' + (t ? '\'' + t.id + '\'' : 'null') + ')">Save</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
