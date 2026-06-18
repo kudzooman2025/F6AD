@@ -4,7 +4,7 @@
 function gtTournament(id) { return GT.tournaments.find(function(t){ return t.id === id; }); }
 function gtTournamentGames(tid) {
   return GT.games.filter(function(g){ return g.tournament_id === tid; })
-    .sort(function(a, b){ return gtTsMillis(a.played_at || a.created_at) - gtTsMillis(b.played_at || b.created_at); });
+    .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
 }
 function gtTournLineup(t) { return (t && t.lineup) || {}; }
 
