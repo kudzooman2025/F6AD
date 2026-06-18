@@ -270,7 +270,7 @@ function gtRenderLive(view, gameId) {
     if (g.status === 'setup') {
       html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtClockStart(\'' + g.id + '\')">▶ Start Game</button>';
     } else if (g.status === 'in_progress') {
-      html += '<button class="gt-cbtn gt-cbtn-warn" onclick="gtClockPause(\'' + g.id + '\')">⏸ Pause</button>' +
+      html += '<button class="gt-cbtn gt-cbtn-warn" style="font-size:.82rem" onpointerdown="gtHoldStart(event,\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">⏸ Hold to Pause</button>' +
         (lastPeriod
           ? '<button class="gt-cbtn gt-cbtn-danger" onclick="gtEndGame(\'' + g.id + '\')">🏁 End Game</button>'
           : '<button class="gt-cbtn gt-cbtn-dark" onclick="gtEndPeriod(\'' + g.id + '\')">End ' + gtEsc(gtPeriodLabel(g, g.current_period, 'in_progress').replace(' — Paused', '')) + '</button>');
@@ -341,7 +341,7 @@ function gtRenderLive(view, gameId) {
   }
   // unavailable footnote
   var outs = gtGameAvail(g.id).filter(function(a){ return !a.available; });
-  if (outs.length) {
+  if (canEdit && outs.length) {
     html += '<p style="font-size:.78rem;color:var(--muted);margin-top:18px"><strong>Unavailable:</strong> ' +
       outs.map(function(a){ return gtEsc(gtPlayerShort(a.player_id)) + (a.notes ? ' (' + gtEsc(a.notes) + ')' : ''); }).join(', ') + '</p>';
   }
@@ -396,6 +396,18 @@ function gtClockStart(gid) {
     played_at: firebase.firestore.FieldValue.serverTimestamp()
   });
   showToast('Kickoff! ⚽');
+}
+var GT_hold = null, GT_holdBtn = null;
+function gtHoldStart(e, gid) {
+  if (e && e.preventDefault) e.preventDefault();
+  gtHoldCancel();
+  GT_holdBtn = e && e.currentTarget ? e.currentTarget : null;
+  if (GT_holdBtn) GT_holdBtn.classList.add('holding');
+  GT_hold = setTimeout(function(){ GT_hold = null; if (GT_holdBtn) { GT_holdBtn.classList.remove('holding'); GT_holdBtn = null; } gtClockPause(gid); }, 650);
+}
+function gtHoldCancel() {
+  if (GT_hold) { clearTimeout(GT_hold); GT_hold = null; }
+  if (GT_holdBtn) { GT_holdBtn.classList.remove('holding'); GT_holdBtn = null; }
 }
 function gtClockPause(gid) {
   var g = gtGame(gid); if (!g) return;

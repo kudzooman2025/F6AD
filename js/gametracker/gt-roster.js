@@ -42,7 +42,7 @@ function gtRenderRoster(view) {
     if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtOpenPlayerForm(\'' + sel.id + '\',null)">➕ Add Player</button>';
     if (!players.length) html += '<div class="gt-empty">No players on this roster yet.</div>';
     else {
-      html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Parents</th><th>Phones</th><th class="num">WhatsApp</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
+      html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Parents</th><th>Phones</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
       players.forEach(function(p) {
         html += '<tr><td class="num" style="font-weight:900;color:var(--purple)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
           '<td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' +
@@ -50,7 +50,6 @@ function gtRenderRoster(view) {
           '<td>' + gtEsc(p.position || '—') + '</td>' +
           '<td>' + ([(p.mom_name || p.parent_name) ? 'M: ' + gtEsc(p.mom_name || p.parent_name) : '', p.dad_name ? 'D: ' + gtEsc(p.dad_name) : ''].filter(Boolean).join('<br>') || '—') + '</td>' +
           '<td>' + ([(p.mom_phone || p.parent_phone) ? gtEsc(p.mom_phone || p.parent_phone) : '', p.dad_phone ? gtEsc(p.dad_phone) : ''].filter(Boolean).join('<br>') || '—') + '</td>' +
-          '<td class="num">' + (p.whatsapp_opt_in ? '✅' : '—') + '</td>' +
           (canEdit ? '<td style="white-space:nowrap"><button class="gt-minibtn" onclick="gtOpenPlayerForm(\'' + sel.id + '\',\'' + p.id + '\')">Edit</button> ' +
             (p.is_guest ? '<button class="gt-minibtn" onclick="gtConvertGuest(\'' + p.id + '\')">⬆ Full Player</button> ' : '<button class="gt-minibtn" onclick="gtMakeGuest(\'' + p.id + '\')">⬇ Make Guest</button> ') +
             '<button class="gt-minibtn danger" onclick="gtDeletePlayer(\'' + p.id + '\')">Remove</button></td>' : '') +
@@ -108,7 +107,7 @@ function gtSaveGuest(pid) {
   var op;
   if (pid) op = db.collection('gt_players').doc(pid).set(data, { merge: true });
   else {
-    data.parent_name = ''; data.parent_phone = ''; data.whatsapp_opt_in = false;
+    data.parent_name = ''; data.parent_phone = '';
     data.created_at = firebase.firestore.FieldValue.serverTimestamp();
     op = db.collection('gt_players').add(data);
   }
@@ -185,8 +184,6 @@ function gtOpenPlayerForm(rid, pid) {
     '<div><label>Mom Phone (E.164)</label><input type="tel" id="gt-pf-momphone" value="' + gtAttr(p ? (p.mom_phone || p.parent_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div></div>' +
     '<div class="gm-row"><div><label>Dad / Guardian</label><input type="text" id="gt-pf-dad" value="' + gtAttr(p ? (p.dad_name || '') : '') + '"/></div>' +
     '<div><label>Dad Phone (E.164)</label><input type="tel" id="gt-pf-dadphone" value="' + gtAttr(p ? (p.dad_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div></div>' +
-    '<div class="gt-checkrow" style="margin-top:12px"><input type="checkbox" id="gt-pf-optin"' + (p && p.whatsapp_opt_in ? ' checked' : '') + '/>' +
-    '<label for="gt-pf-optin" style="margin:0;text-transform:none;font-size:.8rem">Parent has <strong>explicitly opted in</strong> to WhatsApp game notifications</label></div>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSavePlayer(\'' + rid + '\',' + (p ? '\'' + p.id + '\'' : 'null') + ')">Save Player</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
@@ -217,7 +214,6 @@ function gtWirePlayerAutocomplete() {
     el = document.getElementById('gt-pf-momphone'); if(el) el.value = pl.mom_phone || pl.parent_phone || '';
     el = document.getElementById('gt-pf-dad'); if(el) el.value = pl.dad_name || '';
     el = document.getElementById('gt-pf-dadphone'); if(el) el.value = pl.dad_phone || '';
-    el = document.getElementById('gt-pf-optin'); if(el) el.checked = !!pl.whatsapp_opt_in;
     sug.style.display = 'none'; activeIdx = -1;
   }
   function positionSug() {
@@ -280,19 +276,15 @@ function gtSavePlayer(rid, pid) {
   if (dadPhone && !reE164.test(dadPhone)) { showToast('Dad phone must be E.164 format, e.g. +12155551234'); return; }
   var momName = document.getElementById('gt-pf-mom').value.trim();
   var dadName = document.getElementById('gt-pf-dad').value.trim();
-  var optin = document.getElementById('gt-pf-optin').checked;
-  var prev = pid ? gtP(pid) : null;
   var data = {
     roster_id: rid, first_name: first, last_name: last,
     jersey_number: numV === '' ? null : parseInt(numV, 10),
     position: document.getElementById('gt-pf-pos').value.trim(),
     default_position: document.getElementById('gt-pf-defpos').value,
     mom_name: momName, mom_phone: momPhone, dad_name: dadName, dad_phone: dadPhone,
-    parent_name: momName || dadName, parent_phone: momPhone || dadPhone, whatsapp_opt_in: optin,
+    parent_name: momName || dadName, parent_phone: momPhone || dadPhone,
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
-  if (optin && !(prev && prev.whatsapp_opt_in)) data.whatsapp_opt_in_at = firebase.firestore.FieldValue.serverTimestamp();
-  if (!optin) data.whatsapp_opt_in_at = null;
   var op;
   if (pid) op = db.collection('gt_players').doc(pid).set(data, { merge: true });
   else {

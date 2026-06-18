@@ -121,6 +121,7 @@ function gtRenderTournament(view, tid) {
     });
   var availCount = entries.filter(function(x){ return x.e.available; }).length;
   var paidCount = entries.filter(function(x){ return x.e.available && x.e.paid; }).length;
+  var shownEntries = canEdit ? entries : entries.filter(function(x){ return x.e.available; });
   var html = gtLockBanner() +
     '<div class="gt-title">🏆 ' + gtEsc(t.name) + '</div>' +
     '<div class="gt-sub">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') + '</div>' +
@@ -135,12 +136,12 @@ function gtRenderTournament(view, tid) {
     '<button class="gt-minibtn" onclick="gtTournAddPlayerPrompt(\'' + t.id + '\')">➕ Add Player</button>' +
     '<button class="gt-minibtn" onclick="gtTournAddGuestPrompt(\'' + t.id + '\')">➕ Add Guest</button></div>';
   var rosterCollapsed = !!GT.tournRosterCollapsed;
-  html += '<div class="section-title" style="margin-bottom:12px;cursor:pointer;user-select:none" onclick="gtTournToggleRoster()">' + (rosterCollapsed ? '▸' : '▾') + ' 👥 Tournament Roster <span style="font-size:.78rem;color:var(--muted);font-weight:600">(' + entries.length + ')</span></div>';
+  html += '<div class="section-title" style="margin-bottom:12px;cursor:pointer;user-select:none" onclick="gtTournToggleRoster()">' + (rosterCollapsed ? '▸' : '▾') + ' 👥 Tournament Roster <span style="font-size:.78rem;color:var(--muted);font-weight:600">(' + shownEntries.length + ')</span></div>';
   if (!rosterCollapsed) {
-  if (!entries.length) html += '<div class="gt-empty">No players on this tournament roster yet.</div>';
+  if (!shownEntries.length) html += '<div class="gt-empty">No players on this tournament roster yet.</div>';
   else {
     html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th class="num">Status</th><th class="num">Paid</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
-    entries.forEach(function(x) {
+    shownEntries.forEach(function(x) {
       var p = x.p, e = x.e;
       html += '<tr>' +
         '<td class="num" style="font-weight:900;color:var(--purple)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
