@@ -289,6 +289,7 @@ function condLeave(sessionId, name) {
 const MINI_CAMPS = [
   {
     id:'minicamp-jul14',
+    start:'2026-07-14',
     name:'Mini Camp 1',
     dates:'July 14 & 15, 2026',
     days:'Tuesday & Wednesday',
@@ -298,6 +299,7 @@ const MINI_CAMPS = [
   },
   {
     id:'minicamp-jul30',
+    start:'2026-07-30',
     name:'Mini Camp 2',
     dates:'July 30 & 31, 2026',
     days:'Thursday & Friday',

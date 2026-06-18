@@ -75,7 +75,13 @@ function renderSchedule() {
   const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
     return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: g.venue || '', type: 'game', _gt: true };
   }).filter(function(e){ return e.date; }) : [];
-  const sorted = [...scheduleItems, ...gtEvents].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const condEvents = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(s){
+    return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true };
+  }) : [];
+  const campEvents = (typeof MINI_CAMPS !== 'undefined') ? MINI_CAMPS.map(function(c){
+    return { name: c.name, date: c.start, time: '18:00', location: c.location || '', type: 'event', _auto: true };
+  }).filter(function(e){ return e.date; }) : [];
+  const sorted = [...scheduleItems, ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => new Date(a.date) - new Date(b.date));
   const upcoming = sorted.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
   const past     = sorted.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
 
