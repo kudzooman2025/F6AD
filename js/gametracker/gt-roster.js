@@ -39,7 +39,8 @@ function gtRenderRoster(view) {
   if (sel) {
     var players = gtRosterPlayers(sel.id);
     html += '<div class="gt-title" style="margin-top:28px;font-size:1.05rem">' + gtEsc(sel.name) + ' — Players (' + players.length + ')</div>';
-    if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtOpenPlayerForm(\'' + sel.id + '\',null)">➕ Add Player</button>';
+    if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtOpenPlayerForm(\'' + sel.id + '\',null)">➕ Add Player</button>' +
+      ' <button class="gt-minibtn" style="margin-bottom:14px" onclick="gtEmailAllParents(\'' + sel.id + '\')">✉️ Email All Parents</button>';
     if (!players.length) html += '<div class="gt-empty">No players on this roster yet.</div>';
     else {
       html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Parents</th><th>Phones</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
@@ -300,6 +301,20 @@ function gtSavePlayer(rid, pid) {
   }
   op.then(function(){ showToast('Player saved ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtEmailAllParents(rid) {
+  if (!gtCanEdit()) return;
+  var emails = [];
+  gtRosterPlayers(rid).forEach(function(p){
+    [p.mom_email, p.dad_email].forEach(function(e){
+      e = (e || '').trim();
+      if (e && emails.indexOf(e) < 0) emails.push(e);
+    });
+  });
+  if (!emails.length) { showToast('No parent emails on this roster yet.'); return; }
+  var subject = (gtRoster(rid) ? gtRoster(rid).name : 'F6AD') + ' — Team Update';
+  window.location.href = 'mailto:?bcc=' + emails.join(',') + '&subject=' + encodeURIComponent(subject);
+  showToast('Opening email to ' + emails.length + ' parent' + (emails.length === 1 ? '' : 's') + '…');
 }
 function gtConvertGuest(pid) {
   if (!gtCanEdit()) return;
