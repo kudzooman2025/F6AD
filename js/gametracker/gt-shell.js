@@ -14,6 +14,7 @@ function gtListen() {
       });
       GT.loaded[def[1]] = true;
       gtRerender();
+      if (def[1] === 'games' && typeof renderSchedule === 'function') renderSchedule();
     }, function(err) { showToast('GameTracker sync error: ' + err.message); });
   });
 }

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
   renderConfirmedSummer();
   renderSummerGrid();
   startListeners();
+  gtListen();
   window.addEventListener('hashchange', gtRoute);
   gtRoute();
 });

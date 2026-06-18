@@ -72,7 +72,10 @@ function copyLink(url,btn) {
 
 function renderSchedule() {
   const today = new Date(); today.setHours(0,0,0,0);
-  const sorted = [...scheduleItems].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
+    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: g.venue || '', type: 'game', _gt: true };
+  }).filter(function(e){ return e.date; }) : [];
+  const sorted = [...scheduleItems, ...gtEvents].sort((a,b) => new Date(a.date) - new Date(b.date));
   const upcoming = sorted.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
   const past     = sorted.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
 

@@ -72,6 +72,12 @@ function gtTodayStr() {
   var d = new Date();
   return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
 }
+function gtGameDateStr(g) {
+  var ms = gtTsMillis(g.played_at || g.created_at);
+  if (!ms) return '';
+  var d = new Date(ms);
+  return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
 function gtFmtKickoff(t) {
   if (!t || typeof t !== 'string' || t.indexOf(':') < 0) return '';
   var parts = t.split(':'), h = parseInt(parts[0], 10), m = parts[1];
