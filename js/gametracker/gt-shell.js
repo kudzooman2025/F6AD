@@ -169,9 +169,9 @@ function gtGameItem(g) {
 // ---------- LANDING ----------
 function gtRenderHome(view) {
   var live = GT.games.filter(function(g){ return ['setup', 'in_progress', 'paused', 'between_periods'].indexOf(g.status) >= 0; })
-    .sort(function(a, b){ return gtTsMillis(b.created_at) - gtTsMillis(a.created_at); });
+    .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
   var past = GT.games.filter(function(g){ return g.status === 'complete'; })
-    .sort(function(a, b){ return gtTsMillis(b.played_at || b.created_at) - gtTsMillis(a.played_at || a.created_at); });
+    .sort(function(a, b){ return gtGameSortMs(b) - gtGameSortMs(a); });
   var html = gtLockBanner() +
     '<div class="gt-title">⚽ GameTracker</div>' +
     '<div class="gt-sub">Log live game events, track the clock, and build season stats.</div>' +

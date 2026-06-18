@@ -58,6 +58,16 @@ function gtFmtDate(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function gtTsMillis(ts) { return ts && ts.toMillis ? ts.toMillis() : (ts ? new Date(ts).getTime() : 0); }
+function gtGameSortMs(g) {
+  // sortable timestamp combining the game date with its kickoff time (if set)
+  var base = gtTsMillis(g.played_at || g.created_at);
+  if (g.kickoff_time && /^\d{1,2}:\d{2}/.test(g.kickoff_time)) {
+    var d = new Date(base), parts = g.kickoff_time.split(':');
+    d.setHours(parseInt(parts[0], 10) || 0, parseInt(parts[1], 10) || 0, 0, 0);
+    return d.getTime();
+  }
+  return base;
+}
 function gtTodayStr() {
   var d = new Date();
   return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
