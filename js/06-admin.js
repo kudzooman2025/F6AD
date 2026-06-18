@@ -89,7 +89,8 @@ function renderSchedule() {
       }
     });
   }
-  const sorted = [...scheduleItems, ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
+  const sorted = [...scheduleItems, ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
   const vis = (typeof scheduleFilter !== 'undefined' && scheduleFilter !== 'all') ? sorted.filter(ev => ev.type === scheduleFilter) : sorted;
   const upcoming = vis.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
   const past     = vis.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
