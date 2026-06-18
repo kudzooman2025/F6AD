@@ -336,7 +336,7 @@ function gtRenderLive(view, gameId) {
   if (subLog.length) {
     html += '<div class="section-title" style="margin:22px 0 12px">🔄 Substitutions</div><div class="gt-feed">' +
       subLog.slice().reverse().map(function(sb) {
-        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>🔄 <strong>' + gtEsc(gtPlayerShort(sb.player_in_id)) + '</strong>' + (sb.position ? ' (' + gtEsc(sb.position) + ')' : '') + ' ← ' + gtEsc(gtPlayerShort(sb.player_out_id)) + '</div>';
+        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>🔄 <strong>' + gtEsc(gtPlayerShort(sb.player_in_id)) + '</strong>' + (sb.position ? ' (' + gtEsc(sb.position) + ')' : '') + ' ← ' + gtEsc(gtPlayerShort(sb.player_out_id)) + (canEdit ? ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtEditSubPosition(\'' + sb.id + '\')">✏️ Pos</button>' : '') + '</div>';
       }).join('') + '</div>';
   }
   // unavailable footnote
@@ -746,6 +746,24 @@ function gtSaveSub(gid, outPid, clock, period) {
     showToast('🔄 ' + gtPlayerShort(inPid) + ' on (' + position + ') for ' + gtPlayerShort(outPid));
     gtCloseModal();
   }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtEditSubPosition(sid) {
+  if (!gtCanEdit()) return;
+  var sb = GT.subs.find(function(x){ return x.id === sid; });
+  if (!sb) return;
+  gtOpenModal(
+    '<h3>✏️ Edit Sub Position<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted)">' + gtEsc(gtPlayerShort(sb.player_in_id)) + ' came on for ' + gtEsc(gtPlayerShort(sb.player_out_id)) + '. Adjust the position if it was logged incorrectly.</p>' +
+    '<label>Position</label><select id="gt-subpos-edit">' + gtPositionOptions(sb.position || '') + '</select>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveSubPosition(\'' + sid + '\')">Save</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtSaveSubPosition(sid) {
+  if (!gtCanEdit()) return;
+  var pos = document.getElementById('gt-subpos-edit').value;
+  db.collection('gt_subs').doc(sid).update({ position: pos })
+    .then(function(){ showToast('Sub position updated ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtSetStarter(gid, pid, started, pos) {
   if (!gtCanEdit()) return;
