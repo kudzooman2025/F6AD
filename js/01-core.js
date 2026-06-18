@@ -131,6 +131,7 @@ const SUMMER27_TOURNAMENTS = [
 let scheduleItems = [];
 let announcementItems = [];
 let venueItems = [];
+let scheduleFilter = 'all';
 let allVotesFall = {}, allNotesFall = {};
 let allVotesWinter = {}, allNotesWinter = {};
 let allVotesSpring = {}, allNotesSpring = {};

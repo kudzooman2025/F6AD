@@ -67,6 +67,12 @@
     <div class="section-header">
       <div class="section-title">📅 Team Schedule</div>
     </div>
+    <div class="sched-filters" id="sched-filters">
+      <button class="sched-chip active" onclick="setScheduleFilter('all',this)">All</button>
+      <button class="sched-chip" onclick="setScheduleFilter('game',this)">⚽ Games</button>
+      <button class="sched-chip" onclick="setScheduleFilter('practice',this)">🏃 Practices</button>
+      <button class="sched-chip" onclick="setScheduleFilter('event',this)">📅 Events</button>
+    </div>
     <div class="event-list" id="schedule-list"></div>
     <div class="empty-state" id="schedule-empty">
       <span>📅</span>

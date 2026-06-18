@@ -46,11 +46,22 @@ function gtOpenTournamentForm(tid) {
       rosters.map(function(r){ return '<option value="' + r.id + '"' + (defRid === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') + '</select>') +
     '<div class="gm-row"><div><label>Start Date</label><input type="date" id="gt-tf-start" value="' + gtAttr(t ? t.start_date : '') + '"/></div>' +
     '<div><label>End Date</label><input type="date" id="gt-tf-end" value="' + gtAttr(t ? t.end_date : '') + '"/></div></div>' +
-    '<label>Venue</label><input type="text" id="gt-tf-venue" list="venue-datalist" value="' + gtAttr(t ? t.venue : '') + '" placeholder="Maryland SoccerPlex"/>' +
+    '<label>Venue</label><input type="text" id="gt-tf-venue" list="venue-datalist" onchange="gtTournVenueFill()" value="' + gtAttr(t ? t.venue : '') + '" placeholder="Maryland SoccerPlex"/>' +
+    '<label>Address</label><input type="text" id="gt-tf-vaddr" value="' + gtAttr(t ? (t.venue_address || '') : '') + '" placeholder="223 Keith Valley Rd"/>' +
+    '<div class="gm-row"><div><label>City</label><input type="text" id="gt-tf-vcity" value="' + gtAttr(t ? (t.venue_city || '') : '') + '"/></div>' +
+    '<div><label>State</label><input type="text" id="gt-tf-vstate" value="' + gtAttr(t ? (t.venue_state || '') : '') + '"/></div>' +
+    '<div><label>Zip</label><input type="text" id="gt-tf-vzip" value="' + gtAttr(t ? (t.venue_zip || '') : '') + '"/></div></div>' +
     '<label>Players per side</label><input type="number" id="gt-tf-side" min="1" max="11" value="' + (t && t.players_per_side ? t.players_per_side : 11) + '"/>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveTournament(' + (t ? '\'' + t.id + '\'' : 'null') + ')">Save</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
+}
+function gtTournVenueFill() {
+  var name = (document.getElementById('gt-tf-venue') || {}).value || '';
+  var v = (typeof venueItems !== 'undefined' && venueItems) ? venueItems.find(function(x){ return (x.name || '').toLowerCase() === name.trim().toLowerCase(); }) : null;
+  if (!v) return;
+  function set(id, val){ var el = document.getElementById(id); if (el) el.value = val || ''; }
+  set('gt-tf-vaddr', v.address); set('gt-tf-vcity', v.city); set('gt-tf-vstate', v.state); set('gt-tf-vzip', v.zip);
 }
 function gtSaveTournament(tid) {
   if (!gtCanEdit()) return;
@@ -62,6 +73,10 @@ function gtSaveTournament(tid) {
     start_date: document.getElementById('gt-tf-start').value || '',
     end_date: document.getElementById('gt-tf-end').value || '',
     venue: document.getElementById('gt-tf-venue').value.trim(),
+    venue_address: document.getElementById('gt-tf-vaddr').value.trim(),
+    venue_city: document.getElementById('gt-tf-vcity').value.trim(),
+    venue_state: document.getElementById('gt-tf-vstate').value.trim(),
+    venue_zip: document.getElementById('gt-tf-vzip').value.trim(),
     players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-tf-side').value, 10) || 11)),
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
@@ -103,7 +118,8 @@ function gtRenderTournament(view, tid) {
   var paidCount = entries.filter(function(x){ return x.e.available && x.e.paid; }).length;
   var html = gtLockBanner() +
     '<div class="gt-title">🏆 ' + gtEsc(t.name) + '</div>' +
-    '<div class="gt-sub">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') + '</div>';
+    '<div class="gt-sub">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') + '</div>' +
+    ([t.venue_address, t.venue_city, t.venue_state, t.venue_zip].filter(Boolean).length ? '<div class="gt-sub" style="margin-top:-4px">📍 ' + gtEsc([t.venue_address, t.venue_city, t.venue_state, t.venue_zip].filter(Boolean).join(', ')) + '</div>' : '');
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + availCount + '</div><div class="sb-label">Available</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + (entries.length - availCount) + '</div><div class="sb-label">Out</div></div>' +

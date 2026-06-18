@@ -82,8 +82,9 @@ function renderSchedule() {
     return { name: c.name, date: c.start, time: '18:00', location: c.location || '', type: 'event', _auto: true };
   }).filter(function(e){ return e.date; }) : [];
   const sorted = [...scheduleItems, ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => new Date(a.date) - new Date(b.date));
-  const upcoming = sorted.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
-  const past     = sorted.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
+  const vis = (typeof scheduleFilter !== 'undefined' && scheduleFilter !== 'all') ? sorted.filter(ev => ev.type === scheduleFilter) : sorted;
+  const upcoming = vis.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
+  const past     = vis.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
 
   const list  = document.getElementById('schedule-list');
   const empty = document.getElementById('schedule-empty');
@@ -127,6 +128,12 @@ function renderSchedule() {
   }
 }
 
+function setScheduleFilter(f, btn) {
+  scheduleFilter = f;
+  document.querySelectorAll('#sched-filters .sched-chip').forEach(function(c){ c.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderSchedule();
+}
 function toggleArchive() {
   showPastEvents = !showPastEvents;
   renderSchedule();
