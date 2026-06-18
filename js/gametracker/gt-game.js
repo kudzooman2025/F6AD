@@ -324,6 +324,7 @@ function gtRenderLive(view, gameId) {
   }
   if (canEdit && g.status !== 'setup') {
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenMassSub(\'' + g.id + '\')">🔄 Mass Sub</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentGoal(\'' + g.id + '\')">😣 Opponent Goal</button></div>';
   }
   // event feed
@@ -746,6 +747,50 @@ function gtSaveSub(gid, outPid, clock, period) {
     showToast('🔄 ' + gtPlayerShort(inPid) + ' on (' + position + ') for ' + gtPlayerShort(outPid));
     gtCloseModal();
   }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtOpenMassSub(gid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  if (g.status === 'setup') { showToast('Start the game clock first.'); return; }
+  var onField = gtOnField(gid);
+  var clock = gtClockSeconds(g), period = g.current_period || 1;
+  var players = gtAvailIds(gid).map(function(id){ return gtP(id); }).filter(Boolean).sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
+  var onList = players.filter(function(p){ return onField[p.id] !== false; });
+  var bench = players.filter(function(p){ return onField[p.id] === false; });
+  var offHtml = onList.length ? onList.map(function(p){
+    return '<div class="gt-avail-row"><label class="gt-avail-name" style="cursor:pointer"><input type="checkbox" class="gt-ms-off" value="' + p.id + '" style="margin-right:8px"/>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(p.id)) + ' <span style="color:var(--muted);font-size:.75rem">' + gtEsc(gtLastPosition(gid, p.id)) + '</span></label></div>';
+  }).join('') : '<div class="gt-empty">No players on the field.</div>';
+  var onHtml = bench.length ? bench.map(function(p){
+    var def = p.default_position || gtLastPosition(gid, p.id) || '';
+    return '<div class="gt-avail-row"><label class="gt-avail-name" style="cursor:pointer"><input type="checkbox" class="gt-ms-on" value="' + p.id + '" style="margin-right:8px"/>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(p.id)) + '</label><select class="gt-ms-pos" data-pid="' + p.id + '">' + gtPositionOptions(def) + '</select></div>';
+  }).join('') : '<div class="gt-empty">No bench players.</div>';
+  gtOpenModal(
+    '<h3><span>🔄 Mass Substitution</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<div class="gm-clock">🕐 ' + gtEsc(gtPeriodLabel(g, period, 'in_progress')) + ' · ' + gtFmtMMSS(clock) + '</div>' +
+    '<p style="font-size:.8rem;color:var(--muted);margin:6px 0">Check the players coming OFF and the players coming ON (equal numbers). Positions default to the saved position.</p>' +
+    '<label style="font-weight:800;font-size:.8rem;display:block;margin-top:6px">⬇ Coming OFF</label>' + offHtml +
+    '<label style="font-weight:800;font-size:.8rem;display:block;margin-top:12px">⬆ Coming ON</label>' + onHtml +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveMassSub(\'' + gid + '\',' + clock + ',' + period + ')">🔄 Apply Subs</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtSaveMassSub(gid, clock, period) {
+  if (!gtCanEdit()) return;
+  var offs = Array.prototype.slice.call(document.querySelectorAll('.gt-ms-off:checked')).map(function(c){ return c.value; });
+  var ons = Array.prototype.slice.call(document.querySelectorAll('.gt-ms-on:checked')).map(function(c){ return c.value; });
+  if (!offs.length || !ons.length) { showToast('Select players coming off and on.'); return; }
+  if (offs.length !== ons.length) { showToast('Pick equal numbers: ' + offs.length + ' off, ' + ons.length + ' on.'); return; }
+  var posByPid = {};
+  Array.prototype.slice.call(document.querySelectorAll('.gt-ms-pos')).forEach(function(sel){ posByPid[sel.getAttribute('data-pid')] = sel.value; });
+  for (var k = 0; k < ons.length; k++) {
+    if (!posByPid[ons[k]]) { showToast('Pick a position for ' + gtPlayerShort(ons[k]) + '.'); return; }
+  }
+  var ts = firebase.firestore.FieldValue.serverTimestamp();
+  var batch = db.batch();
+  for (var i = 0; i < ons.length; i++) {
+    var ref = db.collection('gt_subs').doc();
+    batch.set(ref, { game_id: gid, player_out_id: offs[i], player_in_id: ons[i], position: posByPid[ons[i]] || '', game_clock_seconds: clock, period: period, created_at: ts });
+  }
+  batch.commit().then(function(){ showToast(ons.length + ' substitution' + (ons.length === 1 ? '' : 's') + ' applied 🔄'); gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtEditSubPosition(sid) {
   if (!gtCanEdit()) return;
