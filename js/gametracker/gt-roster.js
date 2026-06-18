@@ -38,7 +38,7 @@ function gtRenderRoster(view) {
   var sel = gtRoster(GT.rosterSel);
   if (sel) {
     var players = gtRosterPlayers(sel.id);
-    html += '<div class="gt-title" style="margin-top:28px;font-size:1.05rem">' + gtEsc(sel.name) + ' — Players</div>';
+    html += '<div class="gt-title" style="margin-top:28px;font-size:1.05rem">' + gtEsc(sel.name) + ' — Players (' + players.length + ')</div>';
     if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtOpenPlayerForm(\'' + sel.id + '\',null)">➕ Add Player</button>';
     if (!players.length) html += '<div class="gt-empty">No players on this roster yet.</div>';
     else {
