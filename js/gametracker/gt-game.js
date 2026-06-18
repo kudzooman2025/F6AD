@@ -270,17 +270,17 @@ function gtRenderLive(view, gameId) {
     if (g.status === 'setup') {
       html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtClockStart(\'' + g.id + '\')">▶ Start Game</button>';
     } else if (g.status === 'in_progress') {
-      html += '<button class="gt-cbtn gt-cbtn-warn" style="font-size:.82rem" onpointerdown="gtHoldStart(event,\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">⏸ Hold to Pause</button>' +
+      html += '<button class="gt-cbtn gt-cbtn-warn" style="font-size:.82rem" onpointerdown="gtHoldStart(event,\'pause\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">⏸ Hold to Pause</button>' +
         (lastPeriod
-          ? '<button class="gt-cbtn gt-cbtn-danger" onclick="gtEndGame(\'' + g.id + '\')">🏁 End Game</button>'
-          : '<button class="gt-cbtn gt-cbtn-dark" onclick="gtEndPeriod(\'' + g.id + '\')">End ' + gtEsc(gtPeriodLabel(g, g.current_period, 'in_progress').replace(' — Paused', '')) + '</button>');
+          ? '<button class="gt-cbtn gt-cbtn-danger" onpointerdown="gtHoldStart(event,\'endGame\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">🏁 End Game (hold)</button>'
+          : '<button class="gt-cbtn gt-cbtn-dark" onpointerdown="gtHoldStart(event,\'endPeriod\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">End ' + gtEsc(gtPeriodLabel(g, g.current_period, 'in_progress').replace(' — Paused', '')) + ' (hold)</button>');
     } else if (g.status === 'paused') {
       html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtClockResume(\'' + g.id + '\')">▶ Resume</button>' +
-        (lastPeriod ? '' : '<button class="gt-cbtn gt-cbtn-dark" onclick="gtEndPeriod(\'' + g.id + '\')">End Period</button>') +
-        '<button class="gt-cbtn gt-cbtn-danger" onclick="gtEndGame(\'' + g.id + '\')">🏁 End Game</button>';
+        (lastPeriod ? '' : '<button class="gt-cbtn gt-cbtn-dark" onpointerdown="gtHoldStart(event,\'endPeriod\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">End Period (hold)</button>') +
+        '<button class="gt-cbtn gt-cbtn-danger" onpointerdown="gtHoldStart(event,\'endGame\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">🏁 End Game (hold)</button>';
     } else if (g.status === 'between_periods') {
       html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtStartNextPeriod(\'' + g.id + '\')">▶ Start ' + gtEsc(gtPeriodLabel(g, g.current_period, 'in_progress')) + '</button>' +
-        '<button class="gt-cbtn gt-cbtn-danger" onclick="gtEndGame(\'' + g.id + '\')">🏁 End Game</button>';
+        '<button class="gt-cbtn gt-cbtn-danger" onpointerdown="gtHoldStart(event,\'endGame\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">🏁 End Game (hold)</button>';
     }
     html += '</div>';
   }
@@ -399,12 +399,18 @@ function gtClockStart(gid) {
   showToast('Kickoff! ⚽');
 }
 var GT_hold = null, GT_holdBtn = null;
-function gtHoldStart(e, gid) {
+function gtHoldStart(e, action, gid) {
   if (e && e.preventDefault) e.preventDefault();
   gtHoldCancel();
   GT_holdBtn = e && e.currentTarget ? e.currentTarget : null;
   if (GT_holdBtn) GT_holdBtn.classList.add('holding');
-  GT_hold = setTimeout(function(){ GT_hold = null; if (GT_holdBtn) { GT_holdBtn.classList.remove('holding'); GT_holdBtn = null; } gtClockPause(gid); }, 650);
+  GT_hold = setTimeout(function(){
+    GT_hold = null;
+    if (GT_holdBtn) { GT_holdBtn.classList.remove('holding'); GT_holdBtn = null; }
+    if (action === 'endPeriod') gtEndPeriod(gid);
+    else if (action === 'endGame') gtEndGame(gid);
+    else gtClockPause(gid);
+  }, 650);
 }
 function gtHoldCancel() {
   if (GT_hold) { clearTimeout(GT_hold); GT_hold = null; }
@@ -503,7 +509,6 @@ function gtDeleteGame(gid) {
 }
 function gtEndGame(gid) {
   var g = gtGame(gid); if (!g) return;
-  if (!confirm('End this game? Final score: ' + g.home_team + ' ' + (g.home_score || 0) + ' – ' + (g.away_score || 0) + ' ' + g.away_team)) return;
   var pe = Object.assign({}, g.period_elapsed || {});
   if (g.status !== 'between_periods') pe[g.current_period || 1] = gtClockSeconds(g);
   gtGameUpdate(gid, { status: 'complete', period_elapsed: pe, clock_elapsed_seconds: 0, clock_started_at: null })
