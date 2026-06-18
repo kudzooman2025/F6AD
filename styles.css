@@ -650,3 +650,6 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
 .sched-filters{display:flex;flex-wrap:wrap;margin-bottom:14px}
 .sched-chip{border:1px solid var(--border);background:#fff;border-radius:20px;padding:5px 14px;font-size:.8rem;font-weight:700;cursor:pointer;margin:0 6px 8px 0}
 .sched-chip.active{background:var(--purple);color:#fff;border-color:var(--purple)}
+
+/* Sortable table headers — pointer affordance */
+.gt-table th[onclick]{cursor:pointer;user-select:none}

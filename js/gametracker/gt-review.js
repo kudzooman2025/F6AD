@@ -192,7 +192,9 @@ function gtRenderSeason(view) {
     '<div class="gt-stat-box"><div class="sb-num">' + ga + '</div><div class="sb-label">Goals Against</div></div>' +
     '</div>';
   // game log
-  html += '<div class="section-title" style="margin-bottom:12px">📜 Game Log</div>';
+  var glogCollapsed = GT.glogCollapsed !== false;
+  html += '<div class="section-title" style="margin-bottom:12px;cursor:pointer;user-select:none" onclick="gtToggleGlog()">' + (glogCollapsed ? '▸' : '▾') + ' 📜 Game Log <span style="font-size:.78rem;color:var(--muted);font-weight:600">(' + games.length + ')</span></div>';
+  if (!glogCollapsed) {
   if (!games.length) html += '<div class="gt-empty">No completed games match these filters.</div>';
   else {
     var gs = GT.glogSort || { col: 'date', dir: -1 };
@@ -221,6 +223,7 @@ function gtRenderSeason(view) {
     });
     html += '</tbody></table></div>';
   }
+  }
   // player stats
   html += '<div class="section-title" style="margin:26px 0 12px">🏆 Player Stats</div>' +
     '<div class="gt-checkrow" style="margin-bottom:12px"><input type="checkbox" id="gt-show-guests"' + (GT.seasonShowGuests ? ' checked' : '') + ' onchange="GT.seasonShowGuests=this.checked;gtRerender(true)"/><label for="gt-show-guests" style="margin:0">Include guest players</label></div>';
@@ -246,6 +249,10 @@ function gtRenderSeason(view) {
     html += '</tbody></table></div>';
   }
   view.innerHTML = html;
+}
+function gtToggleGlog() {
+  GT.glogCollapsed = (GT.glogCollapsed === false);
+  gtRerender(true);
 }
 function gtGlogSort(col) {
   var gs = GT.glogSort || { col: 'date', dir: -1 };
