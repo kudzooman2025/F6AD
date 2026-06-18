@@ -111,8 +111,11 @@ function gtRenderTournament(view, tid) {
     '</div>';
   if (canEdit) html += '<div style="margin:4px 0 16px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="gt-minibtn" onclick="gtOpenTournamentForm(\'' + t.id + '\')">✏️ Edit Details</button>' +
+    '<button class="gt-minibtn" onclick="gtTournAddPlayerPrompt(\'' + t.id + '\')">➕ Add Player</button>' +
     '<button class="gt-minibtn" onclick="gtTournAddGuestPrompt(\'' + t.id + '\')">➕ Add Guest</button></div>';
-  html += '<div class="section-title" style="margin-bottom:12px">👥 Tournament Roster</div>';
+  var rosterCollapsed = !!GT.tournRosterCollapsed;
+  html += '<div class="section-title" style="margin-bottom:12px;cursor:pointer;user-select:none" onclick="gtTournToggleRoster()">' + (rosterCollapsed ? '▸' : '▾') + ' 👥 Tournament Roster <span style="font-size:.78rem;color:var(--muted);font-weight:600">(' + entries.length + ')</span></div>';
+  if (!rosterCollapsed) {
   if (!entries.length) html += '<div class="gt-empty">No players on this tournament roster yet.</div>';
   else {
     html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th class="num">Status</th><th class="num">Paid</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
@@ -131,6 +134,7 @@ function gtRenderTournament(view, tid) {
         '</tr>';
     });
     html += '</tbody></table></div>';
+  }
   }
   var games = gtTournamentGames(t.id);
   html += '<div class="section-title" style="margin:26px 0 12px">⚽ Games</div>';
@@ -155,6 +159,26 @@ function gtTournRemove(tid, pid) {
   if (!confirm('Remove ' + gtPlayerName(pid) + ' from this tournament roster?')) return;
   var u = {}; u['lineup.' + pid] = firebase.firestore.FieldValue.delete();
   db.collection('gt_tournaments').doc(tid).update(u).then(function(){ showToast('Removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtTournToggleRoster() {
+  GT.tournRosterCollapsed = !GT.tournRosterCollapsed;
+  gtRerender(true);
+}
+function gtTournAddPlayerPrompt(tid) {
+  if (!gtCanEdit()) return;
+  var t = gtTournament(tid); if (!t) return;
+  var lu = gtTournLineup(t);
+  var players = gtRosterPlayers(t.base_roster_id).filter(function(p){ return !p.is_guest && !lu[p.id]; });
+  if (!players.length) { showToast('All squad players are already on this tournament.'); return; }
+  gtOpenModal(
+    '<h3>➕ Add Player<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted)">Add squad players to this tournament roster.</p>' +
+    '<div>' + players.map(function(p) {
+      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--purple);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + '</span>' +
+        '<button class="gt-minibtn" onclick="gtTournAddGuest(\'' + tid + '\',\'' + p.id + '\')">Add</button></div>';
+    }).join('') + '</div>' +
+    '<div class="gm-actions"><button class="gt-minibtn" onclick="gtCloseModal()">Done</button></div>'
+  );
 }
 function gtTournAddGuestPrompt(tid) {
   if (!gtCanEdit()) return;
