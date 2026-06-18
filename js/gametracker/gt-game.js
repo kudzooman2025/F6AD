@@ -581,11 +581,22 @@ function gtSaveLiveEvent() {
     clock = manual;
   }
   var g = gtGame(pe.gameId);
+  var period = pe.period;
+  // an assist can't exist without a goal — snap its timestamp to the most recent goal
+  if (pe.type === 'assist') {
+    var goals = GT.events.filter(function(e){ return e.game_id === pe.gameId && e.event_type === 'goal'; });
+    if (!goals.length) { showToast('Log the goal first — an assist needs a goal.'); return; }
+    if (!document.getElementById('gt-ev-override').checked) {
+      var lastGoal = goals.slice().sort(function(a, b){ return gtCumSec(g, b.period, b.game_clock_seconds) - gtCumSec(g, a.period, a.game_clock_seconds); })[0];
+      clock = lastGoal.game_clock_seconds;
+      period = lastGoal.period;
+    }
+  }
   var notes = document.getElementById('gt-ev-notes').value.trim();
   var assistPid = (pe.type === 'goal') ? (document.getElementById('gt-assist-pid') || {}).value || '' : '';
   var evData = {
     game_id: pe.gameId, player_id: pe.playerId, event_type: pe.type,
-    game_clock_seconds: clock, period: pe.period,
+    game_clock_seconds: clock, period: period,
     notes: notes, youtube_url: '',
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
