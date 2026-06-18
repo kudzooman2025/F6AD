@@ -54,7 +54,10 @@ function gtFmtMMSS(sec) {
 }
 function gtFmtDate(ts) {
   if (!ts) return '—';
-  var d = ts.toDate ? ts.toDate() : new Date(ts);
+  var d;
+  if (ts.toDate) d = ts.toDate();
+  else if (typeof ts === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(ts)) d = new Date(ts + 'T00:00:00');
+  else d = new Date(ts);
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function gtTsMillis(ts) { return ts && ts.toMillis ? ts.toMillis() : (ts ? new Date(ts).getTime() : 0); }

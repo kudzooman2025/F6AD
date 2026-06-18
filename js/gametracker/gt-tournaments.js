@@ -20,10 +20,15 @@ function gtRenderTournaments(view) {
     var lu = gtTournLineup(t), ids = Object.keys(lu);
     var avail = ids.filter(function(id){ return lu[id].available; }).length;
     var paid = ids.filter(function(id){ return lu[id].available && lu[id].paid; }).length;
-    var games = gtTournamentGames(t.id).length;
+    var gms = gtTournamentGames(t.id);
+    var games = gms.length;
+    var gd = gms.map(function(g){ return gtGameDateStr(g); }).filter(Boolean);
+    var ud = gd.filter(function(d, i){ return gd.indexOf(d) === i; }).sort();
+    var dateLabel = ud.length ? ud.map(gtFmtDate).join(', ')
+      : (t.start_date ? gtFmtDate(t.start_date) + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') : '');
     return '<div class="gt-gitem" onclick="gtGo(\'/gametracker/tournament/' + t.id + '\')">' +
       '<span class="gi-teams">' + gtEsc(t.name) + '</span>' +
-      '<span class="gi-meta">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') +
+      '<span class="gi-meta">' + dateLabel + (t.venue ? ' · ' + gtEsc(t.venue) : '') +
         ' · ' + avail + ' available · ' + paid + '/' + avail + ' paid · ' + games + ' game' + (games === 1 ? '' : 's') + '</span>' +
       '</div>';
   }).join('') + '</div>';
