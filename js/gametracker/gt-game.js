@@ -5,7 +5,7 @@ function gtStartSetup() {
   GT.setup = {
     step: 1,
     home_team: act ? act.name : 'F6AD',
-    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '', kickoff_time: '', game_date: gtTodayStr(),
+    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '', field: '', kickoff_time: '', game_date: gtTodayStr(),
     num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
     roster_id: act ? act.id : '',
     avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null, season_id: null,
@@ -73,6 +73,8 @@ function gtRenderNew(view) {
       '<input type="number" id="gt-su-side" min="1" max="11" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + (s.players_per_side || 11) + '"/>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Start Time (kickoff)</label>' +
       '<input type="time" id="gt-su-time" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.kickoff_time || '') + '"/>' +
+      '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Field Assignment</label>' +
+      '<input type="text" id="gt-su-field" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.field || '') + '" placeholder="Field 11"/>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Game Date</label>' +
       '<input type="date" id="gt-su-date" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.game_date || '') + '"/>';
   } else if (s.step === 2) {
@@ -167,6 +169,7 @@ function gtSetupCapture() {
   var d = document.getElementById('gt-su-dur'); if (d) s.period_duration_minutes = Math.max(1, parseInt(d.value, 10) || 35);
   var sd = document.getElementById('gt-su-side'); if (sd) s.players_per_side = Math.max(1, Math.min(11, parseInt(sd.value, 10) || 11));
   var kt = document.getElementById('gt-su-time'); if (kt) s.kickoff_time = kt.value || '';
+  var fld = document.getElementById('gt-su-field'); if (fld) s.field = fld.value.trim();
   var gd = document.getElementById('gt-su-date'); if (gd) s.game_date = gd.value || '';
 }
 function gtSetupNav(dir) {
@@ -201,7 +204,7 @@ function gtCreateGame() {
   batch.set(gameRef, {
     roster_id: s.roster_id, tournament_id: s.tournament_id || null, season_id: s.season_id || null, home_team: s.home_team, away_team: s.away_team, f6ad_side: s.f6ad_side,
     game_type: s.game_type, venue: s.venue, venue_address: s.venue_address || '', venue_city: s.venue_city || '', venue_state: s.venue_state || '', venue_zip: s.venue_zip || '', num_periods: s.num_periods,
-    period_duration_minutes: s.period_duration_minutes, players_per_side: s.players_per_side || 11, kickoff_time: s.kickoff_time || '',
+    period_duration_minutes: s.period_duration_minutes, players_per_side: s.players_per_side || 11, kickoff_time: s.kickoff_time || '', field: s.field || '',
     status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
     period_elapsed: {}, home_score: 0, away_score: 0,
     played_at: s.game_date ? firebase.firestore.Timestamp.fromDate(new Date(s.game_date + 'T12:00:00')) : null, created_at: ts, updated_at: ts
@@ -428,6 +431,7 @@ function gtOpenGameEdit(gid) {
     '<div class="gm-row"><div><label>Game Type</label><select id="gt-ge-type">' + ['league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (g.game_type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Date</label><input type="date" id="gt-ge-date" value="' + dateVal + '"/></div></div>' +
     '<label>Start Time (kickoff)</label><input type="time" id="gt-ge-time" value="' + gtAttr(g.kickoff_time || '') + '"/>' +
+    '<label>Field Assignment</label><input type="text" id="gt-ge-field" value="' + gtAttr(g.field || '') + '" placeholder="Field 11"/>' +
     '<label>Venue</label><input type="text" id="gt-ge-venue" list="venue-datalist" onchange="gtFillVenueFields(\'gt-ge-venue\',\'gt-ge-vaddr\',\'gt-ge-vcity\',\'gt-ge-vstate\',\'gt-ge-vzip\')" value="' + gtAttr(g.venue || '') + '"/>' +
     '<label>Address</label><input type="text" id="gt-ge-vaddr" value="' + gtAttr(g.venue_address || '') + '"/>' +
     '<div class="gm-row"><div><label>City</label><input type="text" id="gt-ge-vcity" value="' + gtAttr(g.venue_city || '') + '"/></div>' +
@@ -460,6 +464,7 @@ function gtSaveGameEdit(gid) {
     period_duration_minutes: Math.max(1, parseInt(document.getElementById('gt-ge-dur').value, 10) || 35),
     players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-ge-side').value, 10) || 11)),
     kickoff_time: document.getElementById('gt-ge-time').value || '',
+    field: document.getElementById('gt-ge-field').value.trim(),
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   var dateStr = document.getElementById('gt-ge-date').value;

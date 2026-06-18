@@ -127,7 +127,7 @@ function gtStartSeasonGame(sid) {
   GT.setup = {
     step: 1,
     home_team: se.team_name || (ros ? ros.name : 'F6AD'),
-    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '',
+    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '', field: '',
     num_periods: 2, period_duration_minutes: 35, players_per_side: se.players_per_side || 11,
     roster_id: se.base_roster_id,
     avail: {}, notes: {}, guests: [], guestIds: {}, kickoff_time: '', game_date: gtTodayStr(),

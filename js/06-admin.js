@@ -73,7 +73,7 @@ function copyLink(url,btn) {
 function renderSchedule() {
   const today = new Date(); today.setHours(0,0,0,0);
   const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
-    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: g.venue || '', type: 'game', _gt: true };
+    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: 'game', _gt: true };
   }).filter(function(e){ return e.date; }) : [];
   const condEvents = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(s){
     return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true };
