@@ -5,7 +5,7 @@ function gtStartSetup() {
   GT.setup = {
     step: 1,
     home_team: act ? act.name : 'F6AD',
-    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', kickoff_time: '', game_date: gtTodayStr(),
+    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '', kickoff_time: '', game_date: gtTodayStr(),
     num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
     roster_id: act ? act.id : '',
     avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null, season_id: null,
@@ -59,7 +59,12 @@ function gtRenderNew(view) {
       ['league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (s.game_type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') +
       '</select></div>' +
       '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Venue</label>' +
-      '<input type="text" id="gt-su-venue" list="venue-datalist" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue) + '" placeholder="Kohler Field, Blue Bell"/></div></div>' +
+      '<input type="text" id="gt-su-venue" list="venue-datalist" onchange="gtFillVenueFields(\'gt-su-venue\',\'gt-su-vaddr\',\'gt-su-vcity\',\'gt-su-vstate\',\'gt-su-vzip\')" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue) + '" placeholder="Kohler Field, Blue Bell"/></div></div>' +
+      '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Address</label>' +
+      '<input type="text" id="gt-su-vaddr" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue_address || '') + '" placeholder="223 Keith Valley Rd"/>' +
+      '<div class="gm-row" style="margin-top:10px"><div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">City</label><input type="text" id="gt-su-vcity" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue_city || '') + '"/></div>' +
+      '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">State</label><input type="text" id="gt-su-vstate" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue_state || '') + '"/></div>' +
+      '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Zip</label><input type="text" id="gt-su-vzip" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue_zip || '') + '"/></div></div>' +
       '<div class="gm-row" style="margin-top:14px"><div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Periods</label>' +
       '<div class="gt-avail-toggle">' + [1, 2, 3, 4].map(function(n){ return '<button class="' + (s.num_periods === n ? 'on-yes' : '') + '" onclick="gtSetupField(\'num_periods\',' + n + ');gtSetupCapture();gtRerender(true)">' + n + '</button>'; }).join('') + '</div></div>' +
       '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Minutes per period</label>' +
@@ -155,6 +160,10 @@ function gtSetupCapture() {
   }
   var t = document.getElementById('gt-su-type'); if (t) s.game_type = t.value;
   var v = document.getElementById('gt-su-venue'); if (v) s.venue = v.value.trim();
+  var va = document.getElementById('gt-su-vaddr'); if (va) s.venue_address = va.value.trim();
+  var vc = document.getElementById('gt-su-vcity'); if (vc) s.venue_city = vc.value.trim();
+  var vst = document.getElementById('gt-su-vstate'); if (vst) s.venue_state = vst.value.trim();
+  var vz = document.getElementById('gt-su-vzip'); if (vz) s.venue_zip = vz.value.trim();
   var d = document.getElementById('gt-su-dur'); if (d) s.period_duration_minutes = Math.max(1, parseInt(d.value, 10) || 35);
   var sd = document.getElementById('gt-su-side'); if (sd) s.players_per_side = Math.max(1, Math.min(11, parseInt(sd.value, 10) || 11));
   var kt = document.getElementById('gt-su-time'); if (kt) s.kickoff_time = kt.value || '';
@@ -191,7 +200,7 @@ function gtCreateGame() {
   var gameRef = db.collection('gt_games').doc();
   batch.set(gameRef, {
     roster_id: s.roster_id, tournament_id: s.tournament_id || null, season_id: s.season_id || null, home_team: s.home_team, away_team: s.away_team, f6ad_side: s.f6ad_side,
-    game_type: s.game_type, venue: s.venue, num_periods: s.num_periods,
+    game_type: s.game_type, venue: s.venue, venue_address: s.venue_address || '', venue_city: s.venue_city || '', venue_state: s.venue_state || '', venue_zip: s.venue_zip || '', num_periods: s.num_periods,
     period_duration_minutes: s.period_duration_minutes, players_per_side: s.players_per_side || 11, kickoff_time: s.kickoff_time || '',
     status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
     period_elapsed: {}, home_score: 0, away_score: 0,
@@ -419,7 +428,11 @@ function gtOpenGameEdit(gid) {
     '<div class="gm-row"><div><label>Game Type</label><select id="gt-ge-type">' + ['league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (g.game_type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Date</label><input type="date" id="gt-ge-date" value="' + dateVal + '"/></div></div>' +
     '<label>Start Time (kickoff)</label><input type="time" id="gt-ge-time" value="' + gtAttr(g.kickoff_time || '') + '"/>' +
-    '<label>Venue</label><input type="text" id="gt-ge-venue" list="venue-datalist" value="' + gtAttr(g.venue || '') + '"/>' +
+    '<label>Venue</label><input type="text" id="gt-ge-venue" list="venue-datalist" onchange="gtFillVenueFields(\'gt-ge-venue\',\'gt-ge-vaddr\',\'gt-ge-vcity\',\'gt-ge-vstate\',\'gt-ge-vzip\')" value="' + gtAttr(g.venue || '') + '"/>' +
+    '<label>Address</label><input type="text" id="gt-ge-vaddr" value="' + gtAttr(g.venue_address || '') + '"/>' +
+    '<div class="gm-row"><div><label>City</label><input type="text" id="gt-ge-vcity" value="' + gtAttr(g.venue_city || '') + '"/></div>' +
+    '<div><label>State</label><input type="text" id="gt-ge-vstate" value="' + gtAttr(g.venue_state || '') + '"/></div>' +
+    '<div><label>Zip</label><input type="text" id="gt-ge-vzip" value="' + gtAttr(g.venue_zip || '') + '"/></div></div>' +
     '<div class="gm-row"><div><label>Periods</label><select id="gt-ge-periods">' + [1, 2, 3, 4].map(function(n){ return '<option value="' + n + '"' + ((g.num_periods || 2) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Minutes per period</label><input type="number" id="gt-ge-dur" min="1" max="60" value="' + (g.period_duration_minutes || 35) + '"/></div></div>' +
     '<label>Players per side</label><input type="number" id="gt-ge-side" min="1" max="11" value="' + (g.players_per_side || 11) + '"/>' +
@@ -439,6 +452,10 @@ function gtSaveGameEdit(gid) {
     away_team: side === 'home' ? opp : ourName,
     game_type: document.getElementById('gt-ge-type').value,
     venue: document.getElementById('gt-ge-venue').value.trim(),
+    venue_address: document.getElementById('gt-ge-vaddr').value.trim(),
+    venue_city: document.getElementById('gt-ge-vcity').value.trim(),
+    venue_state: document.getElementById('gt-ge-vstate').value.trim(),
+    venue_zip: document.getElementById('gt-ge-vzip').value.trim(),
     num_periods: parseInt(document.getElementById('gt-ge-periods').value, 10) || 2,
     period_duration_minutes: Math.max(1, parseInt(document.getElementById('gt-ge-dur').value, 10) || 35),
     players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-ge-side').value, 10) || 11)),

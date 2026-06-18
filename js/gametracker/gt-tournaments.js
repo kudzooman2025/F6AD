@@ -236,7 +236,7 @@ function gtStartTournamentGame(tid) {
   GT.setup = {
     step: 1,
     home_team: t.team_name || (ros ? ros.name : 'F6AD'),
-    away_team: '', f6ad_side: 'home', game_type: 'tournament', venue: t.venue || '',
+    away_team: '', f6ad_side: 'home', game_type: 'tournament', venue: t.venue || '', venue_address: t.venue_address || '', venue_city: t.venue_city || '', venue_state: t.venue_state || '', venue_zip: t.venue_zip || '',
     num_periods: 2, period_duration_minutes: 35, players_per_side: t.players_per_side || 11,
     roster_id: t.base_roster_id,
     avail: avail, notes: {}, guests: [], guestIds: guestIds, kickoff_time: '', game_date: gtTodayStr(),

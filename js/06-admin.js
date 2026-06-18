@@ -78,9 +78,17 @@ function renderSchedule() {
   const condEvents = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(s){
     return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true };
   }) : [];
-  const campEvents = (typeof MINI_CAMPS !== 'undefined') ? MINI_CAMPS.map(function(c){
-    return { name: c.name, date: c.start, time: '18:00', location: c.location || '', type: 'event', _auto: true };
-  }).filter(function(e){ return e.date; }) : [];
+  const campEvents = [];
+  if (typeof MINI_CAMPS !== 'undefined') {
+    MINI_CAMPS.forEach(function(c){
+      if (!c.start) return;
+      for (var off = 0; off < 2; off++) {
+        var d = new Date(c.start + 'T00:00:00'); d.setDate(d.getDate() + off);
+        var ds = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+        campEvents.push({ name: c.name + ' (Day ' + (off+1) + ')', date: ds, time: '18:00', location: c.location || '', type: 'event', _auto: true });
+      }
+    });
+  }
   const sorted = [...scheduleItems, ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => new Date(a.date) - new Date(b.date));
   const vis = (typeof scheduleFilter !== 'undefined' && scheduleFilter !== 'all') ? sorted.filter(ev => ev.type === scheduleFilter) : sorted;
   const upcoming = vis.filter(ev => new Date(ev.date + 'T00:00:00') >= today);

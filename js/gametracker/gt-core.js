@@ -78,6 +78,13 @@ function gtGameDateStr(g) {
   var d = new Date(ms);
   return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
 }
+function gtFillVenueFields(nameId, addrId, cityId, stateId, zipId) {
+  var name = (document.getElementById(nameId) || {}).value || '';
+  var v = (typeof venueItems !== 'undefined' && venueItems) ? venueItems.find(function(x){ return (x.name || '').toLowerCase() === name.trim().toLowerCase(); }) : null;
+  if (!v) return;
+  function set(id, val){ var el = document.getElementById(id); if (el) el.value = val || ''; }
+  set(addrId, v.address); set(cityId, v.city); set(stateId, v.state); set(zipId, v.zip);
+}
 function gtFmtKickoff(t) {
   if (!t || typeof t !== 'string' || t.indexOf(':') < 0) return '';
   var parts = t.split(':'), h = parseInt(parts[0], 10), m = parts[1];
