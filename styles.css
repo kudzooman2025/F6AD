@@ -656,3 +656,16 @@ nav a.nav-active{color:#fff;background:rgba(123,47,212,.5);border-radius:6px}
 
 /* Press-and-hold feedback (pause button) */
 .gt-cbtn.holding{opacity:.55;transform:scale(.95);transition:opacity .15s,transform .15s}
+
+/* Game chat */
+.gt-chat{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:14px 0;background:#fff}
+.gt-chat-head{font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:8px}
+.gt-chat-msgs{max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;margin-bottom:8px}
+.gt-chat-empty{font-size:.8rem;color:var(--muted);padding:4px}
+.gt-chat-msg{font-size:.86rem;line-height:1.3}
+.gt-chat-msg .cm-name{font-weight:800;color:var(--purple)}
+.gt-chat-msg .cm-time{font-size:.68rem;color:var(--muted);margin-left:6px}
+.gt-chat-bar{display:flex;gap:8px}
+.gt-chat-bar input{flex:1;border:2px solid var(--border);border-radius:7px;padding:8px 10px;font-family:inherit}
+.gt-chat-as{font-size:.7rem;color:var(--muted);margin-top:5px}
+.gt-chat-as a{cursor:pointer;color:var(--purple);font-weight:700}

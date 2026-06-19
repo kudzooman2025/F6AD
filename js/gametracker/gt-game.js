@@ -285,6 +285,7 @@ function gtRenderLive(view, gameId) {
     html += '</div>';
   }
   html += '</div>';
+  html += gtChatPanelHtml(g.id);
   // player grid
   var availIds = gtAvailIds(g.id);
   var events = gtGameEvents(g.id);
@@ -346,10 +347,12 @@ function gtRenderLive(view, gameId) {
     html += '<p style="font-size:.78rem;color:var(--muted);margin-top:18px"><strong>Unavailable:</strong> ' +
       outs.map(function(a){ return gtEsc(gtPlayerShort(a.player_id)) + (a.notes ? ' (' + gtEsc(a.notes) + ')' : ''); }).join(', ') + '</p>';
   }
+  html += '<div style="margin-top:22px;text-align:center"><button class="gt-minibtn" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Copy Game Link</button></div>';
   if (canEdit) {
-    html += '<div style="margin-top:26px;display:flex;gap:10px;justify-content:flex-end"><button class="gt-minibtn" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
+    html += '<div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end"><button class="gt-minibtn" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
   }
   view.innerHTML = html;
+  var _cm = document.getElementById('gt-chat-msgs'); if (_cm) _cm.scrollTop = _cm.scrollHeight;
   // ticking clock
   if (!GT.clockTimer) {
     GT.clockTimer = setInterval(function() {

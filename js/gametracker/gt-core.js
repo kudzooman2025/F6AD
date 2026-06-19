@@ -3,7 +3,7 @@
 // gt_rosters, gt_players, gt_games, gt_availability, gt_events, gt_subs
 
 var GT = {
-  rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [],
+  rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [], chat: [],
   loaded: {},
   listening: false,
   route: { page: 'home', arg: null },
@@ -14,7 +14,8 @@ var GT = {
   seasonSort: { col: 'goals', dir: -1 },
   seasonShowGuests: false,
   seasonFilters: { type: 'all', from: '', to: '', opp: '' },
-  rosterSel: null
+  rosterSel: null,
+  chatDraft: ''
 };
 
 var GT_EVENT_TYPES = [
@@ -94,6 +95,58 @@ function gtFmtKickoff(t) {
   if (isNaN(h)) return '';
   var ap = h < 12 ? 'AM' : 'PM', h12 = h % 12; if (h12 === 0) h12 = 12;
   return h12 + ':' + m + ' ' + ap;
+}
+function gtChatName() { try { return localStorage.getItem('gt_chat_name') || ''; } catch (e) { return ''; } }
+function gtSetChatName(clear) {
+  if (clear) { try { localStorage.removeItem('gt_chat_name'); } catch (e) {} gtRerender(true); return; }
+  var v = ((document.getElementById('gt-chat-name') || {}).value || '').trim();
+  if (!v) { showToast('Enter a name to chat.'); return; }
+  try { localStorage.setItem('gt_chat_name', v); } catch (e) {}
+  gtRerender(true);
+}
+function gtGameChat(gid) {
+  return GT.chat.filter(function(m){ return m.game_id === gid; }).sort(function(a, b){ return gtTsMillis(a.created_at) - gtTsMillis(b.created_at); });
+}
+function gtChatTime(ts) {
+  var d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+  if (!d || isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+function gtChatMsgsHtml(gid) {
+  var msgs = gtGameChat(gid);
+  if (!msgs.length) return '<div class="gt-chat-empty">No messages yet. Say hi 👋</div>';
+  return msgs.map(function(m){
+    return '<div class="gt-chat-msg"><span class="cm-name">' + gtEsc(m.name || '') + '</span> <span class="cm-time">' + gtChatTime(m.created_at) + '</span><div class="cm-text">' + gtEsc(m.text || '') + '</div></div>';
+  }).join('');
+}
+function gtChatPanelHtml(gid) {
+  var name = gtChatName();
+  var foot = name
+    ? '<div class="gt-chat-bar"><input id="gt-chat-input" placeholder="Message…" value="' + gtAttr(GT.chatDraft || '') + '" oninput="GT.chatDraft=this.value" onkeydown="if(event.key===\'Enter\')gtSendChat(\'' + gid + '\')"/><button class="btn-primary" onclick="gtSendChat(\'' + gid + '\')">Send</button></div><div class="gt-chat-as">Chatting as <strong>' + gtEsc(name) + '</strong> · <a onclick="gtSetChatName(true)">change name</a></div>'
+    : '<div class="gt-chat-bar"><input id="gt-chat-name" placeholder="Enter your name to chat…" onkeydown="if(event.key===\'Enter\')gtSetChatName()"/><button class="btn-primary" onclick="gtSetChatName()">Join Chat</button></div>';
+  return '<div class="gt-chat"><div class="gt-chat-head">💬 Game Chat</div><div class="gt-chat-msgs" id="gt-chat-msgs">' + gtChatMsgsHtml(gid) + '</div>' + foot + '</div>';
+}
+function gtRenderChatMessages() {
+  var el = document.getElementById('gt-chat-msgs');
+  if (!el || !GT.route || !GT.route.arg) return;
+  el.innerHTML = gtChatMsgsHtml(GT.route.arg);
+  el.scrollTop = el.scrollHeight;
+}
+function gtSendChat(gid) {
+  var name = gtChatName();
+  if (!name) { showToast('Add your name first.'); return; }
+  var inp = document.getElementById('gt-chat-input');
+  var text = (inp ? inp.value : '').trim();
+  if (!text) return;
+  db.collection('gt_chat').add({ game_id: gid, name: name, text: text, created_at: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(function(){ GT.chatDraft = ''; var i = document.getElementById('gt-chat-input'); if (i) { i.value = ''; i.focus(); } })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtCopyGameLink(gid) {
+  var url = window.location.origin + window.location.pathname + '#/gametracker/review/' + gid;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function(){ showToast('Game link copied!'); }).catch(function(){ window.prompt('Copy this game link:', url); });
+  } else { window.prompt('Copy this game link:', url); }
 }
 function gtCanEdit() { return isCoachLoggedIn() || isAdminUnlocked(); }
 

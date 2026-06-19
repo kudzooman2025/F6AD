@@ -5,7 +5,7 @@ function gtListen() {
   var defs = [
     ['gt_rosters', 'rosters'], ['gt_players', 'players'], ['gt_games', 'games'],
     ['gt_events', 'events'], ['gt_subs', 'subs'], ['gt_availability', 'avail'],
-    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons']
+    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons'], ['gt_chat', 'chat']
   ];
   defs.forEach(function(def) {
     db.collection(def[0]).onSnapshot(function(snap) {
@@ -13,6 +13,7 @@ function gtListen() {
         var o = d.data({ serverTimestamps: 'estimate' }); o.id = d.id; return o;
       });
       GT.loaded[def[1]] = true;
+      if (def[1] === 'chat') { if (typeof gtRenderChatMessages === 'function') gtRenderChatMessages(); return; }
       gtRerender();
       if (def[1] === 'games' && typeof renderSchedule === 'function') renderSchedule();
     }, function(err) { showToast('GameTracker sync error: ' + err.message); });
