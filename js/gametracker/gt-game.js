@@ -333,7 +333,7 @@ function gtRenderLive(view, gameId) {
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentCard(\'' + g.id + '\')">🟨 Opponent Card</button></div>';
   }
   // event feed
-  html += '<div class="section-title" style="margin-bottom:12px">📋 Event Feed</div>';
+  html += '<div class="section-title" style="margin-bottom:12px">📋 Event Feed' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap an event to edit or delete</span>' : '') + '</div>';
   var feedEvents = events.slice().reverse();
   if (!feedEvents.length) html += '<div class="gt-empty">No events logged yet.</div>';
   else html += '<div class="gt-feed">' + feedEvents.map(function(e){ return gtFeedItem(g, e, canEdit); }).join('') + '</div>';
@@ -668,7 +668,7 @@ function gtOpenEditEvent(eid) {
   var e = GT.events.find(function(x){ return x.id === eid; });
   if (!e) return;
   var g = gtGame(e.game_id); if (!g) return;
-  var isOpp = e.event_type === 'opponent_goal';
+  var isOpp = (e.event_type || '').indexOf('opponent') === 0;
   var nPeriods = g.num_periods || 2;
   var typeOpts = GT_EVENT_TYPES.map(function(t) {
     return '<option value="' + t.id + '"' + (t.id === e.event_type ? ' selected' : '') + '>' + t.emoji + ' ' + t.label + '</option>';
@@ -683,7 +683,7 @@ function gtOpenEditEvent(eid) {
   gtOpenModal(
     '<h3><span>✏️ Edit Event</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     (isOpp
-      ? '<div class="gm-clock">😣 ' + gtEsc(gtTheirName(g)) + ' — Opponent Goal</div>'
+      ? '<div class="gm-clock">' + gtEventType(e.event_type).emoji + ' ' + gtEsc(gtTheirName(g)) + ' — ' + gtEsc(gtEventType(e.event_type).label) + '</div>'
       : '<label>Event type</label><select id="gt-edit-type">' + typeOpts + '</select>' +
         '<label>Player</label><select id="gt-edit-player">' + playerOpts + '</select>') +
     '<label>Period</label><select id="gt-edit-period">' + periodOpts + '</select>' +
@@ -698,7 +698,7 @@ function gtSaveEditEvent(eid) {
   var e = GT.events.find(function(x){ return x.id === eid; });
   if (!e) return;
   var g = gtGame(e.game_id);
-  var isOpp = e.event_type === 'opponent_goal';
+  var isOpp = (e.event_type || '').indexOf('opponent') === 0;
   var sec = gtParseMMSS(document.getElementById('gt-edit-time').value);
   if (sec == null) { showToast('Time must be MM:SS.'); return; }
   var period = parseInt(document.getElementById('gt-edit-period').value, 10) || 1;

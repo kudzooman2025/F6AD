@@ -150,6 +150,7 @@ function gtStatusPill(g) {
   var map = {
     setup: ['gt-st-setup', 'Ready'], in_progress: ['gt-st-live', '● Live'],
     paused: ['gt-st-paused', 'Paused'], between_periods: ['gt-st-paused', 'Break'],
+    pk_shootout: ['gt-st-live', '● PKs'],
     complete: ['gt-st-complete', 'Final']
   };
   var m = map[g.status] || map.setup;
@@ -170,7 +171,7 @@ function gtGameItem(g) {
 
 // ---------- LANDING ----------
 function gtRenderHome(view) {
-  var live = GT.games.filter(function(g){ return ['setup', 'in_progress', 'paused', 'between_periods'].indexOf(g.status) >= 0; })
+  var live = GT.games.filter(function(g){ return g.status !== 'complete'; })
     .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
   var past = GT.games.filter(function(g){ return g.status === 'complete'; })
     .sort(function(a, b){ return gtGameSortMs(b) - gtGameSortMs(a); });

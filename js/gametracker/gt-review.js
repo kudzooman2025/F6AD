@@ -30,7 +30,7 @@ function gtRenderReview(view, gameId) {
     '</div>';
   html += gtStartingXiHtml(g.id);
   // timeline with period markers
-  html += '<div class="section-title" style="margin-bottom:12px">⏱ Event Timeline</div>';
+  html += '<div class="section-title" style="margin-bottom:12px">⏱ Event Timeline' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap an event to edit or delete</span>' : '') + '</div>';
   if (!events.length) html += '<div class="gt-empty">No events were logged in this game.</div>';
   else {
     var lastPeriod = 0;
