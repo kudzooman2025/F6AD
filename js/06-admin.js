@@ -801,7 +801,7 @@ function renderAdminSessions() {
   COND_SESSIONS.forEach(function(s) {
     var log = sessionLogData[s.id] || null;
     var isCompleted = log && log.completed;
-    var attCount = log && log.attendance ? Object.values(log.attendance).filter(function(v){ return v; }).length : 0;
+    var attCount = log && log.attendance ? Object.values(log.attendance).filter(function(v){ return v === true || (v && v.present); }).length : 0;
 
     var rowWrap = document.createElement('div');
 

@@ -1,4 +1,18 @@
 // ===================== SESSION DETAIL MODAL =====================
+function sessionBlockReps(log) {
+  if(!log) return [];
+  if(Array.isArray(log.block_reps)) return log.block_reps.slice();
+  if(log.blocks && log.reps_per_block) {
+    var a=[]; for(var i=0;i<log.blocks;i++) a.push(log.reps_per_block); return a;
+  }
+  return [];
+}
+function sessionRepsDisplay(log) {
+  var r=sessionBlockReps(log);
+  if(!r.length) return '\u2014';
+  var allSame=r.every(function(x){ return x===r[0]; });
+  return allSame ? String(r[0]) : r.join(' \u00b7 ');
+}
 function openSessionDetail(sessionId) {
   openSessionId = sessionId;
   document.getElementById('session-overlay').classList.add('open');
@@ -70,7 +84,7 @@ function renderSessionModalContent(sessionId) {
     statRow.className = 'log-stat-row';
     var stats = [
       {val: log.blocks || '—', lbl: 'Blocks'},
-      {val: log.reps_per_block || '—', lbl: 'Reps/Block'},
+      {val: sessionRepsDisplay(log), lbl: 'Reps/Block'},
       {val: log.total_reps || '—', lbl: 'Total Reps'}
     ];
     stats.forEach(function(s) {
@@ -178,13 +192,12 @@ function renderSessionEditForm(sessionId) {
   blocksGroup.appendChild(blocksLabel); blocksGroup.appendChild(blocksInput);
   formDiv.appendChild(blocksGroup);
 
-  // Reps per block
+  // Per-block reps (one input per block; each block can differ)
   var repsGroup = document.createElement('div'); repsGroup.className = 'log-field';
-  var repsLabel = document.createElement('label'); repsLabel.textContent = 'Reps per Block';
-  var repsInput = document.createElement('input'); repsInput.type = 'number';
-  repsInput.id = 'edit-reps'; repsInput.min = '1'; repsInput.max = '50';
-  repsInput.value = log.reps_per_block || '';
-  repsGroup.appendChild(repsLabel); repsGroup.appendChild(repsInput);
+  var repsLabel = document.createElement('label'); repsLabel.textContent = 'Reps per Block (set each block individually)';
+  var repsWrap = document.createElement('div'); repsWrap.id = 'edit-block-reps-wrap';
+  repsWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:4px';
+  repsGroup.appendChild(repsLabel); repsGroup.appendChild(repsWrap);
   formDiv.appendChild(repsGroup);
 
   // Total reps (auto-calc display)
@@ -193,16 +206,40 @@ function renderSessionEditForm(sessionId) {
   var totalInput = document.createElement('input'); totalInput.type = 'number';
   totalInput.id = 'edit-total-reps'; totalInput.readOnly = true;
   totalInput.style.background = '#f5f5f5';
-  totalInput.value = log.total_reps || '';
-  function recalcTotal() {
-    var b = parseInt(blocksInput.value) || 0;
-    var r = parseInt(repsInput.value) || 0;
-    totalInput.value = b && r ? b * r : '';
-  }
-  blocksInput.addEventListener('input', recalcTotal);
-  repsInput.addEventListener('input', recalcTotal);
   totalGroup.appendChild(totalLabel); totalGroup.appendChild(totalInput);
   formDiv.appendChild(totalGroup);
+
+  function recalcTotal() {
+    var t = 0, any = false;
+    repsWrap.querySelectorAll('input.block-rep-inp').forEach(function(inp){
+      var v = parseInt(inp.value); if(!isNaN(v)){ t += v; any = true; }
+    });
+    totalInput.value = any ? t : '';
+  }
+  function buildRepInputs() {
+    var n = parseInt(blocksInput.value) || 0;
+    var cur = [];
+    repsWrap.querySelectorAll('input.block-rep-inp').forEach(function(inp){ cur.push(inp.value); });
+    repsWrap.innerHTML = '';
+    var existing = sessionBlockReps(log);
+    for(var i=0;i<n;i++){
+      var cell = document.createElement('div');
+      cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:64px';
+      var cl = document.createElement('label');
+      cl.textContent = 'Block ' + (i+1);
+      cl.style.cssText = 'font-size:.68rem;color:var(--muted);margin-bottom:2px';
+      var ci = document.createElement('input'); ci.type = 'number'; ci.min = '0'; ci.max = '50';
+      ci.className = 'block-rep-inp'; ci.style.cssText = 'width:100%;text-align:center';
+      var val = (cur[i] !== undefined && cur[i] !== '') ? cur[i] : (existing[i] !== undefined ? existing[i] : '');
+      ci.value = val;
+      ci.addEventListener('input', recalcTotal);
+      cell.appendChild(cl); cell.appendChild(ci); repsWrap.appendChild(cell);
+    }
+    recalcTotal();
+  }
+  blocksInput.addEventListener('input', buildRepInputs);
+  if(!blocksInput.value){ var initN = sessionBlockReps(log).length; if(initN) blocksInput.value = initN; }
+  buildRepInputs();
 
   // Notes
   var notesGroup = document.createElement('div'); notesGroup.className = 'log-field';
@@ -285,8 +322,10 @@ function renderSessionEditForm(sessionId) {
 
 function saveSessionLog(sessionId) {
   var blocks = parseInt(document.getElementById('edit-blocks').value) || null;
-  var reps = parseInt(document.getElementById('edit-reps').value) || null;
-  var total = blocks && reps ? blocks * reps : null;
+  var blockReps = [];
+  var brWrap = document.getElementById('edit-block-reps-wrap');
+  if(brWrap){ brWrap.querySelectorAll('input.block-rep-inp').forEach(function(inp){ var v = parseInt(inp.value); blockReps.push(isNaN(v) ? 0 : v); }); }
+  var total = blockReps.length ? blockReps.reduce(function(a,b){ return a + b; }, 0) : null;
   var notes = document.getElementById('edit-notes').value.trim();
 
   var attendance = {};
@@ -309,7 +348,7 @@ function saveSessionLog(sessionId) {
     logged_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if(blocks !== null) data.blocks = blocks;
-  if(reps !== null) data.reps_per_block = reps;
+  if(blockReps.length){ data.block_reps = blockReps; data.reps_per_block = firebase.firestore.FieldValue.delete(); }
   if(total !== null) data.total_reps = total;
   if(notes) data.notes = notes;
 
