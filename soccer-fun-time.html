@@ -4,6 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>F6AD — U14 Boys 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
@@ -11,30 +14,29 @@
 <!-- HEADER -->
 <header>
   <div class="header-inner">
-    <div class="logo"><span>⚽</span><h1>F6AD</h1></div>
+    <div class="logo"><span class="logo-mark"></span><h1>F6AD</h1></div>
     <nav>
       <a href="#/home" class="site-link" data-page="home">Home</a>
       <a href="#/schedule" class="site-link" data-page="schedule">Schedule</a>
       <a href="#/conditioning" class="site-link" data-page="conditioning">Conditioning</a>
       <a href="#/tournaments" class="site-link" data-page="tournaments">Tournaments</a>
-      <a href="#/gametracker" class="nav-gt">⚽ GameTracker</a>
+      <a href="#/gametracker" class="nav-gt">GameTracker</a>
       <a href="#" id="nav-auth" style="display:none" onclick="navAuthClick(event)">Sign In</a>
       <button class="btn-signout" id="btn-signout" onclick="signOut()">Sign Out</button>
-      <button class="btn-admin" onclick="openAdmin()">🔐 Admin</button>
+      <button class="btn-admin" onclick="openAdmin()">Admin</button>
     </nav>
   </div>
 </header>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="hero-ball">⚽</div>
   <h2>F6AD</h2>
   <p>U14 Boys · 2026–2027</p>
   <div class="hero-chips">
-    <span class="chip">⚽ U14 Boys</span>
-    <span class="chip">✅ 4 Summer Confirmed</span>
-    <span class="chip">🗳️ Vote on Fall · Winter · Spring</span>
-    <span class="chip">🏃 Summer Conditioning Sign-Up</span>
+    <span class="chip">U14 Boys</span>
+    <span class="chip">4 Summer Confirmed</span>
+    <span class="chip">Vote on Fall · Winter · Spring</span>
+    <span class="chip">Summer Conditioning Sign-Up</span>
   </div>
 </div>
 
@@ -43,10 +45,10 @@
   <!-- HOME QUICK LINKS -->
   <section id="home-cards" style="margin-bottom:36px">
     <div class="gt-bigbtns" style="margin-bottom:0">
-      <a class="gt-bigbtn" href="#/schedule"><span class="bb-icon">📅</span><span class="bb-label">Schedule</span><span class="bb-desc">Games, practices &amp; events</span></a>
-      <a class="gt-bigbtn" href="#/conditioning"><span class="bb-icon">🏃</span><span class="bb-label">Conditioning</span><span class="bb-desc">Summer sign-up &amp; progress</span></a>
-      <a class="gt-bigbtn" href="#/tournaments"><span class="bb-icon">🗳️</span><span class="bb-label">Tournaments</span><span class="bb-desc">Vote on next season</span></a>
-      <a class="gt-bigbtn" href="#/gametracker"><span class="bb-icon">⚽</span><span class="bb-label">GameTracker</span><span class="bb-desc">Live games &amp; season stats</span></a>
+      <a class="gt-bigbtn" href="#/schedule"><span class="bb-icon">01</span><span class="bb-label">Schedule</span><span class="bb-desc">Games, practices &amp; events</span></a>
+      <a class="gt-bigbtn" href="#/conditioning"><span class="bb-icon">02</span><span class="bb-label">Conditioning</span><span class="bb-desc">Summer sign-up &amp; progress</span></a>
+      <a class="gt-bigbtn" href="#/tournaments"><span class="bb-icon">03</span><span class="bb-label">Tournaments</span><span class="bb-desc">Vote on next season</span></a>
+      <a class="gt-bigbtn" href="#/gametracker"><span class="bb-icon">04</span><span class="bb-label">GameTracker</span><span class="bb-desc">Live games &amp; season stats</span></a>
     </div>
   </section>
 
