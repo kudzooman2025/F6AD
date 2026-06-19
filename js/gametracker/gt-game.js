@@ -861,6 +861,16 @@ function gtToggleStarter(gid, pid) {
   if (!gtCanEdit()) return;
   var ae = gtGameAvailEntry(gid, pid);
   var nowStarted = !(ae && ae.started);
+  if (nowStarted) {
+    var g = gtGame(gid);
+    var limit = (g && g.players_per_side) || 11;
+    if (gtStarters(gid).length >= limit) {
+      gtOpenModal('<h3>Lineup full<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+        '<p style="font-size:.9rem;line-height:1.5;margin-bottom:14px">All <strong>' + limit + '</strong> starters have already been selected. Tap a selected (green) player to take them out before adding another.</p>' +
+        '<div class="gm-actions"><button class="btn-primary" onclick="gtCloseModal()">Got it</button></div>');
+      return;
+    }
+  }
   var p = gtP(pid);
   var pos = nowStarted ? ((p && p.default_position) || (ae && ae.start_position) || '') : '';
   gtSetStarter(gid, pid, nowStarted, pos);
