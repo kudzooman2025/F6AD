@@ -702,3 +702,6 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-pk-pchips{display:flex;flex-wrap:wrap;gap:8px}
 .gt-pk-pchip{border:1px solid var(--border-strong);background:#fff;border-radius:10px;padding:9px 13px;font-weight:600;font-size:.85rem;cursor:pointer}
 .gt-pk-pchip:hover{border-color:var(--purple);background:var(--purple-light)}
+
+/* GameTracker: disabled control buttons (e.g. PK turn enforcement) */
+.gt-cbtn:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.3)}

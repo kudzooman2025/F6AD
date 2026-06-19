@@ -428,6 +428,11 @@ function gtPkScore(g) {
   gtPkKicks(g).forEach(function(k){ if (k.outcome === 'goal') { if (k.team === 'us') us++; else them++; } });
   return { us: us, them: them };
 }
+function gtPkTurn(g) {
+  // Penalties strictly alternate: whose kick is next, based on who shot first.
+  var first = (g && g.pk_first) || 'us';
+  return (gtPkKicks(g).length % 2 === 0) ? first : (first === 'us' ? 'them' : 'us');
+}
 function gtPkClinch(g) {
   // Returns 'us'|'them' when a team has mathematically clinched the shootout, else null.
   // Standard best-of-5, then sudden death (equal kicks, scores differ).

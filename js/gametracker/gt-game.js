@@ -955,17 +955,19 @@ function gtPkPanel(g, canEdit) {
   html += '<div class="gt-pk-row"><span class="pk-team">' + ourName + '</span><span class="pk-marks">' + markers('us') + '</span></div>' + names('us');
   html += '<div class="gt-pk-row"><span class="pk-team">' + theirName + '</span><span class="pk-marks">' + markers('them') + '</span></div>' + names('them');
   if (canEdit) {
+    var turn = gtPkTurn(g), ourTurn = turn === 'us';
     html += '<div class="gt-pk-controls" style="margin-top:12px">' +
-      '<button class="gt-cbtn gt-cbtn-go" onclick="gtPkOurShot(\'' + g.id + '\')">' + ourName + ' kick</button>' +
-      '<button class="gt-cbtn gt-cbtn-dark" onclick="gtPkTheirShot(\'' + g.id + '\')">' + theirName + ' kick</button>' +
+      '<button class="gt-cbtn gt-cbtn-go" ' + (ourTurn ? '' : 'disabled') + ' onclick="gtPkOurShot(\'' + g.id + '\')">' + ourName + ' kick</button>' +
+      '<button class="gt-cbtn gt-cbtn-dark" ' + (ourTurn ? 'disabled' : '') + ' onclick="gtPkTheirShot(\'' + g.id + '\')">' + theirName + ' kick</button>' +
       '<button class="gt-minibtn" onclick="gtPkUndo(\'' + g.id + '\')">↩ Undo</button>' +
       '<button class="gt-cbtn gt-cbtn-danger" onclick="gtPkFinish(\'' + g.id + '\')">🏁 End Shootout</button></div>';
-    html += '<p class="gt-pk-hint">' + (g.pk_first === 'them' ? theirName : ourName) + ' shoots first.</p>';
+    html += '<p class="gt-pk-hint"><strong>' + (ourTurn ? ourName : theirName) + '</strong> to kick' + (kicks.length === 0 ? ' (shoots first)' : '') + '.</p>';
   }
   return html + '</div>';
 }
 function gtPkOurShot(gid) {
   var g = gtGame(gid); if (!gtCanEdit() || !g) return;
+  if (gtPkTurn(g) !== 'us') { showToast('It\'s ' + gtTheirName(g) + '\'s kick — penalties alternate.'); return; }
   var chips = gtAvailIds(gid).map(function(pid){
     var p = gtP(pid); if (!p) return '';
     return '<button class="gt-pk-pchip" onclick="gtPkPickOutcome(\'' + gid + '\',\'' + pid + '\')">' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(pid)) + '</button>';
@@ -981,6 +983,7 @@ function gtPkPickOutcome(gid, pid) {
 }
 function gtPkTheirShot(gid) {
   var g = gtGame(gid); if (!gtCanEdit() || !g) return;
+  if (gtPkTurn(g) !== 'them') { showToast('It\'s ' + gtOurName(g) + '\'s kick — penalties alternate.'); return; }
   var nm = gtEsc(gtTheirName(g));
   gtOpenModal('<h3>' + nm + ' kick — result<button class="gm-close" onclick="gtCloseModal()">✕</button></h3><div class="gt-pk-controls" style="flex-direction:column">' +
     '<button class="gt-cbtn gt-cbtn-go" onclick="gtPkRecord(\'' + gid + '\',\'them\',\'\',\'goal\')">⚽ Goal</button>' +
