@@ -428,6 +428,27 @@ function gtPkScore(g) {
   gtPkKicks(g).forEach(function(k){ if (k.outcome === 'goal') { if (k.team === 'us') us++; else them++; } });
   return { us: us, them: them };
 }
+function gtPkClinch(g) {
+  // Returns 'us'|'them' when a team has mathematically clinched the shootout, else null.
+  // Standard best-of-5, then sudden death (equal kicks, scores differ).
+  var BEST = 5;
+  var usG = 0, themG = 0, usT = 0, themT = 0;
+  gtPkKicks(g).forEach(function(k){
+    if (k.team === 'us') { usT++; if (k.outcome === 'goal') usG++; }
+    else { themT++; if (k.outcome === 'goal') themG++; }
+  });
+  var usRem = Math.max(0, BEST - usT), themRem = Math.max(0, BEST - themT);
+  // best-of-5 clinch (while either team still has regulation kicks)
+  if (usT <= BEST && themT <= BEST) {
+    if (usG > themG + themRem) return 'us';
+    if (themG > usG + usRem) return 'them';
+  }
+  // sudden death: both past 5, equal kicks taken, scores differ
+  if (usT >= BEST && themT >= BEST && usT === themT && usG !== themG) {
+    return usG > themG ? 'us' : 'them';
+  }
+  return null;
+}
 function gtResultLabel(g) {
   var s = gtOurScore(g) + '–' + gtTheirScore(g);
   if (g && g.pk_winner) { var pk = gtPkScore(g); s += ' (' + pk.us + '–' + pk.them + ' pens)'; }

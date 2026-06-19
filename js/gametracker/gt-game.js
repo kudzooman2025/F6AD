@@ -992,7 +992,24 @@ function gtPkRecord(gid, team, pid, outcome) {
   var kicks = (g.pk_kicks || []).slice();
   kicks.push({ team: team, player_id: pid || null, outcome: outcome, order: kicks.length + 1 });
   gtCloseModal();
-  gtGameUpdate(gid, { pk_kicks: kicks }).then(function(){ gtRerender(); });
+  gtGameUpdate(gid, { pk_kicks: kicks }).then(function(){
+    gtRerender();
+    var winner = gtPkClinch({ pk_kicks: kicks });
+    if (winner) {
+      var us = 0, them = 0;
+      kicks.forEach(function(k){ if (k.outcome === 'goal') { if (k.team === 'us') us++; else them++; } });
+      gtPkWinPrompt(gid, winner, us, them);
+    }
+  });
+}
+function gtPkWinPrompt(gid, winner, us, them) {
+  var g = gtGame(gid); if (!g) return;
+  var name = gtEsc(winner === 'us' ? gtOurName(g) : gtTheirName(g));
+  var title = winner === 'us' ? 'Win? 🏆' : 'Loss?';
+  gtOpenModal('<h3>' + title + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.92rem;line-height:1.5;margin-bottom:14px"><strong>' + name + '</strong> has clinched the shootout <strong>' + us + '–' + them + '</strong> — it can no longer be tied. End the shootout now?</p>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtCloseModal();gtPkFinish(\'' + gid + '\')">🏁 End — ' + (winner === 'us' ? 'Win' : 'Loss') + '</button>' +
+    '<button class="gt-minibtn" onclick="gtCloseModal()">Keep recording</button></div>');
 }
 function gtPkUndo(gid) {
   var g = gtGame(gid); if (!g) return;
