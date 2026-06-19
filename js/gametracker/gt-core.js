@@ -38,6 +38,8 @@ function gtPositionOptions(sel) {
 }
 function gtEventType(id) {
   if (id === 'opponent_goal') return { id: 'opponent_goal', label: 'Opponent Goal', emoji: '😣' };
+  if (id === 'opponent_yellow_card') return { id: id, label: 'Opponent Yellow', emoji: '🟨' };
+  if (id === 'opponent_red_card') return { id: id, label: 'Opponent Red', emoji: '🟥' };
   return GT_EVENT_TYPES.find(function(t){ return t.id === id; }) || { id: id, label: id, emoji: '•' };
 }
 
@@ -205,6 +207,7 @@ function gtOurName(g) { return g.f6ad_side === 'away' ? g.away_team : g.home_tea
 function gtTheirName(g) { return g.f6ad_side === 'away' ? g.home_team : g.away_team; }
 function gtResult(g) {
   var us = gtOurScore(g), them = gtTheirScore(g);
+  if (us === them && g && g.pk_winner) return g.pk_winner === 'us' ? 'W' : 'L';
   return us > them ? 'W' : us < them ? 'L' : 'D';
 }
 
@@ -228,6 +231,17 @@ function gtDisplaySeconds(g) {
   return (curPeriod - 1) * dur + gtClockSeconds(g);
 }
 function gtFmtDisplayClock(g) {
+  if (g && g.phase === 'pk') return 'PKs';
+  if (g && g.phase === 'ot') {
+    // each OT period counts up from 0:00
+    var otSec = gtClockSeconds(g);
+    var otDur = (g.ot_duration_minutes || 0) * 60;
+    if (otDur > 0 && otSec > otDur) {
+      var oex = otSec - otDur, oem = Math.floor(oex / 60), oes = oex % 60;
+      return gtFmtMMSS(otDur) + ' <span class="gt-et-badge">+' + oem + ':' + (oes < 10 ? '0' : '') + oes + ' ET</span>';
+    }
+    return gtFmtMMSS(otSec);
+  }
   // Format the live game clock with extra-time annotation
   var dispSec = gtDisplaySeconds(g);
   var dur = (g && g.period_duration_minutes) || 0;
@@ -277,6 +291,17 @@ function gtNominalMinute(g, period, sec) {
 function gtPeriodLabel(g, period, status) {
   var n = (g && g.num_periods) || 2;
   var p = period || (g ? g.current_period : 1) || 1;
+  var _st = status || (g && g.status);
+  if (g && g.phase === 'pk') return _st === 'complete' ? 'Final' : 'Penalty Shootout';
+  if (g && g.phase === 'ot' && p > n) {
+    var _ot = p - n;
+    var _lbl = (g.ot_num_periods > 1) ? ('Overtime ' + _ot) : 'Overtime';
+    if (_st === 'between_periods') return 'Break before ' + _lbl;
+    if (_st === 'paused') return _lbl + ' — Paused';
+    if (_st === 'complete') return 'Final';
+    if (_st === 'setup') return 'Not Started';
+    return _lbl;
+  }
   var labels;
   if (n === 1) labels = ['Game'];
   else if (n === 2) labels = ['1st Half', '2nd Half'];
@@ -390,3 +415,42 @@ function gtStatLine(pid, events) {
   return st;
 }
 
+
+
+// ===================== OT / PK / CARDS HELPERS =====================
+function gtIsOT(g) { return !!(g && g.phase === 'ot'); }
+function gtIsPK(g) { return !!(g && g.phase === 'pk'); }
+function gtOtIndex(g) { return gtIsOT(g) ? ((g.current_period || 1) - (g.num_periods || 2)) : 0; }
+
+function gtPkKicks(g) { return (g && g.pk_kicks) || []; }
+function gtPkScore(g) {
+  var us = 0, them = 0;
+  gtPkKicks(g).forEach(function(k){ if (k.outcome === 'goal') { if (k.team === 'us') us++; else them++; } });
+  return { us: us, them: them };
+}
+function gtResultLabel(g) {
+  var s = gtOurScore(g) + '–' + gtTheirScore(g);
+  if (g && g.pk_winner) { var pk = gtPkScore(g); s += ' (' + pk.us + '–' + pk.them + ' pens)'; }
+  return s;
+}
+
+function gtOurReds(gid) {
+  var ev = gtGameEvents(gid);
+  var reds = ev.filter(function(e){ return e.event_type === 'red_card'; }).length;
+  var yc = {};
+  ev.forEach(function(e){ if (e.event_type === 'yellow_card' && e.player_id) yc[e.player_id] = (yc[e.player_id] || 0) + 1; });
+  Object.keys(yc).forEach(function(p){ if (yc[p] >= 2) reds++; });
+  return reds;
+}
+function gtTheirReds(gid) {
+  return gtGameEvents(gid).filter(function(e){ return e.event_type === 'opponent_red_card'; }).length;
+}
+function gtManDownHtml(g) {
+  if (!g) return '';
+  var our = gtOurReds(g.id), their = gtTheirReds(g.id);
+  if (!our && !their) return '';
+  var html = '<div class="gt-mandown-bar">';
+  if (our) html += '<span class="gt-mandown">🟥 ' + gtEsc(gtOurName(g)) + ' down ' + (our > 1 ? ('×' + our) : 'a player') + '</span>';
+  if (their) html += '<span class="gt-mandown">🟥 ' + gtEsc(gtTheirName(g)) + ' down ' + (their > 1 ? ('×' + their) : 'a player') + '</span>';
+  return html + '</div>';
+}

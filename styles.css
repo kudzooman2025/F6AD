@@ -680,3 +680,25 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-chat-bar input{flex:1;border:2px solid var(--border);border-radius:7px;padding:8px 10px;font-family:inherit}
 .gt-chat-as{font-size:.7rem;color:var(--muted);margin-top:5px}
 .gt-chat-as a{cursor:pointer;color:var(--purple);font-weight:700}
+
+/* GameTracker: man-down banner */
+.gt-mandown-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.gt-mandown{font-size:.74rem;font-weight:700;padding:3px 11px;border-radius:999px;background:#fee2e2;color:#991b1b}
+
+/* GameTracker: penalty shootout */
+.gt-pk{background:#fff;border:1px solid var(--border);border-radius:var(--card-radius);padding:16px 18px;margin:14px 0}
+.gt-pk-head{font-family:'Bricolage Grotesque','Hanken Grotesk',sans-serif;font-weight:800;font-size:1.1rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.gt-pk-score{color:var(--purple)}
+.gt-pk-row{display:flex;align-items:center;gap:10px;margin:8px 0 2px}
+.gt-pk-row .pk-team{min-width:96px;font-weight:700;font-size:.86rem}
+.pk-marks{display:flex;gap:6px;flex-wrap:wrap}
+.pk-mk{width:22px;height:22px;border-radius:50%;display:inline-grid;place-items:center;font-size:.78rem;font-weight:800;border:2px solid var(--border-strong);background:#fff;color:#dc2626;box-sizing:border-box}
+.pk-mk.goal{background:#16a34a;border-color:#16a34a}
+.pk-mk.miss{border-color:#dc2626;color:#dc2626}
+.pk-mk.empty{border-style:dashed;border-color:var(--border-strong)}
+.gt-pk-log{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:.78rem;color:var(--muted);margin:2px 0 6px 106px}
+.gt-pk-controls{display:flex;gap:10px;flex-wrap:wrap}
+.gt-pk-hint{font-size:.76rem;color:var(--muted);margin-top:8px}
+.gt-pk-pchips{display:flex;flex-wrap:wrap;gap:8px}
+.gt-pk-pchip{border:1px solid var(--border-strong);background:#fff;border-radius:10px;padding:9px 13px;font-weight:600;font-size:.85rem;cursor:pointer}
+.gt-pk-pchip:hover{border-color:var(--purple);background:var(--purple-light)}

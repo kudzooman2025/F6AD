@@ -254,6 +254,7 @@ function gtRenderLive(view, gameId) {
   }
   if (g.status === 'complete') { gtGo('/gametracker/review/' + g.id); return; }
   var canEdit = gtCanEdit();
+  var inPK = gtIsPK(g), inOT = gtIsOT(g);
   var html = gtLockBanner();
   // clock bar
   html += '<div class="gt-clockbar">' +
@@ -264,9 +265,10 @@ function gtRenderLive(view, gameId) {
     '<span style="color:#666">–</span>' +
     '<span class="sc-num">' + (g.away_score || 0) + '</span><span class="sc-team">' + gtEsc(g.away_team) + '</span>' +
     '</div>';
-  if (canEdit) {
+  html += gtManDownHtml(g);
+  if (canEdit && !inPK) {
     html += '<div class="gt-clock-controls">';
-    var lastPeriod = (g.current_period || 1) >= (g.num_periods || 1);
+    var lastPeriod = inOT ? (gtOtIndex(g) >= (g.ot_num_periods || 1)) : ((g.current_period || 1) >= (g.num_periods || 1));
     if (g.status === 'setup') {
       html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtClockStart(\'' + g.id + '\')">▶ Start Game</button>';
     } else if (g.status === 'in_progress') {
@@ -285,6 +287,7 @@ function gtRenderLive(view, gameId) {
     html += '</div>';
   }
   html += '</div>';
+  if (inPK) html += gtPkPanel(g, canEdit);
   html += gtChatPanelHtml(g.id);
   // player grid
   var availIds = gtAvailIds(g.id);
@@ -323,10 +326,11 @@ function gtRenderLive(view, gameId) {
         '<span class="pc-badges">' + badges + '</span></button>';
     }).join('') + '</div>';
   }
-  if (canEdit && g.status !== 'setup') {
+  if (canEdit && g.status !== 'setup' && !inPK) {
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenMassSub(\'' + g.id + '\')">🔄 Mass Sub</button>' +
-      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentGoal(\'' + g.id + '\')">😣 Opponent Goal</button></div>';
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentGoal(\'' + g.id + '\')">😣 Opponent Goal</button>' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentCard(\'' + g.id + '\')">🟨 Opponent Card</button></div>';
   }
   // event feed
   html += '<div class="section-title" style="margin-bottom:12px">📋 Event Feed</div>';
@@ -366,11 +370,13 @@ function gtRenderLive(view, gameId) {
 }
 function gtFeedItem(g, e, canEdit) {
   var t = gtEventType(e.event_type);
-  var who = e.event_type === 'opponent_goal' ? gtEsc(gtTheirName(g)) : gtEsc(gtPlayerShort(e.player_id));
+  var isOppEvt = (e.event_type || '').indexOf('opponent') === 0;
+  var who = isOppEvt ? gtEsc(gtTheirName(g)) : gtEsc(gtPlayerShort(e.player_id));
   var open = GT.openFeedItem === e.id;
   var yt = gtYtId(e.youtube_url);
-  var cumSec = gtDisplayCumSec(g, e.period, e.game_clock_seconds);
-  var gameClockStr = gtFmtMMSS(cumSec);
+  var gameClockStr = (e.period > (g.num_periods || 2))
+    ? ('OT' + (e.period - (g.num_periods || 2)) + ' ' + gtFmtMMSS(e.game_clock_seconds))
+    : gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds));
   return '<div class="gt-fitem' + (open ? ' open' : '') + '" onclick="gtToggleFeedItem(\'' + e.id + '\')">' +
     '<span class="fi-min">[' + gameClockStr + ']</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label +
     (e.notes ? ' <span class="fi-note">· ' + gtEsc(e.notes) + '</span>' : '') +
@@ -512,8 +518,14 @@ function gtDeleteGame(gid) {
 }
 function gtEndGame(gid) {
   var g = gtGame(gid); if (!g) return;
+  var tied = gtOurScore(g) === gtTheirScore(g);
+  if (tied && g.phase !== 'pk') { gtOpenDrawDecision(gid, g.phase === 'ot'); return; }
+  gtFinishGame(gid);
+}
+function gtFinishGame(gid) {
+  var g = gtGame(gid); if (!g) return;
   var pe = Object.assign({}, g.period_elapsed || {});
-  if (g.status !== 'between_periods') pe[g.current_period || 1] = gtClockSeconds(g);
+  if (g.status !== 'between_periods' && g.status !== 'pk_shootout') pe[g.current_period || 1] = gtClockSeconds(g);
   gtGameUpdate(gid, { status: 'complete', period_elapsed: pe, clock_elapsed_seconds: 0, clock_started_at: null })
     .then(function() { gtGo('/gametracker/review/' + gid); });
 }
@@ -530,6 +542,7 @@ function gtOpenEventPopup(gid, pid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
   if (g.status === 'setup') { showToast('Start the game clock first.'); return; }
+  if (gtIsPK(g)) { showToast('Penalty shootout — use the shootout panel.'); return; }
   var p = gtP(pid);
   var ae = gtGameAvailEntry(gid, pid);
   var started = !!(ae && ae.started);
@@ -856,3 +869,162 @@ function gtStatusShort(st) {
   return { STARTER: 'START', ON_FIELD: 'ON', BENCHED: 'BENCH', NOT_USED: 'BENCH' }[st] || '';
 }
 
+
+// ===================== OVERTIME / SHOOTOUT / OPP CARDS =====================
+function gtOpenDrawDecision(gid, afterOT) {
+  var g = gtGame(gid); if (!g) return;
+  var us = gtOurScore(g), them = gtTheirScore(g);
+  var opts = '';
+  if (!afterOT) opts += '<button class="gt-cbtn gt-cbtn-go" onclick="gtCloseModal();gtOpenOTSetup(\'' + gid + '\')">➕ Go to Overtime</button>';
+  opts += '<button class="gt-cbtn gt-cbtn-dark" onclick="gtCloseModal();gtOpenPKSetup(\'' + gid + '\')">🥅 Penalty Shootout</button>';
+  opts += '<button class="gt-cbtn gt-cbtn-danger" onclick="gtCloseModal();gtFinishGame(\'' + gid + '\')">➖ End as Tie</button>';
+  gtOpenModal('<h3>Tied ' + us + '–' + them + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.88rem;color:var(--muted);margin-bottom:12px">How should this game be decided?</p>' +
+    '<div class="gt-pk-controls" style="flex-direction:column">' + opts + '</div>');
+}
+function gtOpenOTSetup(gid) {
+  gtOpenModal('<h3>Overtime<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<div class="gm-row"><div><label>OT periods</label><select id="gt-ot-n"><option value="1">1</option><option value="2" selected>2</option></select></div>' +
+    '<div><label>Minutes each</label><input type="number" id="gt-ot-dur" min="1" max="30" value="10"/></div></div>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtStartOT(\'' + gid + '\')">Start Overtime</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>');
+}
+function gtStartOT(gid) {
+  var g = gtGame(gid); if (!g) return;
+  var n = Math.max(1, parseInt((document.getElementById('gt-ot-n') || {}).value, 10) || 1);
+  var dur = Math.max(1, parseInt((document.getElementById('gt-ot-dur') || {}).value, 10) || 10);
+  var reg = g.num_periods || 2;
+  var pe = Object.assign({}, g.period_elapsed || {});
+  if (g.status === 'in_progress' || g.status === 'paused') pe[g.current_period || reg] = gtClockSeconds(g);
+  gtCloseModal();
+  gtGameUpdate(gid, {
+    phase: 'ot', ot_num_periods: n, ot_duration_minutes: dur,
+    current_period: reg + 1, status: 'between_periods', period_elapsed: pe,
+    clock_elapsed_seconds: 0, clock_started_at: null
+  }).then(function(){ gtRerender(); });
+  showToast('Overtime ready — tap Start.');
+}
+function gtOpenPKSetup(gid) {
+  var g = gtGame(gid); if (!g) return;
+  gtOpenModal('<h3>Penalty Shootout<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<label>Who shoots first?</label><div class="gt-pk-controls" style="margin-top:8px">' +
+    '<button class="gt-cbtn gt-cbtn-go" onclick="gtStartPK(\'' + gid + '\',\'us\')">' + gtEsc(gtOurName(g)) + '</button>' +
+    '<button class="gt-cbtn gt-cbtn-dark" onclick="gtStartPK(\'' + gid + '\',\'them\')">' + gtEsc(gtTheirName(g)) + '</button></div>');
+}
+function gtStartPK(gid, first) {
+  var g = gtGame(gid); if (!g) return;
+  var pe = Object.assign({}, g.period_elapsed || {});
+  if (g.status === 'in_progress' || g.status === 'paused') pe[g.current_period || 1] = gtClockSeconds(g);
+  gtCloseModal();
+  gtGameUpdate(gid, {
+    phase: 'pk', pk_first: first, pk_kicks: (g.pk_kicks || []),
+    status: 'pk_shootout', period_elapsed: pe, clock_elapsed_seconds: 0, clock_started_at: null
+  }).then(function(){ gtRerender(); });
+}
+function gtPkPanel(g, canEdit) {
+  var kicks = gtPkKicks(g), sc = gtPkScore(g);
+  var ourName = gtEsc(gtOurName(g)), theirName = gtEsc(gtTheirName(g));
+  function markers(team) {
+    var ks = kicks.filter(function(k){ return k.team === team; });
+    var cells = ks.map(function(k){
+      if (k.outcome === 'goal') return '<span class="pk-mk goal" title="Goal"></span>';
+      return '<span class="pk-mk miss" title="' + (k.outcome === 'saved' ? 'Saved' : 'Missed') + '">✕</span>';
+    }).join('');
+    return cells + '<span class="pk-mk empty"></span>';
+  }
+  function names(team) {
+    var ks = kicks.filter(function(k){ return k.team === team; });
+    if (!ks.length) return '';
+    return '<div class="gt-pk-log">' + ks.map(function(k){
+      var nm = k.team === 'us' && k.player_id ? gtEsc(gtPlayerShort(k.player_id)) : (k.team === 'us' ? ourName : theirName);
+      var oc = k.outcome === 'goal' ? '✅' : (k.outcome === 'saved' ? '🧤' : '✕');
+      return '<span>' + oc + ' ' + nm + '</span>';
+    }).join('') + '</div>';
+  }
+  var html = '<div class="gt-pk">';
+  html += '<div class="gt-pk-head">🥅 Penalty Shootout <span class="gt-pk-score">' + sc.us + ' – ' + sc.them + '</span></div>';
+  html += '<div class="gt-pk-row"><span class="pk-team">' + ourName + '</span><span class="pk-marks">' + markers('us') + '</span></div>' + names('us');
+  html += '<div class="gt-pk-row"><span class="pk-team">' + theirName + '</span><span class="pk-marks">' + markers('them') + '</span></div>' + names('them');
+  if (canEdit) {
+    html += '<div class="gt-pk-controls" style="margin-top:12px">' +
+      '<button class="gt-cbtn gt-cbtn-go" onclick="gtPkOurShot(\'' + g.id + '\')">' + ourName + ' kick</button>' +
+      '<button class="gt-cbtn gt-cbtn-dark" onclick="gtPkTheirShot(\'' + g.id + '\')">' + theirName + ' kick</button>' +
+      '<button class="gt-minibtn" onclick="gtPkUndo(\'' + g.id + '\')">↩ Undo</button>' +
+      '<button class="gt-cbtn gt-cbtn-danger" onclick="gtPkFinish(\'' + g.id + '\')">🏁 End Shootout</button></div>';
+    html += '<p class="gt-pk-hint">' + (g.pk_first === 'them' ? theirName : ourName) + ' shoots first.</p>';
+  }
+  return html + '</div>';
+}
+function gtPkOurShot(gid) {
+  var g = gtGame(gid); if (!gtCanEdit() || !g) return;
+  var chips = gtAvailIds(gid).map(function(pid){
+    var p = gtP(pid); if (!p) return '';
+    return '<button class="gt-pk-pchip" onclick="gtPkPickOutcome(\'' + gid + '\',\'' + pid + '\')">' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(pid)) + '</button>';
+  }).join('');
+  gtOpenModal('<h3>Who is taking the kick?<button class="gm-close" onclick="gtCloseModal()">✕</button></h3><div class="gt-pk-pchips">' + chips + '</div>');
+}
+function gtPkPickOutcome(gid, pid) {
+  var nm = gtEsc(gtPlayerShort(pid));
+  gtOpenModal('<h3>' + nm + ' — result<button class="gm-close" onclick="gtCloseModal()">✕</button></h3><div class="gt-pk-controls" style="flex-direction:column">' +
+    '<button class="gt-cbtn gt-cbtn-go" onclick="gtPkRecord(\'' + gid + '\',\'us\',\'' + pid + '\',\'goal\')">✅ Goal</button>' +
+    '<button class="gt-cbtn gt-cbtn-dark" onclick="gtPkRecord(\'' + gid + '\',\'us\',\'' + pid + '\',\'saved\')">🧤 Saved</button>' +
+    '<button class="gt-cbtn gt-cbtn-danger" onclick="gtPkRecord(\'' + gid + '\',\'us\',\'' + pid + '\',\'missed\')">✕ Missed</button></div>');
+}
+function gtPkTheirShot(gid) {
+  var g = gtGame(gid); if (!gtCanEdit() || !g) return;
+  var nm = gtEsc(gtTheirName(g));
+  gtOpenModal('<h3>' + nm + ' kick — result<button class="gm-close" onclick="gtCloseModal()">✕</button></h3><div class="gt-pk-controls" style="flex-direction:column">' +
+    '<button class="gt-cbtn gt-cbtn-go" onclick="gtPkRecord(\'' + gid + '\',\'them\',\'\',\'goal\')">⚽ Goal</button>' +
+    '<button class="gt-cbtn gt-cbtn-dark" onclick="gtPkRecord(\'' + gid + '\',\'them\',\'\',\'saved\')">🧤 Saved (our keeper)</button>' +
+    '<button class="gt-cbtn gt-cbtn-danger" onclick="gtPkRecord(\'' + gid + '\',\'them\',\'\',\'missed\')">✕ Missed</button></div>');
+}
+function gtPkRecord(gid, team, pid, outcome) {
+  var g = gtGame(gid); if (!g) return;
+  var kicks = (g.pk_kicks || []).slice();
+  kicks.push({ team: team, player_id: pid || null, outcome: outcome, order: kicks.length + 1 });
+  gtCloseModal();
+  gtGameUpdate(gid, { pk_kicks: kicks }).then(function(){ gtRerender(); });
+}
+function gtPkUndo(gid) {
+  var g = gtGame(gid); if (!g) return;
+  var kicks = (g.pk_kicks || []).slice(); if (!kicks.length) return; kicks.pop();
+  gtGameUpdate(gid, { pk_kicks: kicks }).then(function(){ gtRerender(); });
+}
+function gtPkFinish(gid) {
+  var g = gtGame(gid); if (!g) return;
+  var sc = gtPkScore(g);
+  if (sc.us === sc.them) { if (!confirm('Shootout is level ' + sc.us + '–' + sc.them + '. End anyway as a tie?')) return; }
+  var winner = sc.us > sc.them ? 'us' : (sc.them > sc.us ? 'them' : null);
+  gtGameUpdate(gid, { pk_winner: winner }).then(function(){ gtFinishGame(gid); });
+}
+function gtLogOpponentCard(gid) {
+  var g = gtGame(gid); if (!gtCanEdit() || !g) return;
+  gtOpenModal('<h3>' + gtEsc(gtTheirName(g)) + ' card<button class="gm-close" onclick="gtCloseModal()">✕</button></h3><div class="gt-pk-controls" style="flex-direction:column">' +
+    '<button class="gt-cbtn gt-cbtn-warn" onclick="gtRecordOppCard(\'' + gid + '\',\'yellow\')">🟨 Yellow Card</button>' +
+    '<button class="gt-cbtn gt-cbtn-danger" onclick="gtRecordOppCard(\'' + gid + '\',\'red\')">🟥 Red Card</button></div>');
+}
+function gtRecordOppCard(gid, kind) {
+  var g = gtGame(gid); if (!g) return;
+  if (kind === 'yellow') {
+    var priorY = gtGameEvents(gid).filter(function(e){ return e.event_type === 'opponent_yellow_card'; }).length;
+    if (priorY >= 1 && confirm('Second yellow to the SAME player? (Makes it a red card — man down.)')) {
+      gtCloseModal();
+      gtAddOppCardEvent(gid, 'opponent_yellow_card', function(){
+        gtAddOppCardEvent(gid, 'opponent_red_card', function(){ showToast('Second yellow → Red. ' + gtTheirName(g) + ' a man down.'); });
+      });
+      return;
+    }
+    gtCloseModal();
+    gtAddOppCardEvent(gid, 'opponent_yellow_card', function(){ showToast('Opponent yellow logged.'); });
+  } else {
+    gtCloseModal();
+    gtAddOppCardEvent(gid, 'opponent_red_card', function(){ showToast(gtTheirName(g) + ' a man down 🟥'); });
+  }
+}
+function gtAddOppCardEvent(gid, type, cb) {
+  var g = gtGame(gid); if (!g) return;
+  db.collection('gt_events').add({
+    game_id: gid, player_id: null, event_type: type,
+    game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
+    notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){ if (cb) cb(); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
