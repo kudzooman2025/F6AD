@@ -862,18 +862,51 @@ function buildAdminSessionDetail(container, sessionId, log) {
     return d;
   }
   var blocksF = numField('sadmin-blocks-'+sessionId, 'Blocks', log2.blocks, 1, 20);
-  var repsF = numField('sadmin-reps-'+sessionId, 'Reps/Block', log2.reps_per_block, 1, 50);
   var totalF = numField('sadmin-total-'+sessionId, 'Total Reps (auto)', log2.total_reps, 0, 9999);
   var totalInp = totalF.querySelector('input'); totalInp.readOnly = true; totalInp.style.background = '#eee';
   var blocksInp = blocksF.querySelector('input');
-  var repsInp = repsF.querySelector('input');
-  function recalc() {
-    var b = parseInt(blocksInp.value)||0, r = parseInt(repsInp.value)||0;
-    totalInp.value = b && r ? b*r : '';
-  }
-  blocksInp.addEventListener('input', recalc); repsInp.addEventListener('input', recalc);
-  fr.appendChild(blocksF); fr.appendChild(repsF); fr.appendChild(totalF);
+  fr.appendChild(blocksF); fr.appendChild(totalF);
   container.appendChild(fr);
+
+  // Per-block reps (one input per block; each block can differ)
+  var repsD = document.createElement('div'); repsD.className = 'log-field'; repsD.style.marginBottom = '12px';
+  var repsL = document.createElement('label'); repsL.textContent = 'Reps per Block (set each block individually)';
+  var repsWrap = document.createElement('div'); repsWrap.id = 'sadmin-block-reps-'+sessionId;
+  repsWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;margin-top:4px';
+  repsD.appendChild(repsL); repsD.appendChild(repsWrap);
+  container.appendChild(repsD);
+
+  function recalc() {
+    var t = 0, any = false;
+    repsWrap.querySelectorAll('input.block-rep-inp').forEach(function(inp){
+      var v = parseInt(inp.value); if(!isNaN(v)){ t += v; any = true; }
+    });
+    totalInp.value = any ? t : '';
+  }
+  function buildRepInputs() {
+    var n = parseInt(blocksInp.value) || 0;
+    var cur = [];
+    repsWrap.querySelectorAll('input.block-rep-inp').forEach(function(inp){ cur.push(inp.value); });
+    repsWrap.innerHTML = '';
+    var existing = sessionBlockReps(log2);
+    for(var i=0;i<n;i++){
+      var cell = document.createElement('div');
+      cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:64px';
+      var cl = document.createElement('label');
+      cl.textContent = 'Block ' + (i+1);
+      cl.style.cssText = 'font-size:.68rem;color:var(--muted);margin-bottom:2px';
+      var ci = document.createElement('input'); ci.type = 'number'; ci.min = '0'; ci.max = '50';
+      ci.className = 'block-rep-inp'; ci.style.cssText = 'width:100%;text-align:center;border-color:var(--purple)';
+      var val = (cur[i] !== undefined && cur[i] !== '') ? cur[i] : (existing[i] !== undefined ? existing[i] : '');
+      ci.value = val;
+      ci.addEventListener('input', recalc);
+      cell.appendChild(cl); cell.appendChild(ci); repsWrap.appendChild(cell);
+    }
+    recalc();
+  }
+  blocksInp.addEventListener('input', buildRepInputs);
+  if(!blocksInp.value){ var initN = sessionBlockReps(log2).length; if(initN) blocksInp.value = initN; }
+  buildRepInputs();
 
   // Notes
   var notesD = document.createElement('div'); notesD.className = 'log-field'; notesD.style.marginBottom = '12px';
@@ -937,8 +970,10 @@ function buildAdminSessionDetail(container, sessionId, log) {
   saveBtn.addEventListener('click', function() {
     var sid = this.getAttribute('data-sid');
     var blocks = parseInt(document.getElementById('sadmin-blocks-'+sid).value)||null;
-    var reps = parseInt(document.getElementById('sadmin-reps-'+sid).value)||null;
-    var total = blocks && reps ? blocks*reps : null;
+    var blockReps = [];
+    var brW = document.getElementById('sadmin-block-reps-'+sid);
+    if(brW){ brW.querySelectorAll('input.block-rep-inp').forEach(function(inp){ var v = parseInt(inp.value); blockReps.push(isNaN(v)?0:v); }); }
+    var total = blockReps.length ? blockReps.reduce(function(a,b){return a+b;},0) : null;
     var notes = document.getElementById('sadmin-notes-'+sid).value.trim();
     var att = {};
     PLAYERS.forEach(function(p) {
@@ -953,7 +988,7 @@ function buildAdminSessionDetail(container, sessionId, log) {
     });
     var data = {completed:true, attendance:att, logged_by:'Admin', logged_at:firebase.firestore.FieldValue.serverTimestamp()};
     if(blocks) data.blocks = blocks;
-    if(reps) data.reps_per_block = reps;
+    if(blockReps.length){ data.block_reps = blockReps; data.reps_per_block = firebase.firestore.FieldValue.delete(); }
     if(total) data.total_reps = total;
     if(notes) data.notes = notes;
     db.collection('session_log').doc(sid).set(data, {merge:true})

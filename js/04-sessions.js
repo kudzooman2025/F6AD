@@ -477,9 +477,10 @@ function renderSummerOverview() {
   repRow.appendChild(repLbl);
   COND_SESSIONS.forEach(function(s, idx) {
     var log = sessionLogData[s.id];
+    var rb = log ? sessionBlockReps(log) : [];
     var td = document.createElement('td');
-    td.className = (idx % 2 === 0 && idx > 0 ? 'week-sep ' : '') + (log && log.reps_per_block ? 'logged' : 'unlogged');
-    td.textContent = (log && log.reps_per_block) ? log.reps_per_block : '—';
+    td.className = (idx % 2 === 0 && idx > 0 ? 'week-sep ' : '') + (rb.length ? 'logged' : 'unlogged');
+    td.textContent = rb.length ? sessionRepsDisplay(log) : '—';
     repRow.appendChild(td);
   });
   statBody.appendChild(repRow);
@@ -490,7 +491,8 @@ function renderSummerOverview() {
   totRow.appendChild(totLbl);
   COND_SESSIONS.forEach(function(s, idx) {
     var log = sessionLogData[s.id];
-    var total = log ? (log.total_reps || (log.blocks && log.reps_per_block ? log.blocks * log.reps_per_block : null)) : null;
+    var rbT = log ? sessionBlockReps(log) : [];
+    var total = log ? (log.total_reps || (rbT.length ? rbT.reduce(function(a,b){return a+b;},0) : null)) : null;
     var td = document.createElement('td');
     td.className = (idx % 2 === 0 && idx > 0 ? 'week-sep ' : '') + (total ? 'logged' : 'unlogged');
     td.textContent = total ? total : '—';
