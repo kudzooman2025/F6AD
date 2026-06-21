@@ -13,7 +13,7 @@ var GT = {
   openFeedItem: null,
   seasonSort: { col: 'goals', dir: -1 },
   seasonShowGuests: false,
-  seasonFilters: { type: 'all', from: '', to: '', opp: '' },
+  seasonFilters: { type: 'all', from: '', to: '', opp: '', team: '' },
   rosterSel: null,
   chatDraft: ''
 };

@@ -53,7 +53,7 @@ function gtRenderReview(view, gameId) {
       }).join('') + '</div>';
   }
   // player stat table
-  html += '<div class="section-title" style="margin:26px 0 12px">📊 Player Stats</div>';
+  html += '<div class="section-title" style="margin:26px 0 12px">📊 Player Stats' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove a player from this game</span>' : '') + '</div>';
   var availIds = gtAvailIds(g.id);
   if (availIds.length) {
     var mins = gtMinutesMap(g.id);
@@ -62,7 +62,7 @@ function gtRenderReview(view, gameId) {
       .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); })
       .forEach(function(p) {
         var st = gtStatLine(p.id, events);
-        html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' + (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + '</td>' +
+        html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' + (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (canEdit ? ' <button class="gt-minibtn danger" style="padding:1px 6px;font-size:.65rem" title="Remove from this game" onclick="gtRemovePlayerFromGame(\'' + g.id + '\',\'' + p.id + '\')">✕</button>' : '') + '</td>' +
           '<td class="num">' + (st.goal || '') + '</td><td class="num">' + (st.assist || '') + '</td><td class="num">' + (st.shot_on_target || '') + '</td><td class="num">' + (st.shot || '') + '</td>' +
           '<td class="num">' + (st.yellow_card || '') + '</td><td class="num">' + (st.red_card || '') + '</td><td class="num">' + (st.save || '') + '</td><td class="num">' + (st.tackle || '') + '</td>' +
           '<td class="num">' + Math.round((mins[p.id] || 0) / 60) + '</td></tr>';
@@ -79,6 +79,24 @@ function gtRenderReview(view, gameId) {
     (canEdit ? '<button class="gt-minibtn danger" style="padding:10px 16px" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button>' : '') + '</div>';
   view.innerHTML = html;
   var _cm = document.getElementById('gt-chat-msgs'); if (_cm) _cm.scrollTop = _cm.scrollHeight;
+}
+function gtRemovePlayerFromGame(gid, pid) {
+  // Remove a player who shouldn't be in THIS game: their availability, events, and
+  // subs for this game only (roster profile + other games are untouched).
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var evs = GT.events.filter(function(e){ return e.game_id === gid && e.player_id === pid; });
+  var goalsRemoved = evs.filter(function(e){ return e.event_type === 'goal'; }).length;
+  var subs = GT.subs.filter(function(s){ return s.game_id === gid && (s.player_in_id === pid || s.player_out_id === pid); });
+  if (!confirm('Remove ' + gtPlayerName(pid) + ' from this game?\n\nThis deletes their availability, ' + evs.length + ' event(s), and ' + subs.length + ' sub record(s) for THIS game only. Their roster profile and other games are unaffected.')) return;
+  var batch = db.batch();
+  gtGameAvail(gid).filter(function(a){ return a.player_id === pid; }).forEach(function(a){ batch.delete(db.collection('gt_availability').doc(a.id)); });
+  evs.forEach(function(e){ batch.delete(db.collection('gt_events').doc(e.id)); });
+  subs.forEach(function(s){ batch.delete(db.collection('gt_subs').doc(s.id)); });
+  batch.commit().then(function() {
+    if (goalsRemoved) gtBumpScore(g, 'us', -goalsRemoved);
+    showToast(gtPlayerShort(pid) + ' removed from this game.');
+  }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtExportGame(gid) {
   var g = gtGame(gid); if (!g) return;
@@ -157,6 +175,7 @@ function gtSeasonGames() {
     if (rid && g.roster_id !== rid) return false;
     if (g.status !== 'complete') return false;
     if (f.type !== 'all' && g.game_type !== f.type) return false;
+    if (f.team && gtOurName(g) !== f.team) return false;
     if (f.opp) {
       var opp = gtTheirName(g) || '';
       if (opp.toLowerCase().indexOf(f.opp.toLowerCase()) < 0) return false;
@@ -179,12 +198,16 @@ function gtRenderSeason(view) {
     if (r === 'W') w++; else if (r === 'L') l++; else d++;
     gf += gtOurScore(g); ga += gtTheirScore(g);
   });
+  var seasonTeams = [];
+  GT.games.forEach(function(g){ if (g.status === 'complete' && (!rid || g.roster_id === rid)) { var tn = gtOurName(g); if (tn && seasonTeams.indexOf(tn) < 0) seasonTeams.push(tn); } });
+  seasonTeams.sort();
   var html = '<div class="gt-title">📊 Season Overview</div>' +
     '<div class="gt-sub">All completed games' + (rid && gtRoster(rid) ? ' for ' + gtEsc(gtRoster(rid).name) : '') + '.</div>';
   html += '<div class="gt-filters">' +
     (rosters.length > 1 ? '<select onchange="GT.seasonRoster=this.value;gtRerender(true)">' + rosters.map(function(r){ return '<option value="' + r.id + '"' + (rid === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') + '</select>' : '') +
     '<select onchange="GT.seasonFilters.type=this.value;gtRerender(true)">' +
     ['all', 'league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (f.type === t ? ' selected' : '') + '>' + (t === 'all' ? 'All types' : t.charAt(0).toUpperCase() + t.slice(1)) + '</option>'; }).join('') + '</select>' +
+    (seasonTeams.length > 1 ? '<select onchange="GT.seasonFilters.team=this.value;gtRerender(true)"><option value="">All teams</option>' + seasonTeams.map(function(tn){ return '<option value="' + gtAttr(tn) + '"' + (f.team === tn ? ' selected' : '') + '>' + gtEsc(tn) + '</option>'; }).join('') + '</select>' : '') +
     '<input type="date" value="' + gtAttr(f.from) + '" onchange="GT.seasonFilters.from=this.value;gtRerender(true)" title="From date"/>' +
     '<input type="date" value="' + gtAttr(f.to) + '" onchange="GT.seasonFilters.to=this.value;gtRerender(true)" title="To date"/>' +
     '<input type="text" value="' + gtAttr(f.opp) + '" placeholder="Opponent…" onchange="GT.seasonFilters.opp=this.value;gtRerender(true)"/>' +
