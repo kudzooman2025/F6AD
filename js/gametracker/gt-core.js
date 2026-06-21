@@ -118,7 +118,7 @@ function gtChatMsgsHtml(gid) {
   var msgs = gtGameChat(gid);
   if (!msgs.length) return '<div class="gt-chat-empty">No messages yet. Say hi 👋</div>';
   return msgs.map(function(m){
-    return '<div class="gt-chat-msg"><span class="cm-name">' + gtEsc(m.name || '') + '</span> <span class="cm-time">' + gtChatTime(m.created_at) + '</span><div class="cm-text">' + gtEsc(m.text || '') + '</div></div>';
+    return '<div class="gt-chat-msg">' + (gtCanEdit() ? '<button class="gt-chat-del" title="Delete message" onclick="gtDeleteChat(\'' + m.id + '\')">🗑</button>' : '') + '<span class="cm-name">' + gtEsc(m.name || '') + '</span> <span class="cm-time">' + gtChatTime(m.created_at) + '</span><div class="cm-text">' + gtEsc(m.text || '') + '</div></div>';
   }).join('');
 }
 function gtChatPanelHtml(gid) {
@@ -142,6 +142,14 @@ function gtSendChat(gid) {
   if (!text) return;
   db.collection('gt_chat').add({ game_id: gid, name: name, text: text, created_at: firebase.firestore.FieldValue.serverTimestamp() })
     .then(function(){ GT.chatDraft = ''; var i = document.getElementById('gt-chat-input'); if (i) { i.value = ''; i.focus(); } })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtDeleteChat(id) {
+  // Staff/admin only (enforced in UI and firestore.rules). Posting stays open to all.
+  if (!gtCanEdit()) return;
+  if (!confirm('Delete this chat message?')) return;
+  db.collection('gt_chat').doc(id).delete()
+    .then(function(){ showToast('Message deleted.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtCopyGameLink(gid) {

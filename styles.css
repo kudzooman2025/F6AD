@@ -664,6 +664,8 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-onfield.over{background:#fee2e2;color:#b91c1c}
 #offline-banner{position:fixed;top:0;left:0;right:0;z-index:9999;background:#b45309;color:#fff;font-size:.82rem;font-weight:700;text-align:center;padding:7px 12px;display:none;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 #offline-banner.show{display:block}
+.gt-chat-del{float:right;background:none;border:none;cursor:pointer;font-size:.78rem;opacity:.45;padding:0 2px;line-height:1.4}
+.gt-chat-del:hover{opacity:1}
 /* Schedule filter chips */
 .sched-filters{display:flex;flex-wrap:wrap;margin-bottom:14px}
 .sched-chip{border:1px solid var(--border);background:#fff;border-radius:20px;padding:5px 14px;font-size:.8rem;font-weight:700;cursor:pointer;margin:0 6px 8px 0}
