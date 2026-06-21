@@ -558,11 +558,11 @@ footer strong{color:#fff}
 .gt-cbtn-danger{background:#dc2626;color:#fff}
 /* player grid */
 .gt-pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px;margin-bottom:24px}
-.gt-pcard{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .12s;min-height:88px;position:relative;font-family:inherit}
+.gt-pcard{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .12s;min-height:94px;position:relative;font-family:inherit}
 .gt-pcard:active{transform:scale(.96)}
 .gt-pcard:hover{border-color:var(--purple)}
 .gt-pcard .pc-num{font-size:1.25rem;font-weight:900;color:var(--purple);line-height:1}
-.gt-pcard .pc-name{font-size:.78rem;font-weight:700;margin-top:3px;line-height:1.15;word-break:break-word}
+.gt-pcard .pc-name{font-size:.95rem;font-weight:800;margin-top:4px;line-height:1.15;word-break:break-word}
 .gt-pcard .pc-pos{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:2px}
 .gt-pcard.gk{border-color:#d97706;background:#fffbeb}
 .gt-pcard.gk .pc-num{color:#d97706}
