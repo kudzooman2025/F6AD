@@ -358,8 +358,8 @@ function gtRenderLive(view, gameId) {
   // unavailable footnote
   var outs = gtGameAvail(g.id).filter(function(a){ return !a.available; });
   if (canEdit && outs.length) {
-    html += '<p style="font-size:.78rem;color:var(--muted);margin-top:18px"><strong>Unavailable:</strong> ' +
-      outs.map(function(a){ return gtEsc(gtPlayerShort(a.player_id)) + (a.notes ? ' (' + gtEsc(a.notes) + ')' : ''); }).join(', ') + '</p>';
+    html += '<div style="font-size:.78rem;color:var(--muted);margin-top:18px"><strong>Scratched / Unavailable:</strong> ' +
+      outs.map(function(a){ return gtEsc(gtPlayerShort(a.player_id)) + (a.notes ? ' (' + gtEsc(a.notes) + ')' : '') + ' <button class="gt-minibtn" style="padding:1px 7px;font-size:.68rem" onclick="gtAddPlayerToGame(\'' + g.id + '\',\'' + a.player_id + '\')">↩ add back</button>'; }).join(' · ') + '</div>';
   }
   html += '<div style="margin-top:22px;text-align:center"><button class="gt-minibtn" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Copy Game Link</button></div>';
   if (canEdit) {
@@ -583,6 +583,7 @@ function gtOpenEventPopup(gid, pid) {
     '<div class="gt-override-row"><input type="checkbox" id="gt-ev-override" onchange="document.getElementById(\'gt-ev-time\').style.display=this.checked?\'inline-block\':\'none\'"/>' +
     '<label for="gt-ev-override" style="margin:0;text-transform:none">Adjust time</label>' +
     '<input type="text" id="gt-ev-time" value="' + gtFmtMMSS(GT.pendingEvent.clock) + '" style="display:none" placeholder="MM:SS"/></div>' +
+    '<label style="display:flex;align-items:center;gap:8px;text-transform:none;margin-top:8px;color:#b91c1c;font-weight:700"><input type="checkbox" onchange="gtScratchFromPopup(this,\'' + gid + '\',\'' + pid + '\')"/> 🚫 Scratch from gameday roster</label>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveLiveEvent()">💾 Save Event</button>' +
     '<button class="gt-minibtn" style="padding:10px 16px" onclick="gtOpenSubForm(\'' + gid + '\',\'' + pid + '\')">🔄 Log Substitution</button></div>'
   );
@@ -876,6 +877,22 @@ function gtSetStarter(gid, pid, started, pos) {
     op = db.collection('gt_availability').add(data);
   }
   op.catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtScratchPlayer(gid, pid) {
+  // Remove a player from this game's roster/board (healthy scratch, didn't dress,
+  // or suspended). Sets availability false — reversible via "Add Player" / "add back".
+  if (!gtCanEdit()) return;
+  var ae = gtGameAvailEntry(gid, pid);
+  var op;
+  if (ae) op = db.collection('gt_availability').doc(ae.id).set({ available: false, started: false, notes: 'Scratched' }, { merge: true });
+  else op = db.collection('gt_availability').add({ game_id: gid, player_id: pid, available: false, started: false, start_position: '', notes: 'Scratched', created_at: firebase.firestore.FieldValue.serverTimestamp() });
+  op.then(function(){ showToast('🚫 ' + gtPlayerShort(pid) + ' scratched from the gameday roster.'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtScratchFromPopup(cb, gid, pid) {
+  if (!cb.checked) return;
+  if (!confirm('Scratch ' + gtPlayerName(pid) + " from this game's roster?\n\nThey'll be removed from the board (use for a healthy scratch or a suspension). You can add them back anytime with \u201c\u2795 Add Player\u201d or the \u201cadd back\u201d button.")) { cb.checked = false; return; }
+  gtScratchPlayer(gid, pid);
 }
 function gtOpenAddPlayer(gid) {
   if (!gtCanEdit()) return;
