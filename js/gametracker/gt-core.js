@@ -164,6 +164,24 @@ function gtPlayerShort(id) {
   return ((p.first_name || '') + (p.last_name ? ' ' + p.last_name.charAt(0) + '.' : '')).trim();
 }
 function gtIsGK(p) { return !!(p && p.position && /^(gk|goal)/i.test(p.position)); }
+function gtSubRowText(sb) {
+  // HTML for one substitution row, handling solo on/off toggles (one side null)
+  var inN = sb.player_in_id ? gtEsc(gtPlayerShort(sb.player_in_id)) : '';
+  var outN = sb.player_out_id ? gtEsc(gtPlayerShort(sb.player_out_id)) : '';
+  var pos = sb.position ? ' (' + gtEsc(sb.position) + ')' : '';
+  if (inN && outN) return '🔄 <strong>' + inN + '</strong>' + pos + ' ← ' + outN;
+  if (inN) return '⬆ <strong>' + inN + '</strong>' + pos + ' on';
+  if (outN) return '⬇ <strong>' + outN + '</strong> off';
+  return '🔄 sub';
+}
+function gtSubDesc(sb) {
+  var inN = sb.player_in_id ? gtPlayerShort(sb.player_in_id) : '';
+  var outN = sb.player_out_id ? gtPlayerShort(sb.player_out_id) : '';
+  if (inN && outN) return inN + ' on for ' + outN;
+  if (inN) return inN + ' coming on';
+  if (outN) return outN + ' going off';
+  return 'this substitution';
+}
 function gtRosterPlayers(rid) {
   return GT.players.filter(function(p){ return p.roster_id === rid; }).sort(function(a, b) {
     var an = a.jersey_number == null ? 999 : a.jersey_number, bn = b.jersey_number == null ? 999 : b.jersey_number;

@@ -298,7 +298,7 @@ function gtRenderLive(view, gameId) {
     return an - bn;
   });
   html += gtStartingXiHtml(g.id);
-  html += '<div class="section-title" style="margin-bottom:12px">👕 Players' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters &amp; positions' : 'tap to log an event or sub') + '</span>' : '') + '</div>';
+  html += '<div class="section-title" style="margin-bottom:12px">👕 Players' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters &amp; positions' : 'tap to sub on/off · hold for stats') + '</span>' : '') + '</div>';
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {
     html += '<div class="gt-pgrid">' + players.map(function(p) {
@@ -318,8 +318,13 @@ function gtRenderLive(view, gameId) {
       var starterCls = (setup && ae.started) ? ' starter' : '';
       var posShow = setup ? (p.default_position || '') : gtLastPosition(g.id, p.id);
       var statusLabel = setup ? (ae.started ? 'START' : 'BENCH') : gtStatusShort(gtPlayerGameStatus(g.id, p.id));
-      return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + '"' +
-        (canEdit ? ' onclick="' + (setup ? 'gtToggleStarter' : 'gtOpenEventPopup') + '(\'' + g.id + '\',\'' + p.id + '\')"' : '') + '>' +
+      var pcHandlers = '';
+      if (canEdit) {
+        pcHandlers = setup
+          ? ' onclick="gtToggleStarter(\'' + g.id + '\',\'' + p.id + '\')"'
+          : ' onpointerdown="gtCardPressStart(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerup="gtCardPressEnd(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerleave="gtCardPressCancel()" onpointercancel="gtCardPressCancel()" oncontextmenu="return false"';
+      }
+      return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + '"' + pcHandlers + '>' +
         '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
         '<span class="pc-name">' + gtEsc(gtPlayerShort(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</span>' +
         '<span class="pc-pos">' + (posShow ? gtEsc(posShow) + ' · ' : '') + statusLabel + '</span>' +
@@ -342,7 +347,7 @@ function gtRenderLive(view, gameId) {
   if (subLog.length) {
     html += '<div class="section-title" style="margin:22px 0 12px">🔄 Substitutions</div><div class="gt-feed">' +
       subLog.slice().reverse().map(function(sb) {
-        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>🔄 <strong>' + gtEsc(gtPlayerShort(sb.player_in_id)) + '</strong>' + (sb.position ? ' (' + gtEsc(sb.position) + ')' : '') + ' ← ' + gtEsc(gtPlayerShort(sb.player_out_id)) + (canEdit ? ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtEditSubPosition(\'' + sb.id + '\')">✏️ Pos</button> <button class="gt-minibtn danger" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtDeleteSub(\'' + sb.id + '\')">🗑</button>' : '') + '</div>';
+        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>' + gtSubRowText(sb) + (canEdit ? (sb.player_in_id ? ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtEditSubPosition(\'' + sb.id + '\')">✏️ Pos</button>' : '') + ' <button class="gt-minibtn danger" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtDeleteSub(\'' + sb.id + '\')">🗑</button>' : '') + '</div>';
       }).join('') + '</div>';
   }
   // unavailable footnote
@@ -830,7 +835,7 @@ function gtEditSubPosition(sid) {
   if (!sb) return;
   gtOpenModal(
     '<h3>✏️ Edit Sub Position<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<p style="font-size:.85rem;color:var(--muted)">' + gtEsc(gtPlayerShort(sb.player_in_id)) + ' came on for ' + gtEsc(gtPlayerShort(sb.player_out_id)) + '. Adjust the position if it was logged incorrectly.</p>' +
+    '<p style="font-size:.85rem;color:var(--muted)">' + gtEsc(gtSubDesc(sb)) + '. Adjust the position if it was logged incorrectly.</p>' +
     '<label>Position</label><select id="gt-subpos-edit">' + gtPositionOptions(sb.position || '') + '</select>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveSubPosition(\'' + sid + '\')">Save</button><button class="gt-minibtn danger" onclick="gtDeleteSub(\'' + sid + '\')">🗑 Delete Sub</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
@@ -841,7 +846,7 @@ function gtDeleteSub(sid) {
   if (!gtCanEdit()) return;
   var sb = GT.subs.find(function(x){ return x.id === sid; });
   if (!sb) return;
-  if (!confirm('Delete this substitution (' + gtPlayerShort(sb.player_in_id) + ' for ' + gtPlayerShort(sb.player_out_id) + ')?\n\nOn-field status and minutes will recalculate.')) return;
+  if (!confirm('Delete this substitution (' + gtSubDesc(sb) + ')?\n\nOn-field status and minutes will recalculate.')) return;
   db.collection('gt_subs').doc(sid).delete()
     .then(function(){ showToast('Substitution deleted ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
@@ -865,6 +870,49 @@ function gtSetStarter(gid, pid, started, pos) {
     op = db.collection('gt_availability').add(data);
   }
   op.catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtCardPressStart(e, gid, pid) {
+  if (!gtCanEdit()) return;
+  gtCardPressCancel();
+  GT._press = { gid: gid, pid: pid };
+  GT._pressTimer = setTimeout(function() {
+    var pr = GT._press; GT._press = null; GT._pressTimer = null;
+    if (pr) gtOpenEventPopup(pr.gid, pr.pid);
+  }, 450);
+}
+function gtCardPressEnd(e, gid, pid) {
+  if (!GT._press) return;            // hold already fired the stats popup
+  clearTimeout(GT._pressTimer); GT._pressTimer = null;
+  var pr = GT._press; GT._press = null;
+  gtToggleField(pr.gid, pr.pid);     // short tap = flip on/off the field
+}
+function gtCardPressCancel() {
+  if (GT._pressTimer) { clearTimeout(GT._pressTimer); GT._pressTimer = null; }
+  GT._press = null;
+}
+function gtToggleField(gid, pid) {
+  // Fast sub: tap a player to flip them on/off the field, recorded as a one-sided
+  // gt_subs entry (only in OR only out). On-field state and minutes derive from these.
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  if (g.status === 'setup') { gtToggleStarter(gid, pid); return; }
+  if (gtIsPK(g)) { showToast('Penalty shootout — use the shootout panel.'); return; }
+  var onField = gtOnField(gid);
+  var isOn = onField[pid] === true;
+  var data = { game_id: gid, game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1, created_at: firebase.firestore.FieldValue.serverTimestamp() };
+  if (isOn) {
+    data.player_out_id = pid; data.player_in_id = null; data.position = '';
+  } else {
+    var onCount = Object.keys(onField).filter(function(k){ return onField[k] === true; }).length;
+    var limit = g.players_per_side || 11;
+    if (onCount >= limit && !confirm(gtPlayerShort(pid) + ' would make ' + (onCount + 1) + ' on the field (max ' + limit + '). Bring them on anyway?')) return;
+    var p = gtP(pid);
+    data.player_in_id = pid; data.player_out_id = null;
+    data.position = (p && p.default_position) || gtLastPosition(gid, pid) || '';
+  }
+  db.collection('gt_subs').add(data)
+    .then(function(){ showToast(isOn ? ('⬇ ' + gtPlayerShort(pid) + ' off') : ('⬆ ' + gtPlayerShort(pid) + ' on' + (data.position ? ' (' + data.position + ')' : ''))); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtToggleStarter(gid, pid) {
   // Fast lineup: tap toggles a player in/out of the starting XI, using their
