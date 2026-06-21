@@ -11,6 +11,33 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// Offline support: cache data and queue writes locally so live stat entry keeps
+// working on a flaky field connection. Reads serve from cache; writes sync when
+// the connection returns. First load still needs to be online to fetch data/rules.
+db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
+  // failed-precondition = multiple tabs open; unimplemented = browser unsupported.
+  // Either way the app keeps working online-only.
+  console.warn('Offline cache unavailable:', err && err.code);
+});
+
+// Offline indicator: a banner so coaches know entries are saved locally and will sync.
+(function() {
+  function setOfflineBanner() {
+    var el = document.getElementById('offline-banner');
+    if (!el && document.body) {
+      el = document.createElement('div');
+      el.id = 'offline-banner';
+      el.textContent = '⚠ Offline — changes are saved on this device and will sync when you reconnect.';
+      document.body.appendChild(el);
+    }
+    if (el) el.classList.toggle('show', !navigator.onLine);
+  }
+  window.addEventListener('online', setOfflineBanner);
+  window.addEventListener('offline', setOfflineBanner);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setOfflineBanner);
+  else setOfflineBanner();
+})();
+
 // ===================== DATA =====================
 const CONFIRMED_IDS = [8, 13, 20, 6];
 const POSSIBILITY_IDS = [6];
