@@ -352,6 +352,18 @@ function gtKickoffOn(gid) {
   gtAvailIds(gid).forEach(function(pid){ on[pid] = anyStarter ? !!startedSet[pid] : true; });
   return on;
 }
+function gtPlayerRedInfo(gid, pid) {
+  // Cumulative-seconds time a player is sent off (straight red OR 2nd yellow), else null.
+  var g = gtGame(gid);
+  var evs = gtGameEvents(gid).filter(function(e){ return e.player_id === pid && (e.event_type === 'red_card' || e.event_type === 'yellow_card'); });
+  var y = 0, t = null;
+  for (var i = 0; i < evs.length; i++) {
+    var et = gtCumSec(g, evs[i].period, evs[i].game_clock_seconds);
+    if (evs[i].event_type === 'red_card') { t = et; break; }
+    y++; if (y >= 2) { t = et; break; }
+  }
+  return t === null ? null : { t: t };
+}
 function gtOnField(gid) {
   // pid -> bool currently on the field; kickoff XI then sub toggles (free re-subs)
   var on = gtKickoffOn(gid);
@@ -359,6 +371,8 @@ function gtOnField(gid) {
     if (s.out && on[s.out] !== undefined) on[s.out] = false;
     if (s.inn && on[s.inn] !== undefined) on[s.inn] = true;
   });
+  // a sent-off player (red / 2nd yellow) is off regardless of subs
+  Object.keys(on).forEach(function(pid) { if (on[pid] && gtPlayerRedInfo(gid, pid)) on[pid] = false; });
   return on;
 }
 function gtMinutesMap(gid) {
@@ -366,11 +380,15 @@ function gtMinutesMap(gid) {
   var g = gtGame(gid);
   var total = gtTotalSeconds(g);
   var kick = gtKickoffOn(gid);
-  var secs = {}, onAt = {};
+  var secs = {}, onAt = {}, sentOff = {};
   gtAvailIds(gid).forEach(function(pid){ secs[pid] = 0; onAt[pid] = kick[pid] ? 0 : null; });
-  gtSubEvents(gid).forEach(function(s) {
+  var stream = gtSubEvents(gid).slice();
+  gtAvailIds(gid).forEach(function(pid){ var r = gtPlayerRedInfo(gid, pid); if (r) stream.push({ t: r.t, out: pid, inn: null, red: true }); });
+  stream.sort(function(a, b){ return a.t - b.t; });
+  stream.forEach(function(s) {
     if (s.out && onAt[s.out] != null) { secs[s.out] += Math.max(0, s.t - onAt[s.out]); onAt[s.out] = null; }
-    if (s.inn && secs[s.inn] !== undefined && onAt[s.inn] == null) onAt[s.inn] = s.t;
+    if (s.red && s.out) sentOff[s.out] = true;
+    if (s.inn && !sentOff[s.inn] && secs[s.inn] !== undefined && onAt[s.inn] == null) onAt[s.inn] = s.t;
   });
   Object.keys(onAt).forEach(function(pid) {
     if (onAt[pid] != null) secs[pid] += Math.max(0, total - onAt[pid]);
@@ -389,6 +407,16 @@ function gtPlayerStints(gid, pid) {
     if (s.inn === pid) { if (cur) { cur.outT = s.t; stints.push(cur); } cur = { inT: s.t, position: s.position || '', outT: null }; }
   });
   if (cur) stints.push(cur);
+  var red = gtPlayerRedInfo(gid, pid);
+  if (red) {
+    var trimmed = [];
+    stints.forEach(function(st) {
+      if (st.inT >= red.t) return;                                  // stint began after send-off
+      if (st.outT === null || st.outT > red.t) st.outT = red.t;     // cap open/overrunning stint
+      trimmed.push(st);
+    });
+    stints = trimmed;
+  }
   return stints;
 }
 function gtLastPosition(gid, pid) {
@@ -398,7 +426,8 @@ function gtLastPosition(gid, pid) {
   return ae && ae.start_position ? ae.start_position : '';
 }
 function gtPlayerGameStatus(gid, pid) {
-  // STARTER | ON_FIELD | BENCHED | NOT_USED
+  // STARTER | ON_FIELD | BENCHED | NOT_USED | SENT_OFF
+  if (gtPlayerRedInfo(gid, pid)) return 'SENT_OFF';
   var stints = gtPlayerStints(gid, pid);
   if (!stints.length) return 'NOT_USED';
   if (gtOnField(gid)[pid]) {

@@ -657,6 +657,11 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-xi-item{display:inline-block;margin:0 10px 4px 0;white-space:nowrap}
 .gt-xi-pos{font-weight:800;color:var(--purple);font-size:.74rem}
 
+.gt-addlist{display:flex;flex-wrap:wrap;margin:4px 0 6px}
+.gt-onfield{display:inline-block;font-size:.72rem;font-weight:800;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:2px}
+.gt-onfield.ok{background:rgba(22,163,74,.14);color:#15803d}
+.gt-onfield.under{background:#fef9c3;color:#854d0e}
+.gt-onfield.over{background:#fee2e2;color:#b91c1c}
 /* Schedule filter chips */
 .sched-filters{display:flex;flex-wrap:wrap;margin-bottom:14px}
 .sched-chip{border:1px solid var(--border);background:#fff;border-radius:20px;padding:5px 14px;font-size:.8rem;font-weight:700;cursor:pointer;margin:0 6px 8px 0}

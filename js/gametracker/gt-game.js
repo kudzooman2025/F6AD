@@ -298,7 +298,11 @@ function gtRenderLive(view, gameId) {
     return an - bn;
   });
   html += gtStartingXiHtml(g.id);
-  html += '<div class="section-title" style="margin-bottom:12px">👕 Players' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters &amp; positions' : 'tap to sub on/off · hold for stats') + '</span>' : '') + '</div>';
+  var gtOnCount = Object.keys(onField).filter(function(k){ return onField[k] === true; }).length;
+  var gtPps = g.players_per_side || 11;
+  var gtTallyCls = gtOnCount === gtPps ? 'ok' : (gtOnCount > gtPps ? 'over' : 'under');
+  var gtOnFieldTally = '<span class="gt-onfield ' + gtTallyCls + '">' + gtOnCount + '/' + gtPps + ' ' + (g.status === 'setup' ? 'starters' : 'on field') + '</span>';
+  html += '<div class="section-title" style="margin-bottom:12px">👕 Players ' + gtOnFieldTally + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters &amp; positions' : 'tap to sub on/off · hold for stats') + '</span>' : '') + '</div>';
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {
     html += '<div class="gt-pgrid">' + players.map(function(p) {
@@ -333,6 +337,7 @@ function gtRenderLive(view, gameId) {
   }
   if (canEdit && g.status !== 'setup' && !inPK) {
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenMassSub(\'' + g.id + '\')">🔄 Mass Sub</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentGoal(\'' + g.id + '\')">😣 Opponent Goal</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentCard(\'' + g.id + '\')">🟨 Opponent Card</button></div>';
@@ -641,6 +646,7 @@ function gtSaveLiveEvent() {
   }).then(function() {
     var msg = gtEventType(pe.type).emoji + ' ' + gtEventType(pe.type).label + ' logged for ' + gtPlayerShort(pe.playerId);
     if (assistPid) msg += ' (assist: ' + gtPlayerShort(assistPid) + ')';
+    if (pe.type === 'red_card') msg = '🟥 ' + gtPlayerShort(pe.playerId) + ' sent off — taken off, man down';
     showToast(msg);
     gtCloseModal();
   }).catch(function(e){ showToast('Error: ' + e.message); });
@@ -871,6 +877,54 @@ function gtSetStarter(gid, pid, started, pos) {
   }
   op.catch(function(e){ showToast('Error: ' + e.message); });
 }
+function gtOpenAddPlayer(gid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var inGame = {}; gtAvailIds(gid).forEach(function(pid){ inGame[pid] = true; });
+  var roster = gtRosterPlayers(g.roster_id).filter(function(p){ return !p.is_guest && !inGame[p.id]; });
+  var guests = gtGuestPool().filter(function(p){ return !inGame[p.id]; });
+  function row(p) {
+    return '<button class="gt-minibtn" style="margin:0 6px 6px 0" onclick="gtAddPlayerToGame(\'' + gid + '\',\'' + p.id + '\')">➕ ' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</button>';
+  }
+  gtOpenModal(
+    '<h3><span>➕ Add Player</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.82rem;color:var(--muted);margin-bottom:4px">Adds a player to this game on the bench. Tap their card to put them on the field.</p>' +
+    (roster.length ? '<label>From roster</label><div class="gt-addlist">' + roster.map(row).join('') + '</div>' : '') +
+    (guests.length ? '<label>Guest pool</label><div class="gt-addlist">' + guests.map(row).join('') + '</div>' : '') +
+    (!roster.length && !guests.length ? '<p style="font-size:.85rem;color:var(--muted)">Everyone is already in this game. Add a new guest below.</p>' : '') +
+    '<label style="margin-top:10px">New guest</label>' +
+    '<input type="text" id="gt-ag-first" placeholder="First name" style="width:100%"/>' +
+    '<input type="text" id="gt-ag-last" placeholder="Last name" style="width:100%"/>' +
+    '<input type="text" id="gt-ag-num" placeholder="Jersey # (optional)" inputmode="numeric" style="width:100%"/>' +
+    '<select id="gt-ag-pos">' + gtPositionOptions('') + '</select>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtAddGuestToGame(\'' + gid + '\')">Add Guest</button><button class="gt-minibtn" onclick="gtCloseModal()">Close</button></div>'
+  );
+}
+function gtAddPlayerToGame(gid, pid) {
+  if (!gtCanEdit()) return;
+  var ae = gtGameAvailEntry(gid, pid);
+  var op;
+  if (ae) op = db.collection('gt_availability').doc(ae.id).set({ available: true, started: false, notes: '' }, { merge: true });
+  else op = db.collection('gt_availability').add({ game_id: gid, player_id: pid, available: true, started: false, start_position: '', notes: '', created_at: firebase.firestore.FieldValue.serverTimestamp() });
+  op.then(function(){ showToast('➕ ' + gtPlayerShort(pid) + ' added to the bench — tap to send on.'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtAddGuestToGame(gid) {
+  if (!gtCanEdit()) return;
+  var first = (document.getElementById('gt-ag-first').value || '').trim();
+  if (!first) { showToast('Guest first name is required.'); return; }
+  var last = (document.getElementById('gt-ag-last').value || '').trim();
+  var num = (document.getElementById('gt-ag-num').value || '').trim();
+  var pos = document.getElementById('gt-ag-pos').value;
+  var ts = firebase.firestore.FieldValue.serverTimestamp();
+  var batch = db.batch();
+  var pref = db.collection('gt_players').doc();
+  batch.set(pref, { roster_id: '__guests__', first_name: first, last_name: last, jersey_number: num === '' ? null : parseInt(num, 10), position: pos || '', parent_name: '', parent_phone: '', whatsapp_opt_in: false, is_guest: true, created_at: ts });
+  var aref = db.collection('gt_availability').doc();
+  batch.set(aref, { game_id: gid, player_id: pref.id, available: true, started: false, start_position: '', notes: 'Guest player', created_at: ts });
+  batch.commit().then(function(){ showToast('➕ ' + first + ' added as guest — tap to send on.'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
 function gtCardPressStart(e, gid, pid) {
   if (!gtCanEdit()) return;
   gtCardPressCancel();
@@ -935,7 +989,7 @@ function gtToggleStarter(gid, pid) {
   gtSetStarter(gid, pid, nowStarted, pos);
 }
 function gtStatusShort(st) {
-  return { STARTER: 'START', ON_FIELD: 'ON', BENCHED: 'BENCH', NOT_USED: 'BENCH' }[st] || '';
+  return { STARTER: 'START', ON_FIELD: 'ON', BENCHED: 'BENCH', NOT_USED: 'BENCH', SENT_OFF: '🟥 OFF' }[st] || '';
 }
 
 
