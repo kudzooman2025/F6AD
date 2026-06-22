@@ -205,9 +205,9 @@ function gtRenderSeason(view) {
     '<div class="gt-sub">All completed games' + (rid && gtRoster(rid) ? ' for ' + gtEsc(gtRoster(rid).name) : '') + '.</div>';
   html += '<div class="gt-filters">' +
     (rosters.length > 1 ? '<select onchange="GT.seasonRoster=this.value;gtRerender(true)">' + rosters.map(function(r){ return '<option value="' + r.id + '"' + (rid === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') + '</select>' : '') +
+    (seasonTeams.length >= 1 ? '<select onchange="GT.seasonFilters.team=this.value;gtRerender(true)"><option value="">All teams</option>' + seasonTeams.map(function(tn){ return '<option value="' + gtAttr(tn) + '"' + (f.team === tn ? ' selected' : '') + '>' + gtEsc(tn) + '</option>'; }).join('') + '</select>' : '') +
     '<select onchange="GT.seasonFilters.type=this.value;gtRerender(true)">' +
     ['all', 'league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (f.type === t ? ' selected' : '') + '>' + (t === 'all' ? 'All types' : t.charAt(0).toUpperCase() + t.slice(1)) + '</option>'; }).join('') + '</select>' +
-    (seasonTeams.length > 1 ? '<select onchange="GT.seasonFilters.team=this.value;gtRerender(true)"><option value="">All teams</option>' + seasonTeams.map(function(tn){ return '<option value="' + gtAttr(tn) + '"' + (f.team === tn ? ' selected' : '') + '>' + gtEsc(tn) + '</option>'; }).join('') + '</select>' : '') +
     '<input type="date" value="' + gtAttr(f.from) + '" onchange="GT.seasonFilters.from=this.value;gtRerender(true)" title="From date"/>' +
     '<input type="date" value="' + gtAttr(f.to) + '" onchange="GT.seasonFilters.to=this.value;gtRerender(true)" title="To date"/>' +
     '<input type="text" value="' + gtAttr(f.opp) + '" placeholder="Opponent…" onchange="GT.seasonFilters.opp=this.value;gtRerender(true)"/>' +
