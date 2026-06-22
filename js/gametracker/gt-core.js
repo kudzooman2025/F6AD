@@ -412,7 +412,17 @@ function gtMinutesMap(gid) {
   Object.keys(onAt).forEach(function(pid) {
     if (onAt[pid] != null) secs[pid] += Math.max(0, total - onAt[pid]);
   });
+  // Manual per-player minute overrides (stored in MINUTES on the availability doc)
+  gtGameAvail(gid).forEach(function(a) {
+    if (a.minutes_override != null && a.minutes_override !== '') {
+      secs[a.player_id] = Math.max(0, Number(a.minutes_override) || 0) * 60;
+    }
+  });
   return secs;
+}
+function gtMinutesOverridden(gid, pid) {
+  var a = gtGameAvailEntry(gid, pid);
+  return !!(a && a.minutes_override != null && a.minutes_override !== '');
 }
 function gtPlayerStints(gid, pid) {
   // ordered list of on-field stints: { inT, position, outT } (outT null = still on)

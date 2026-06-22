@@ -53,7 +53,7 @@ function gtRenderReview(view, gameId) {
       }).join('') + '</div>';
   }
   // player stat table
-  html += '<div class="section-title" style="margin:26px 0 12px">📊 Player Stats' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove a player from this game</span>' : '') + '</div>';
+  html += '<div class="section-title" style="margin:26px 0 12px">📊 Player Stats' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove a player · ✏️ to edit minutes</span>' : '') + '</div>';
   var availIds = gtAvailIds(g.id);
   if (availIds.length) {
     var mins = gtMinutesMap(g.id);
@@ -65,7 +65,7 @@ function gtRenderReview(view, gameId) {
         html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' + (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (canEdit ? ' <button class="gt-minibtn danger" style="padding:1px 6px;font-size:.65rem" title="Remove from this game" onclick="gtRemovePlayerFromGame(\'' + g.id + '\',\'' + p.id + '\')">✕</button>' : '') + '</td>' +
           '<td class="num">' + (st.goal || '') + '</td><td class="num">' + (st.assist || '') + '</td><td class="num">' + (st.shot_on_target || '') + '</td><td class="num">' + (st.shot || '') + '</td>' +
           '<td class="num">' + (st.yellow_card || '') + '</td><td class="num">' + (st.red_card || '') + '</td><td class="num">' + (st.save || '') + '</td><td class="num">' + (st.tackle || '') + '</td>' +
-          '<td class="num">' + Math.round((mins[p.id] || 0) / 60) + '</td></tr>';
+          '<td class="num">' + Math.round((mins[p.id] || 0) / 60) + (gtMinutesOverridden(g.id, p.id) ? '<span title="Manually adjusted" style="color:var(--purple)">*</span>' : '') + (canEdit ? ' <button class="gt-minibtn" style="padding:1px 6px;font-size:.66rem" title="Edit minutes" onclick="gtEditMinutes(\'' + g.id + '\',\'' + p.id + '\')">✏️</button>' : '') + '</td></tr>';
       });
     html += '</tbody></table></div>';
   }
@@ -377,3 +377,23 @@ function gtSharePlayer(pid) {
   navigator.clipboard.writeText(url).then(function(){ showToast('Player profile link copied!'); });
 }
 
+function gtEditMinutes(gid, pid) {
+  if (!gtCanEdit()) return;
+  var cur = Math.round((gtMinutesMap(gid)[pid] || 0) / 60);
+  var ans = prompt('Minutes played for ' + gtPlayerShort(pid) + '\n(leave blank to auto-calculate from subs):', gtMinutesOverridden(gid, pid) ? cur : '');
+  if (ans === null) return;
+  ans = ('' + ans).trim();
+  var ae = gtGameAvailEntry(gid, pid);
+  if (ans === '' && !ae) { showToast('Already auto-calculated.'); return; }
+  var val = ans === '' ? firebase.firestore.FieldValue.delete() : Math.max(0, parseInt(ans, 10) || 0);
+  var data = { minutes_override: val };
+  var op;
+  if (ae) op = db.collection('gt_availability').doc(ae.id).set(data, { merge: true });
+  else {
+    data.game_id = gid; data.player_id = pid; data.available = true; data.notes = '';
+    data.created_at = firebase.firestore.FieldValue.serverTimestamp();
+    op = db.collection('gt_availability').add(data);
+  }
+  op.then(function(){ showToast(ans === '' ? 'Minutes reset to auto.' : 'Minutes updated.'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
