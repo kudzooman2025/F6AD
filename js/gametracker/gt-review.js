@@ -12,7 +12,7 @@ function gtRenderReview(view, gameId) {
     '<div class="gt-card" style="text-align:center">' +
     '<div style="font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">' + gtEsc(g.game_type || 'game') + ' · ' + gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.players_per_side ? ' · ' + g.players_per_side + 'v' + g.players_per_side : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '') + '</div>' +
     ([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).length ? '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">📍 ' + gtEsc([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).join(', ')) + '</div>' : '') +
-    '<div style="font-size:1.25rem;font-weight:900;margin-top:8px">' + gtEsc(g.home_team) + ' <span style="font-size:1.6rem;color:var(--purple)">' + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span> ' + gtEsc(g.away_team) + '</div>' +
+    '<div style="font-size:1.25rem;font-weight:900;margin-top:8px">' + gtEsc(gtHomeName(g)) + ' <span style="font-size:1.6rem;color:var(--purple)">' + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span> ' + gtEsc(gtAwayName(g)) + '</div>' +
     (g.pk_winner ? '<div style="font-size:.85rem;color:var(--muted);margin-top:2px">🥅 Penalties: ' + gtEsc(gtOurName(g)) + ' ' + gtPkScore(g).us + '–' + gtPkScore(g).them + ' ' + gtEsc(gtTheirName(g)) + '</div>' : '') +
     (res ? '<div style="margin-top:6px"><span class="gt-result-' + res.toLowerCase() + '" style="font-size:1rem">' + (res === 'W' ? '✅ Win' : res === 'L' ? '❌ Loss' : '➖ Draw') + '</span></div>' : '<div style="margin-top:6px">' + gtStatusPill(g) + (canEdit ? ' <a href="#/gametracker/live/' + g.id + '" style="font-size:.8rem;font-weight:700">Open live view →</a>' : '') + '</div>') +
     '</div>';
@@ -102,7 +102,7 @@ function gtExportGame(gid) {
   var g = gtGame(gid); if (!g) return;
   var events = gtGameEvents(gid);
   var lines = [];
-  lines.push(g.home_team + ' ' + (g.home_score || 0) + ' - ' + (g.away_score || 0) + ' ' + g.away_team);
+  lines.push(gtHomeName(g) + ' ' + (g.home_score || 0) + ' - ' + (g.away_score || 0) + ' ' + gtAwayName(g));
   lines.push(gtFmtDate(g.played_at || g.created_at) + (g.venue ? ' · ' + g.venue : '') + ' · ' + (g.game_type || ''));
   lines.push('');
   events.forEach(function(e) {
@@ -130,7 +130,7 @@ function gtExportGamePDF(gid) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(110);
   doc.text((g.game_type || 'game') + '  ·  ' + gtFmtDate(g.played_at || g.created_at) + (g.venue ? '  ·  ' + g.venue : ''), 40, 66);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(20);
-  doc.text(g.home_team + '   ' + (g.home_score || 0) + ' - ' + (g.away_score || 0) + '   ' + g.away_team, 40, 92);
+  doc.text(gtHomeName(g) + '   ' + (g.home_score || 0) + ' - ' + (g.away_score || 0) + '   ' + gtAwayName(g), 40, 92);
   var res = g.status === 'complete' ? gtResult(g) : null;
   var y = 100;
   if (res) { doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(110); doc.text(res === 'W' ? 'Win' : res === 'L' ? 'Loss' : 'Draw', 40, (y += 12)); }

@@ -163,7 +163,7 @@ function gtGameItem(g) {
   var res = g.status === 'complete' ? '<span class="gt-result-' + gtResult(g).toLowerCase() + '">' + gtResult(g) + '</span> ' : '';
   return '<div class="gt-gitem" onclick="gtGo(\'' + target.slice(1) + '\')">' +
     gtStatusPill(g) +
-    '<span class="gi-teams">' + gtEsc(g.home_team) + ' vs ' + gtEsc(g.away_team) + '</span>' +
+    '<span class="gi-teams">' + gtEsc(gtHomeName(g)) + ' vs ' + gtEsc(gtAwayName(g)) + '</span>' +
     '<span class="gi-score">' + res + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span>' +
     '<span class="gi-meta">' + gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + ' · ' + gtEsc(g.game_type || '') + (g.players_per_side ? ' · ' + g.players_per_side + 'v' + g.players_per_side : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '') + '</span>' +
     '</div>';

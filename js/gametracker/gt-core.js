@@ -229,8 +229,19 @@ function gtAvailIds(gid) {
 }
 function gtOurScore(g) { return g.f6ad_side === 'away' ? (g.away_score || 0) : (g.home_score || 0); }
 function gtTheirScore(g) { return g.f6ad_side === 'away' ? (g.home_score || 0) : (g.away_score || 0); }
-function gtOurName(g) { return g.f6ad_side === 'away' ? g.away_team : g.home_team; }
+function gtOurName(g) {
+  // The team-name LABEL for our side. A linked tournament/season's team name is
+  // authoritative (so it applies to all its games + season stats, retroactively);
+  // otherwise fall back to the name stored on the game.
+  if (g) {
+    if (g.tournament_id && typeof gtTournament === 'function') { var t = gtTournament(g.tournament_id); if (t && t.team_name) return t.team_name; }
+    if (g.season_id && typeof gtSeason === 'function') { var se = gtSeason(g.season_id); if (se && se.team_name) return se.team_name; }
+  }
+  return g.f6ad_side === 'away' ? g.away_team : g.home_team;
+}
 function gtTheirName(g) { return g.f6ad_side === 'away' ? g.home_team : g.away_team; }
+function gtHomeName(g) { return g.f6ad_side === 'home' ? gtOurName(g) : gtTheirName(g); }
+function gtAwayName(g) { return g.f6ad_side === 'away' ? gtOurName(g) : gtTheirName(g); }
 function gtResult(g) {
   var us = gtOurScore(g), them = gtTheirScore(g);
   if (us === them && g && g.pk_winner) return g.pk_winner === 'us' ? 'W' : 'L';

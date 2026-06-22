@@ -261,9 +261,9 @@ function gtRenderLive(view, gameId) {
     '<div class="gt-period" id="gt-period-label">' + gtEsc(gtPeriodLabel(g)) + '</div>' +
     '<div class="gt-clock" id="gt-clock-display">' + gtFmtDisplayClock(g) + '</div>' +
     '<div class="gt-scoreline">' +
-    '<span class="sc-team">' + gtEsc(g.home_team) + '</span><span class="sc-num">' + (g.home_score || 0) + '</span>' +
+    '<span class="sc-team">' + gtEsc(gtHomeName(g)) + '</span><span class="sc-num">' + (g.home_score || 0) + '</span>' +
     '<span style="color:#666">–</span>' +
-    '<span class="sc-num">' + (g.away_score || 0) + '</span><span class="sc-team">' + gtEsc(g.away_team) + '</span>' +
+    '<span class="sc-num">' + (g.away_score || 0) + '</span><span class="sc-team">' + gtEsc(gtAwayName(g)) + '</span>' +
     '</div>';
   html += gtManDownHtml(g);
   if (canEdit && !inPK) {
@@ -515,7 +515,7 @@ function gtDeleteGame(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
   var n = GT.events.filter(function(e){ return e.game_id === gid; }).length;
-  if (!confirm('Delete ' + g.home_team + ' vs ' + g.away_team + ' and its ' + n + ' logged event(s)? This cannot be undone.')) return;
+  if (!confirm('Delete ' + gtHomeName(g) + ' vs ' + gtAwayName(g) + ' and its ' + n + ' logged event(s)? This cannot be undone.')) return;
   var batch = db.batch();
   batch.delete(db.collection('gt_games').doc(gid));
   GT.events.filter(function(e){ return e.game_id === gid; }).forEach(function(e){ batch.delete(db.collection('gt_events').doc(e.id)); });
