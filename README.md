@@ -4,6 +4,7 @@ A single-page web app for managing a youth soccer team: summer conditioning,
 mini-camps, player roster, session attendance, voting on tournaments, and a
 full live game tracker (**GameTracker**). Data is stored in Firebase
 (Firestore + Auth) and the site is served as static files via Firebase Hosting.
+It is also an installable **PWA** that loads and runs offline (see Offline & PWA).
 
 ## Project layout
 
@@ -35,6 +36,9 @@ js/                       Application logic (plain scripts, no build step)
                           record + per-player stats
     gt-tournaments.js     Tournament entity: grouped games, payment, lineup,
                           address fields
+manifest.json            PWA manifest (installable app metadata)
+sw.js                    Service worker (offline app-shell cache)
+icon-192.png / icon-512.png / apple-touch-icon-180.png   PWA / home-screen icons
 firebase.json            Firebase Hosting + Firestore config
 firestore.rules          Firestore security rules
 firestore.indexes.json   Firestore indexes
@@ -135,16 +139,24 @@ edit controls, and Firestore rules enforce it server-side).
   be logged without a goal.
 - **Opponent events:** "Opponent Goal" and "Opponent Card" buttons. A second
   opponent yellow prompts "same player?" → converts to a red.
-- **Substitutions:** individual subs (with position) and **Mass Sub** (N off /
-  N on at once); sub positions are editable after the fact; free re-subs.
+- **Substitutions:** **tap a player to toggle them on/off the field; hold for the
+  stats popup.** Individual subs (with position) and **Mass Sub** (N off / N on at
+  once); sub positions are editable after the fact; free re-subs; accidental subs
+  can be deleted. Solo on/off entries render cleanly in the live and review logs.
+- **Add players to a live game:** pull in a roster player, a guest, or a brand-new
+  guest mid-game. A live **on-field tally** shows how many players are on.
+- **Healthy scratches:** scratch a player from the gameday roster (checkbox in the
+  stats popup) to remove them from the board; reversible by adding them back.
 - **Cards & man-down:** a red card — or a second yellow to the same player —
   shows a "man down" banner for that team (works for both F6AD and the
-  opponent), with effective counts.
+  opponent), with effective counts. A sent-off F6AD player is **automatically
+  removed from the field** (minutes capped, `SENT_OFF` status; bench case
+  handled).
 - **Edit / delete events:** tap any event in the feed to reveal Edit and Delete.
   Editing can change the stat type, player, period, time, and notes; the score
   auto-adjusts when goals are added, removed, or reclassified.
-- **In-game chat** (open to anyone) and a **shareable game link** that never
-  expires.
+- **In-game chat** (open to anyone) with **staff/admin message moderation**
+  (🗑 delete per message), and a **shareable game link** that never expires.
 
 ### Overtime & penalty shootouts
 
@@ -170,16 +182,32 @@ edit controls, and Firestore rules enforce it server-side).
 - Substitution log, a **sortable player stat table** (goals, assists, shots on
   target, shots, cards, saves, tackles, minutes), **PDF export**, copy-to-
   clipboard, and a share link.
+- Coaches can **remove a player (and their events/subs) from a specific game**
+  here if they were added by mistake.
 
 ### Seasons & tournaments
 
 - **Seasons (`gt-seasons.js`):** group games into a season, set players-per-side,
   track per-game availability (no fees), and view the season record plus
-  per-player stats. "Add Game" seeds the setup wizard.
+  per-player stats. "Add Game" seeds the setup wizard. The season game log
+  filters by type, date range, opponent, and **team name** (F6AD / FC Delco / …).
 - **Tournaments (`gt-tournaments.js`):** group games, track payment, manage a
   lineup (in/out + paid), add roster players or guests, store address fields,
   and list games sorted by date and time. "Out" players are hidden from
   visitors.
+
+### Offline & PWA
+
+The app is installable to a phone/desktop home screen (`manifest.json` + icons)
+and works offline:
+
+- A **service worker** (`sw.js`) caches the app shell (HTML, CSS, JS, icons) so
+  the app loads with no connection. Bump `VERSION` in `sw.js` to force a fresh
+  cache after changes.
+- **Firestore offline persistence** is enabled (`js/01-core.js`), so stat entry,
+  the clock, and other writes **queue locally and sync when the connection
+  returns**. An **offline banner** tells coaches their entries are saved locally.
+- First load still needs to be online once to fetch data and rules.
 
 ### Site integration
 
@@ -209,8 +237,10 @@ GameTracker: `gt_rosters`, `gt_players`, `gt_games`, `gt_availability`,
 `gt_events`, `gt_subs`, `gt_seasons`, `gt_tournaments`, `gt_chat`.
 
 All collections are **public-read**; writes are restricted to staff/admin by
-`firestore.rules`, except `gt_chat` (open read + write) and the voting/
-conditioning sign-up collections (open by design for no-login family use).
+`firestore.rules`. Exceptions: `gt_chat` allows open read + **create** (anyone
+can post) but restricts **update/delete** to staff/admin (message moderation);
+the voting and conditioning sign-up collections are fully open by design for
+no-login family use.
 
 ## Running locally
 
