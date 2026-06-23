@@ -337,6 +337,10 @@ function gtRenderLive(view, gameId) {
         '<span class="pc-badges">' + badges + '</span></button>';
     }).join('') + '</div>';
   }
+  if (canEdit && g.status === 'setup') {
+    html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player / Guest</button></div>';
+  }
   if (canEdit && g.status !== 'setup' && !inPK) {
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player</button>' +
