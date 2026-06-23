@@ -121,7 +121,11 @@ function gtPdfDate(ts) {
 }
 function gtExportGamePDF(gid) {
   var g = gtGame(gid); if (!g) return;
-  if (!(window.jspdf && window.jspdf.jsPDF)) { showToast('PDF tool still loading — try again in a moment.'); return; }
+  if (!(window.jspdf && window.jspdf.jsPDF)) {
+    showToast('Loading PDF tool…');
+    gtEnsureJsPdf(function(ok){ if (ok) gtExportGamePDF(gid); else showToast('Could not load the PDF tool — check your connection.'); });
+    return;
+  }
   var events = gtGameEvents(gid);
   var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter' });
   var purple = [123, 47, 212];
@@ -396,4 +400,24 @@ function gtEditMinutes(gid, pid) {
   }
   op.then(function(){ showToast(ans === '' ? 'Minutes reset to auto.' : 'Minutes updated.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+
+// Lazy-load jsPDF + autotable only when a PDF is actually exported (keeps them off
+// every page load). Cross-origin scripts are SW-cached after the first use.
+var GT_pdfLoading = false;
+function gtEnsureJsPdf(cb) {
+  if (window.jspdf && window.jspdf.jsPDF) { cb(true); return; }
+  var urls = [
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
+  ];
+  function loadSeq(i) {
+    if (i >= urls.length) { cb(!!(window.jspdf && window.jspdf.jsPDF)); return; }
+    var sc = document.createElement('script');
+    sc.src = urls[i]; sc.async = false;
+    sc.onload = function(){ loadSeq(i + 1); };
+    sc.onerror = function(){ cb(false); };
+    document.head.appendChild(sc);
+  }
+  loadSeq(0);
 }
