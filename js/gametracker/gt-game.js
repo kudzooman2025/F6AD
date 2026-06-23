@@ -40,6 +40,7 @@ function gtRenderNew(view) {
     });
     oppNames.sort(function(a,b){ return a.localeCompare(b); });
     var currentOpp = s.f6ad_side === 'home' ? s.away_team : s.home_team;
+    html += gtImportPrevBtn();
     html += '<div class="gm-row"><div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Our Team</label>' +
       '<select id="gt-su-us" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" onchange="gtSetupCapture();gtRerender(true)">' +
       (ourRosters.length === 0 ? '<option value="">No rosters yet</option>' : '') +
@@ -84,6 +85,7 @@ function gtRenderNew(view) {
       '<option value="">— Select roster —</option>' +
       rosters.map(function(r){ return '<option value="' + r.id + '"' + (s.roster_id === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + (r.is_active ? ' (active)' : '') + '</option>'; }).join('') + '</select>';
     if (s.roster_id) {
+      html += gtImportPrevBtn();
       var players = gtRosterPlayers(s.roster_id).filter(function(p){ return !p.is_guest; });
       if (!players.length) html += '<div class="gt-empty" style="margin-top:14px">This roster has no players. Add them in the Roster Manager.</div>';
       else {
@@ -1187,4 +1189,43 @@ function gtAddOppCardEvent(gid, type, cb) {
     game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
     notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ if (cb) cb(); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+
+// ---------- Import roster + venue from the previous game (less setup work) ----------
+function gtLastGameForSetup(s) {
+  if (!s) return null;
+  var list = GT.games.filter(function(g) {
+    if (g.status === 'setup') return false;
+    if (s.season_id) return g.season_id === s.season_id;
+    if (s.tournament_id) return g.tournament_id === s.tournament_id;
+    return s.roster_id && g.roster_id === s.roster_id;
+  });
+  list.sort(function(a, b){ return gtGameSortMs(b) - gtGameSortMs(a); });
+  return list[0] || null;
+}
+function gtImportPrevBtn() {
+  var g = gtLastGameForSetup(GT.setup);
+  if (!g) return '';
+  var when = gtFmtDate(g.played_at || g.created_at);
+  return '<button class="gt-minibtn" style="margin-bottom:14px" onclick="gtImportPrevGame()">\u2b07 Import roster &amp; venue from last game (vs ' + gtEsc(gtTheirName(g)) + (when ? ' \u00b7 ' + gtEsc(when) : '') + ')</button>';
+}
+function gtImportPrevGame() {
+  var s = GT.setup; if (!s) return;
+  if (typeof gtSetupCapture === 'function') gtSetupCapture();   // preserve current field edits first
+  var g = gtLastGameForSetup(s);
+  if (!g) { showToast('No previous game to import from.'); return; }
+  ['venue', 'venue_address', 'venue_city', 'venue_state', 'venue_zip', 'field'].forEach(function(k){ if (g[k]) s[k] = g[k]; });
+  var nIn = 0, nOut = 0, nG = 0;
+  s.avail = s.avail || {}; s.notes = s.notes || {}; s.guestIds = s.guestIds || {};
+  gtGameAvail(g.id).forEach(function(a) {
+    var p = gtP(a.player_id);
+    if (p && p.is_guest) {
+      if (a.available !== false) { s.guestIds[a.player_id] = true; nG++; }
+    } else {
+      s.avail[a.player_id] = a.available !== false;
+      if (a.available === false) { s.notes[a.player_id] = a.notes || ''; nOut++; } else nIn++;
+    }
+  });
+  showToast('Imported ' + nIn + ' in / ' + nOut + ' out' + (nG ? ' + ' + nG + ' guest' + (nG > 1 ? 's' : '') : '') + ' \u00b7 venue.');
+  gtRerender(true);
 }
