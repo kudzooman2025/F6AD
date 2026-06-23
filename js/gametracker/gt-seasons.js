@@ -112,8 +112,10 @@ function gtRenderSeasonEntity(view, sid) {
     '<div class="gt-stat-box"><div class="sb-num">' + r.gf + '</div><div class="sb-label">Goals For</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + r.ga + '</div><div class="sb-label">Goals Against</div></div>' +
     '</div>';
-  if (canEdit) html += '<div style="margin:4px 0 16px;display:flex;gap:10px;flex-wrap:wrap">' +
-    '<button class="gt-minibtn" onclick="gtOpenSeasonForm(\'' + se.id + '\')">✏️ Edit Details</button></div>';
+  html += '<div style="margin:4px 0 16px;display:flex;gap:10px;flex-wrap:wrap">' +
+    '<button class="gt-minibtn" onclick="gtCopySeasonLink(\'' + se.id + '\')">🔗 Share Season</button>' +
+    (canEdit ? '<button class="gt-minibtn" onclick="gtOpenSeasonForm(\'' + se.id + '\')">✏️ Edit Details</button>' : '') +
+    '</div>';
   html += '<div class="section-title" style="margin-bottom:12px">⚽ Games</div>';
   if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtStartSeasonGame(\'' + se.id + '\')">➕ Add Game</button>';
   html += games.length ? '<div class="gt-glist">' + games.map(gtGameItem).join('') + '</div>' : '<div class="gt-empty">No games yet.</div>';

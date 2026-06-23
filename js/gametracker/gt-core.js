@@ -152,6 +152,12 @@ function gtDeleteChat(id) {
     .then(function(){ showToast('Message deleted.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
+function gtCopySeasonLink(sid) {
+  var url = window.location.origin + window.location.pathname + '#/gametracker/seasons/' + sid;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function(){ showToast('Season link copied!'); }).catch(function(){ window.prompt('Copy this season link:', url); });
+  } else { window.prompt('Copy this season link:', url); }
+}
 function gtCopyGameLink(gid) {
   var url = window.location.origin + window.location.pathname + '#/gametracker/review/' + gid;
   if (navigator.clipboard && navigator.clipboard.writeText) {
