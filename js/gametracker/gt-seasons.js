@@ -5,7 +5,7 @@
 function gtSeason(id) { return GT.seasons.find(function(se){ return se.id === id; }); }
 function gtSeasonEntGames(sid) {
   return GT.games.filter(function(g){ return g.season_id === sid; })
-    .sort(function(a, b){ return gtTsMillis(b.played_at || b.created_at) - gtTsMillis(a.played_at || a.created_at); });
+    .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
 }
 function gtSeasonRecord(games) {
   var r = { w: 0, l: 0, d: 0, gf: 0, ga: 0 };
