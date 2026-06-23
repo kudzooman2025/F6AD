@@ -1,6 +1,6 @@
 // F6AD service worker — makes the app load + run offline (pairs with Firestore's
 // own offline cache for data). Bump VERSION to force a fresh cache after changes.
-var VERSION = 'f6ad-2026-06-23-swr';
+var VERSION = 'f6ad-2026-06-23c-netfirst';
 var SHELL = [
   '/', '/soccer-fun-time.html', '/styles.css', '/manifest.json',
   '/js/01-core.js', '/js/02-auth.js', '/js/03-conditioning.js', '/js/04-sessions.js',
@@ -52,30 +52,16 @@ self.addEventListener('fetch', function(e) {
     return;
   }
 
-  // Same-origin NAVIGATIONS (the HTML shell): network-first so new deploys appear
-  // immediately, falling back to the cached shell when offline.
-  if (req.mode === 'navigate') {
-    e.respondWith(
-      fetch(req).then(function(res) {
-        if (res && res.status === 200) { var cl = res.clone(); caches.open(VERSION).then(function(c){ c.put(req, cl); }); }
-        return res;
-      }).catch(function() {
-        return caches.match(req).then(function(hit) { return hit || caches.match('/soccer-fun-time.html'); });
-      })
-    );
-    return;
-  }
-
-  // Same-origin static assets (CSS / JS / icons / manifest): stale-while-revalidate.
-  // Serve instantly from cache, then refresh the cache in the background for next
-  // load. This is what makes repeat loads near-instant.
+  // Same-origin app files: NETWORK-FIRST (always fresh when online), fall back to
+  // cache only when offline. SPA navigations fall back to the cached app shell.
   e.respondWith(
-    caches.match(req).then(function(hit) {
-      var net = fetch(req).then(function(res) {
-        if (res && res.status === 200) { var cl = res.clone(); caches.open(VERSION).then(function(c){ c.put(req, cl); }); }
-        return res;
-      }).catch(function() { return hit; });
-      return hit || net;
+    fetch(req).then(function(res) {
+      if (res && res.status === 200) { var cl = res.clone(); caches.open(VERSION).then(function(c){ c.put(req, cl); }); }
+      return res;
+    }).catch(function() {
+      return caches.match(req).then(function(hit) {
+        return hit || (req.mode === 'navigate' ? caches.match('/soccer-fun-time.html') : Response.error());
+      });
     })
   );
 });
