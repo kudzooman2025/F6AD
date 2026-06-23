@@ -53,6 +53,12 @@ function gtOpenSeasonForm(sid) {
     '<div class="gm-row"><div><label>Start Date</label><input type="date" id="gt-sf-start" value="' + gtAttr(se ? se.start_date : '') + '"/></div>' +
     '<div><label>End Date</label><input type="date" id="gt-sf-end" value="' + gtAttr(se ? se.end_date : '') + '"/></div></div>' +
     '<label>Players per side</label><input type="number" id="gt-sf-side" min="1" max="11" value="' + (se && se.players_per_side ? se.players_per_side : 11) + '"/>' +
+    '<label>Default Venue (auto-fills new games; editable per game)</label><input type="text" id="gt-sf-venue" list="venue-datalist" onchange="gtFillVenueFields(\'gt-sf-venue\',\'gt-sf-vaddr\',\'gt-sf-vcity\',\'gt-sf-vstate\',\'gt-sf-vzip\')" value="' + gtAttr(se && se.venue ? se.venue : '') + '" placeholder="Kohler Field, Blue Bell"/>' +
+    '<label>Address</label><input type="text" id="gt-sf-vaddr" value="' + gtAttr(se && se.venue_address ? se.venue_address : '') + '"/>' +
+    '<div class="gm-row"><div><label>City</label><input type="text" id="gt-sf-vcity" value="' + gtAttr(se && se.venue_city ? se.venue_city : '') + '"/></div>' +
+    '<div><label>State</label><input type="text" id="gt-sf-vstate" value="' + gtAttr(se && se.venue_state ? se.venue_state : '') + '"/></div>' +
+    '<div><label>Zip</label><input type="text" id="gt-sf-vzip" value="' + gtAttr(se && se.venue_zip ? se.venue_zip : '') + '"/></div></div>' +
+    '<label>Default Field Assignment</label><input type="text" id="gt-sf-field" value="' + gtAttr(se && se.field ? se.field : '') + '" placeholder="Field 11"/>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveSeason(' + (se ? '\'' + se.id + '\'' : 'null') + ')">Save</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
@@ -67,6 +73,12 @@ function gtSaveSeason(sid) {
     start_date: document.getElementById('gt-sf-start').value || '',
     end_date: document.getElementById('gt-sf-end').value || '',
     players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-sf-side').value, 10) || 11)),
+    venue: (document.getElementById('gt-sf-venue') || {}).value || '',
+    venue_address: (document.getElementById('gt-sf-vaddr') || {}).value || '',
+    venue_city: (document.getElementById('gt-sf-vcity') || {}).value || '',
+    venue_state: (document.getElementById('gt-sf-vstate') || {}).value || '',
+    venue_zip: (document.getElementById('gt-sf-vzip') || {}).value || '',
+    field: (document.getElementById('gt-sf-field') || {}).value || '',
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (sid) {
@@ -127,7 +139,7 @@ function gtStartSeasonGame(sid) {
   GT.setup = {
     step: 1,
     home_team: se.team_name || (ros ? ros.name : 'F6AD'),
-    away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '', field: '',
+    away_team: '', f6ad_side: 'home', game_type: 'league', venue: se.venue || '', venue_address: se.venue_address || '', venue_city: se.venue_city || '', venue_state: se.venue_state || '', venue_zip: se.venue_zip || '', field: se.field || '',
     num_periods: 2, period_duration_minutes: 35, players_per_side: se.players_per_side || 11,
     roster_id: se.base_roster_id,
     avail: {}, notes: {}, guests: [], guestIds: {}, kickoff_time: '', game_date: gtTodayStr(),
