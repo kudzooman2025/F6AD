@@ -579,7 +579,7 @@ function gtRsvp(gid, pid) { return GT.rsvp.find(function(r){ return r.game_id ==
 function gtRsvpStatus(gid, pid) { var r = gtRsvp(gid, pid); return r ? r.status : ''; }
 function gtRsvpTally(gid) {
   var t = { in: 0, out: 0, maybe: 0 };
-  gtGameRsvps(gid).forEach(function(r){ if (t[r.status] !== undefined) t[r.status]++; });
+  gtGameRsvps(gid).forEach(function(r){ if (!r.hidden && t[r.status] !== undefined) t[r.status]++; });
   return t;
 }
 function gtRsvpOpen(g) { return g && g.status === 'setup'; }   // frozen once a game kicks off

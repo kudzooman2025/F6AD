@@ -73,7 +73,7 @@ function copyLink(url,btn) {
 function renderSchedule() {
   const today = new Date(); today.setHours(0,0,0,0);
   const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
-    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: 'game', _gt: true };
+    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: 'game', _gt: true, _rsvpId: g.id };
   }).filter(function(e){ return e.date; }) : [];
   const condEvents = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(s){
     return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true };
@@ -85,7 +85,7 @@ function renderSchedule() {
       for (var off = 0; off < 2; off++) {
         var d = new Date(c.start + 'T00:00:00'); d.setDate(d.getDate() + off);
         var ds = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
-        campEvents.push({ name: c.name + ' (Day ' + (off+1) + ')', date: ds, time: '18:00', location: c.location || '', type: 'event', _auto: true });
+        campEvents.push({ name: c.name + ' (Day ' + (off+1) + ')', date: ds, time: '18:00', location: c.location || '', type: 'event', _auto: true, _rsvpId: c.id + '-d' + (off+1) });
       }
     });
   }
@@ -111,6 +111,7 @@ function renderSchedule() {
         <div class="event-name">${ev.name}</div>
         <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
+        ${(!isPast && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}">📋 RSVP / availability</a>` : ''}
       </div>
     </div>`;
   }

@@ -746,3 +746,12 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .rsvp-toggle button.on-out{background:#991b1b;color:#fff}
 .rsvp-note{border:1px solid var(--border-strong);border-radius:8px;padding:5px 9px;font-size:.8rem;font-family:inherit;flex:1;min-width:140px}
 .rsvp-noteshow{font-size:.78rem;color:var(--muted)}
+
+/* RSVP coach remove/restore */
+.rsvp-x{border:none;background:transparent;color:#c0392b;font-weight:800;font-size:.9rem;cursor:pointer;padding:2px 6px;border-radius:6px}
+.rsvp-x:hover{background:#fee2e2}
+.rsvp-removed{margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rsvp-removed-lbl{width:100%;font-size:.74rem;font-weight:700;color:var(--muted)}
+
+/* Schedule: inline RSVP link */
+.sched-rsvp{display:inline-block;margin-top:5px;font-size:.74rem;font-weight:700;color:var(--purple);background:var(--accent-soft);padding:2px 9px;border-radius:999px}
