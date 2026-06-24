@@ -1310,7 +1310,8 @@ function gtRsvpCard(id, title, meta, rosterId, open) {
 }
 function gtRsvpGameCard(g) {
   var meta = gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '');
-  return gtRsvpCard(g.id, gtEsc(gtHomeName(g)) + ' vs ' + gtEsc(gtAwayName(g)), meta, g.roster_id, gtRsvpOpen(g));
+  var ourName = gtOurName(g) || 'FC Delco MLS Next AD U14';   // event team name, default to MLS Next squad
+  return gtRsvpCard(g.id, gtEsc(ourName) + ' vs ' + gtEsc(gtTheirName(g) || 'TBD'), meta, g.roster_id, gtRsvpOpen(g));
 }
 // mini-camp availability (reuses the same RSVP machinery)
 function gtCampRosterId() {
