@@ -5,7 +5,7 @@ function gtListen() {
   var defs = [
     ['gt_rosters', 'rosters'], ['gt_players', 'players'], ['gt_games', 'games'],
     ['gt_events', 'events'], ['gt_subs', 'subs'], ['gt_availability', 'avail'],
-    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons'], ['gt_chat', 'chat']
+    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons'], ['gt_chat', 'chat'], ['gt_rsvp', 'rsvp']
   ];
   defs.forEach(function(def) {
     db.collection(def[0]).onSnapshot(function(snap) {
@@ -91,6 +91,8 @@ function gtRerender(force) {
   else if (page === 'tournaments') gtRenderTournaments(view);
   else if (page === 'tournament') gtRenderTournament(view, GT.route.arg);
   else if (page === 'seasons') { if (GT.route.arg) gtRenderSeasonEntity(view, GT.route.arg); else gtRenderSeasons(view); }
+  else if (page === 'availability') gtRenderAvailability(view);
+  else if (page === 'rsvp') gtRenderRsvp(view, GT.route.arg);
   else if (page === 'roster') gtRenderRoster(view);
   else if (page === 'player') gtRenderPlayerProfile(view, GT.route.arg);
   else gtRenderHome(view);
@@ -101,6 +103,7 @@ function gtRenderNav() {
   var page = GT.route.page;
   var items = [
     ['home', '#/gametracker', '⚽ GameTracker'],
+    ['availability', '#/gametracker/availability', '📋 Availability'],
     ['season', '#/gametracker/season', '📊 Season Stats'],
     ['tournaments', '#/gametracker/tournaments', '🏆 Tournaments'],
     ['seasons', '#/gametracker/seasons', '📅 Seasons'],
@@ -108,7 +111,7 @@ function gtRenderNav() {
     ['site', '#/home', '🏠 Team Site']
   ];
   nav.innerHTML = items.map(function(it) {
-    var active = (it[0] === page) || (it[0] === 'home' && ['live', 'review', 'new'].indexOf(page) >= 0) || (it[0] === 'tournaments' && page === 'tournament');
+    var active = (it[0] === page) || (it[0] === 'home' && ['live', 'review', 'new'].indexOf(page) >= 0) || (it[0] === 'tournaments' && page === 'tournament') || (it[0] === 'availability' && page === 'rsvp');
     return '<a href="' + it[1] + '" class="' + (active && it[0] !== 'site' ? 'active' : '') + '">' + it[2] + '</a>';
   }).join('');
 }

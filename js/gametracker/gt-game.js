@@ -338,8 +338,12 @@ function gtRenderLive(view, gameId) {
     }).join('') + '</div>';
   }
   if (canEdit && g.status === 'setup') {
-    html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
-      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player / Guest</button></div>';
+    var rsvpT = gtRsvpTally(g.id);
+    html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center">' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player / Guest</button>' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtApplyRsvpsToGame(\'' + g.id + '\')">📋 Apply RSVPs</button>' +
+      '<a class="gt-minibtn" style="padding:9px 16px" href="#/gametracker/rsvp/' + g.id + '">View / share RSVPs</a>' +
+      '<span style="font-size:.78rem;color:var(--muted)">' + rsvpT.in + ' in · ' + rsvpT.maybe + ' maybe · ' + rsvpT.out + ' out</span></div>';
   }
   if (canEdit && g.status !== 'setup' && !inPK) {
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
@@ -1232,4 +1236,95 @@ function gtImportPrevGame() {
   });
   showToast('Imported ' + nIn + ' in / ' + nOut + ' out' + (nG ? ' + ' + nG + ' guest' + (nG > 1 ? 's' : '') : '') + ' \u00b7 venue.');
   gtRerender(true);
+}
+
+// ===================== RSVP / AVAILABILITY VIEWS =====================
+function gtRsvpStatusBadge(status) {
+  if (status === 'in') return '<span class="rsvp-b in">In</span>';
+  if (status === 'out') return '<span class="rsvp-b out">Out</span>';
+  if (status === 'maybe') return '<span class="rsvp-b maybe">Maybe</span>';
+  return '<span class="rsvp-b none">—</span>';
+}
+function gtRsvpRosterPlayers() {
+  var rids = {}; gtUpcomingGames().forEach(function(g){ if (g.roster_id) rids[g.roster_id] = true; });
+  var ids = Object.keys(rids);
+  if (!ids.length && gtActiveRoster()) ids = [gtActiveRoster().id];
+  var seen = {}, list = [];
+  ids.forEach(function(rid){ gtRosterPlayers(rid).filter(function(p){ return !p.is_guest; }).forEach(function(p){ if (!seen[p.id]) { seen[p.id] = true; list.push(p); } }); });
+  return list.sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
+}
+function gtRsvpIdentityPicker() {
+  var players = gtRsvpRosterPlayers();
+  var mineCount = gtMyRsvpPlayers().length;
+  var chips = players.map(function(p) {
+    var mine = gtIsMyRsvpPlayer(p.id);
+    return '<button class="rsvp-idchip' + (mine ? ' on' : '') + '" onclick="gtToggleMyRsvpPlayer(\'' + p.id + '\')">' + (mine ? '✓ ' : '') + gtEsc(gtPlayerName(p.id)) + '</button>';
+  }).join('');
+  return '<div class="rsvp-idbox"><div class="rsvp-idlabel">Who are you here for? <span style="font-weight:500;color:var(--muted)">tap your player(s) — saved on this device</span></div>' +
+    '<div class="rsvp-idchips">' + (chips || '<span style="color:var(--muted);font-size:.85rem">No roster players found.</span>') + '</div>' +
+    (mineCount ? '' : '<div class="rsvp-idhint">Pick your player above, then set their status for each game below.</div>') + '</div>';
+}
+function gtRsvpGameCard(g) {
+  var open = gtRsvpOpen(g);
+  var t = gtRsvpTally(g.id);
+  var players = gtRosterPlayers(g.roster_id).filter(function(p){ return !p.is_guest; })
+    .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
+  var meta = gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '');
+  var rows = players.map(function(p) {
+    var st = gtRsvpStatus(g.id, p.id), r = gtRsvp(g.id, p.id), mine = gtIsMyRsvpPlayer(p.id);
+    var ctrl;
+    if (mine && open) {
+      ctrl = '<span class="rsvp-toggle">' +
+        '<button class="' + (st === 'in' ? 'on-in' : '') + '" onclick="gtSetRsvp(\'' + g.id + '\',\'' + p.id + '\',\'in\')">In</button>' +
+        '<button class="' + (st === 'maybe' ? 'on-maybe' : '') + '" onclick="gtSetRsvp(\'' + g.id + '\',\'' + p.id + '\',\'maybe\')">Maybe</button>' +
+        '<button class="' + (st === 'out' ? 'on-out' : '') + '" onclick="gtSetRsvp(\'' + g.id + '\',\'' + p.id + '\',\'out\')">Out</button></span>';
+    } else { ctrl = gtRsvpStatusBadge(st); }
+    var noteHtml = '';
+    if (mine && open && st) noteHtml = '<input class="rsvp-note" placeholder="Add a note (optional)" value="' + gtAttr(r && r.note || '') + '" onchange="gtSetRsvp(\'' + g.id + '\',\'' + p.id + '\',\'' + st + '\',this.value)"/>';
+    else if (r && r.note) noteHtml = '<span class="rsvp-noteshow">“' + gtEsc(r.note) + '”</span>';
+    return '<div class="rsvp-row' + (mine ? ' mine' : '') + '">' +
+      '<span class="rsvp-name">' + (p.jersey_number != null ? '<b>#' + p.jersey_number + '</b> ' : '') + gtEsc(gtPlayerName(p.id)) + (mine ? ' <span class="rsvp-you">you</span>' : '') + '</span>' +
+      ctrl + noteHtml + '</div>';
+  }).join('');
+  return '<div class="rsvp-card">' +
+    '<div class="rsvp-ghead"><span class="rsvp-gteams">' + gtEsc(gtHomeName(g)) + ' vs ' + gtEsc(gtAwayName(g)) + '</span>' +
+    '<a class="gt-minibtn" style="padding:4px 10px;font-size:.72rem" onclick="gtCopyRsvpLink(\'' + g.id + '\')">🔗 RSVP link</a></div>' +
+    '<div class="rsvp-gmeta">' + meta + '</div>' +
+    '<div class="rsvp-tally"><span class="rsvp-b in">' + t.in + ' in</span><span class="rsvp-b maybe">' + t.maybe + ' maybe</span><span class="rsvp-b out">' + t.out + ' out</span>' + (open ? '' : '<span class="rsvp-locked">· closed (kicked off)</span>') + '</div>' +
+    '<div class="rsvp-rows">' + rows + '</div></div>';
+}
+function gtRenderAvailability(view) {
+  var games = gtUpcomingGames();
+  var html = '<div class="gt-title">📋 Availability</div>' +
+    '<div class="gt-sub">Let the coaches know in advance which games your player can make.</div>' +
+    gtRsvpIdentityPicker();
+  html += games.length ? games.map(gtRsvpGameCard).join('') : '<div class="gt-empty">No upcoming games scheduled yet.</div>';
+  view.innerHTML = html;
+}
+function gtRenderRsvp(view, gid) {
+  var g = gtGame(gid);
+  if (!g) { view.innerHTML = GT.loaded.games ? '<div class="gt-empty">Game not found. <a href="#/gametracker/availability">See all upcoming games</a></div>' : '<div class="gt-empty">Loading…</div>'; return; }
+  var html = '<div class="gt-title">📋 RSVP</div>' +
+    '<div class="gt-sub">Mark your player’s availability for this game.</div>' +
+    gtRsvpIdentityPicker() + gtRsvpGameCard(g) +
+    '<div style="margin-top:16px"><a class="gt-minibtn" href="#/gametracker/availability">← All upcoming games</a></div>';
+  view.innerHTML = html;
+}
+
+function gtApplyRsvpsToGame(gid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var rsvps = gtGameRsvps(gid);
+  if (!rsvps.length) { showToast('No RSVPs yet for this game.'); return; }
+  var nOut = rsvps.filter(function(r){ return r.status === 'out'; }).length;
+  if (!confirm('Apply ' + rsvps.length + ' RSVP response(s)? Players marked Out (' + nOut + ') will be set unavailable; In/Maybe set available. You can still adjust by hand.')) return;
+  var batch = db.batch();
+  rsvps.forEach(function(r) {
+    var p = gtP(r.player_id); if (!p) return;
+    var avail = r.status !== 'out';
+    var ae = gtGameAvailEntry(gid, r.player_id);
+    if (ae) batch.set(db.collection('gt_availability').doc(ae.id), { available: avail, scratched: false }, { merge: true });
+    else batch.set(db.collection('gt_availability').doc(), { game_id: gid, player_id: r.player_id, available: avail, started: false, start_position: '', notes: avail ? '' : 'RSVP: out', created_at: firebase.firestore.FieldValue.serverTimestamp() });
+  });
+  batch.commit().then(function(){ showToast('RSVPs applied to availability ✓'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }

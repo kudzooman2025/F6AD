@@ -3,7 +3,7 @@
 // gt_rosters, gt_players, gt_games, gt_availability, gt_events, gt_subs
 
 var GT = {
-  rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [], chat: [],
+  rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [], chat: [], rsvp: [],
   loaded: {},
   listening: false,
   route: { page: 'home', arg: null },
@@ -151,6 +151,12 @@ function gtDeleteChat(id) {
   db.collection('gt_chat').doc(id).delete()
     .then(function(){ showToast('Message deleted.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtCopyRsvpLink(gid) {
+  var url = window.location.origin + window.location.pathname + '#/gametracker/rsvp/' + gid;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function(){ showToast('RSVP link copied!'); }).catch(function(){ window.prompt('Copy this RSVP link:', url); });
+  } else { window.prompt('Copy this RSVP link:', url); }
 }
 function gtCopySeasonLink(sid) {
   var url = window.location.origin + window.location.pathname + '#/gametracker/seasons/' + sid;
@@ -561,4 +567,41 @@ function gtManDownHtml(g) {
   if (our) html += '<span class="gt-mandown">🟥 ' + gtEsc(gtOurName(g)) + ' down ' + (our > 1 ? ('×' + our) : 'a player') + '</span>';
   if (their) html += '<span class="gt-mandown">🟥 ' + gtEsc(gtTheirName(g)) + ' down ' + (their > 1 ? ('×' + their) : 'a player') + '</span>';
   return html + '</div>';
+}
+
+// ===================== RSVP (advance attendance) =====================
+function gtUpcomingGames() {
+  return GT.games.filter(function(g){ return g.status !== 'complete'; })
+    .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
+}
+function gtGameRsvps(gid) { return GT.rsvp.filter(function(r){ return r.game_id === gid; }); }
+function gtRsvp(gid, pid) { return GT.rsvp.find(function(r){ return r.game_id === gid && r.player_id === pid; }); }
+function gtRsvpStatus(gid, pid) { var r = gtRsvp(gid, pid); return r ? r.status : ''; }
+function gtRsvpTally(gid) {
+  var t = { in: 0, out: 0, maybe: 0 };
+  gtGameRsvps(gid).forEach(function(r){ if (t[r.status] !== undefined) t[r.status]++; });
+  return t;
+}
+function gtRsvpOpen(g) { return g && g.status === 'setup'; }   // frozen once a game kicks off
+function gtSetRsvp(gid, pid, status, note) {
+  var id = gid + '_' + pid;
+  var data = {
+    game_id: gid, player_id: pid, status: status, note: note || '',
+    updated_by: gtPlayerName(pid), updated_at: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  return db.collection('gt_rsvp').doc(id).set(data, { merge: true })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Which players this device manages (chosen from the roster, stored locally)
+function gtMyRsvpPlayers() {
+  try { return JSON.parse(localStorage.getItem('gt_rsvp_players') || '[]') || []; } catch (e) { return []; }
+}
+function gtSetMyRsvpPlayers(arr) {
+  try { localStorage.setItem('gt_rsvp_players', JSON.stringify(arr || [])); } catch (e) {}
+}
+function gtIsMyRsvpPlayer(pid) { return gtMyRsvpPlayers().indexOf(pid) >= 0; }
+function gtToggleMyRsvpPlayer(pid) {
+  var arr = gtMyRsvpPlayers(), i = arr.indexOf(pid);
+  if (i >= 0) arr.splice(i, 1); else arr.push(pid);
+  gtSetMyRsvpPlayers(arr); gtRerender(true);
 }

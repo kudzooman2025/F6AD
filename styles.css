@@ -714,3 +714,35 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 
 /* GameTracker: disabled control buttons (e.g. PK turn enforcement) */
 .gt-cbtn:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.3)}
+
+/* GameTracker: RSVP / availability */
+.rsvp-idbox{background:#fff;border:1px solid var(--border);border-radius:var(--card-radius);padding:14px 16px;margin-bottom:16px}
+.rsvp-idlabel{font-weight:700;font-size:.9rem;margin-bottom:8px}
+.rsvp-idchips{display:flex;flex-wrap:wrap;gap:8px}
+.rsvp-idchip{border:1px solid var(--border-strong);background:#fff;border-radius:999px;padding:7px 13px;font-size:.84rem;font-weight:600;cursor:pointer}
+.rsvp-idchip.on{background:var(--purple);border-color:var(--purple);color:#fff}
+.rsvp-idhint{font-size:.78rem;color:var(--muted);margin-top:8px}
+.rsvp-card{background:#fff;border:1px solid var(--border);border-radius:var(--card-radius);padding:14px 16px;margin-bottom:14px}
+.rsvp-ghead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.rsvp-gteams{font-family:'Bricolage Grotesque','Hanken Grotesk',sans-serif;font-weight:700;font-size:1.05rem}
+.rsvp-gmeta{font-size:.8rem;color:var(--muted);margin:2px 0 8px}
+.rsvp-tally{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.rsvp-locked{font-size:.74rem;color:var(--muted)}
+.rsvp-b{font-size:.74rem;font-weight:800;padding:2px 9px;border-radius:999px}
+.rsvp-b.in{background:#E7F5EE;color:#177A4E}
+.rsvp-b.maybe{background:#FBF1E3;color:#9A6A1E}
+.rsvp-b.out{background:#fee2e2;color:#991b1b}
+.rsvp-b.none{background:#f0f0f3;color:#8A8993}
+.rsvp-rows{display:flex;flex-direction:column;gap:6px}
+.rsvp-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px;border-radius:9px}
+.rsvp-row.mine{background:var(--accent-soft)}
+.rsvp-name{flex:1;min-width:120px;font-size:.88rem}
+.rsvp-you{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);background:#fff;border:1px solid var(--purple);border-radius:999px;padding:1px 6px;margin-left:4px}
+.rsvp-toggle{display:inline-flex;border:1px solid var(--border-strong);border-radius:8px;overflow:hidden}
+.rsvp-toggle button{border:none;background:#fff;padding:6px 12px;font-size:.8rem;font-weight:700;cursor:pointer;border-left:1px solid var(--border)}
+.rsvp-toggle button:first-child{border-left:none}
+.rsvp-toggle button.on-in{background:#177A4E;color:#fff}
+.rsvp-toggle button.on-maybe{background:#9A6A1E;color:#fff}
+.rsvp-toggle button.on-out{background:#991b1b;color:#fff}
+.rsvp-note{border:1px solid var(--border-strong);border-radius:8px;padding:5px 9px;font-size:.8rem;font-family:inherit;flex:1;min-width:140px}
+.rsvp-noteshow{font-size:.78rem;color:var(--muted)}
