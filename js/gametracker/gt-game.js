@@ -1291,7 +1291,7 @@ function gtRsvpCard(id, title, meta, rosterId, open) {
     var noteHtml = '';
     if (mine && open && st) noteHtml = '<input class="rsvp-note" placeholder="Add a note (optional)" value="' + gtAttr(r && r.note || '') + '" onchange="gtSetRsvp(\'' + id + '\',\'' + p.id + '\',\'' + st + '\',this.value)"/>';
     else if (r && r.note) noteHtml = '<span class="rsvp-noteshow">“' + gtEsc(r.note) + '”</span>';
-    var coachX = canEd ? '<button class="rsvp-x" title="Remove from this event" onclick="gtSetRsvpHidden(\'' + id + '\',\'' + p.id + '\',true)">✕</button>' : '';
+    var coachX = canEd ? '<button class="rsvp-x" title="Remove from this event" onclick="gtRsvpRemovePlayer(\'' + id + '\',\'' + p.id + '\')">✕</button>' : '';
     return '<div class="rsvp-row' + (mine ? ' mine' : '') + '">' +
       '<span class="rsvp-name">' + (p.jersey_number != null ? '<b>#' + p.jersey_number + '</b> ' : '') + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + (mine ? ' <span class="rsvp-you">you</span>' : '') + '</span>' +
       ctrl + noteHtml + coachX + '</div>';
@@ -1299,7 +1299,7 @@ function gtRsvpCard(id, title, meta, rosterId, open) {
   var hiddenHtml = '';
   if (canEd && hidden.length) {
     hiddenHtml = '<div class="rsvp-removed"><div class="rsvp-removed-lbl">Removed from this event — tap to add back:</div>' +
-      hidden.map(function(p){ return '<button class="gt-minibtn" onclick="gtSetRsvpHidden(\'' + id + '\',\'' + p.id + '\',false)">↩ ' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</button>'; }).join('') + '</div>';
+      hidden.map(function(p){ return '<button class="gt-minibtn" onclick="gtRsvpRestorePlayer(\'' + id + '\',\'' + p.id + '\')">↩ ' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</button>'; }).join('') + '</div>';
   }
   return '<div class="rsvp-card">' +
     '<div class="rsvp-ghead"><span class="rsvp-gteams">' + title + '</span>' +
@@ -1388,4 +1388,65 @@ function gtSetRsvpHidden(id, pid, hidden) {
   if (!gtCanEdit()) { showToast('Coach sign-in required.'); return; }
   db.collection('gt_rsvp').doc(id + '_' + pid).set({ game_id: id, player_id: pid, hidden: !!hidden, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+
+// ---- RSVP remove/restore with optional bulk-apply across season/tournament/camp ----
+function gtRsvpScope(id) {
+  var g = gtGame(id);
+  if (g) {
+    if (g.tournament_id) {
+      var t = gtTournament(g.tournament_id);
+      var ids = GT.games.filter(function(x){ return x.tournament_id === g.tournament_id; }).map(function(x){ return x.id; });
+      return { ids: ids, label: 'all ' + ids.length + ' games in ' + ((t && t.name) || 'this tournament') };
+    }
+    if (g.season_id) {
+      var se = gtSeason(g.season_id);
+      var sids = GT.games.filter(function(x){ return x.season_id === g.season_id; }).map(function(x){ return x.id; });
+      return { ids: sids, label: 'all ' + sids.length + ' games in ' + ((se && se.name) || 'this season') };
+    }
+    return { ids: [id], label: '' };
+  }
+  var day = gtCampDay(id);
+  if (day) {
+    var campId = id.replace(/-d\d+$/, '');
+    var cids = gtCampDays().filter(function(d){ return d.id.indexOf(campId + '-d') === 0; }).map(function(d){ return d.id; });
+    return { ids: cids, label: 'both days of this camp' };
+  }
+  return { ids: [id], label: '' };
+}
+function gtSetRsvpHiddenAll(ids, pid, hidden) {
+  if (!gtCanEdit()) { showToast('Coach sign-in required.'); return; }
+  var batch = db.batch();
+  ids.forEach(function(eid){
+    batch.set(db.collection('gt_rsvp').doc(eid + '_' + pid),
+      { game_id: eid, player_id: pid, hidden: !!hidden, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+  });
+  batch.commit().then(function(){ showToast(hidden ? 'Removed from all events ✓' : 'Added back to all events ✓'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtSetRsvpHiddenScope(id, pid, hidden) {
+  if (!gtCanEdit()) return;
+  gtSetRsvpHiddenAll(gtRsvpScope(id).ids, pid, hidden);
+}
+function gtRsvpRemovePlayer(id, pid) {
+  if (!gtCanEdit()) return;
+  var sc = gtRsvpScope(id), nm = gtEsc(gtPlayerName(pid));
+  if (sc.ids.length <= 1) { gtSetRsvpHidden(id, pid, true); return; }
+  gtOpenModal('<h3>Remove ' + nm + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.9rem;line-height:1.5;margin-bottom:12px">Remove ' + nm + ' from the availability list for…</p>' +
+    '<div class="gt-pk-controls" style="flex-direction:column">' +
+    '<button class="gt-cbtn gt-cbtn-dark" onclick="gtCloseModal();gtSetRsvpHidden(\'' + id + '\',\'' + pid + '\',true)">Just this event</button>' +
+    '<button class="gt-cbtn gt-cbtn-danger" onclick="gtCloseModal();gtSetRsvpHiddenScope(\'' + id + '\',\'' + pid + '\',true)">Apply to ' + gtEsc(sc.label) + '</button>' +
+    '</div>');
+}
+function gtRsvpRestorePlayer(id, pid) {
+  if (!gtCanEdit()) return;
+  var sc = gtRsvpScope(id), nm = gtEsc(gtPlayerName(pid));
+  if (sc.ids.length <= 1) { gtSetRsvpHidden(id, pid, false); return; }
+  gtOpenModal('<h3>Add back ' + nm + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.9rem;line-height:1.5;margin-bottom:12px">Add ' + nm + ' back to the availability list for…</p>' +
+    '<div class="gt-pk-controls" style="flex-direction:column">' +
+    '<button class="gt-cbtn gt-cbtn-dark" onclick="gtCloseModal();gtSetRsvpHidden(\'' + id + '\',\'' + pid + '\',false)">Just this event</button>' +
+    '<button class="gt-cbtn gt-cbtn-go" onclick="gtCloseModal();gtSetRsvpHiddenScope(\'' + id + '\',\'' + pid + '\',false)">Apply to ' + gtEsc(sc.label) + '</button>' +
+    '</div>');
 }
