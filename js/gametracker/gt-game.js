@@ -1336,16 +1336,24 @@ function gtCampDayOpen(day) { try { return new Date(day.date + 'T23:59:59').getT
 function gtUpcomingCampDays() { return gtCampDays().filter(gtCampDayOpen); }
 function gtRsvpCampCard(day) { return gtRsvpCard(day.id, day.label, day.meta, gtCampRosterId(), gtCampDayOpen(day)); }
 function gtRenderAvailability(view) {
-  var games = gtUpcomingGames();
-  var camps = gtUpcomingCampDays();
+  var filter = GT.rsvpFilter || 'all';
+  var items = [];
+  gtUpcomingGames().forEach(function(g){ items.push({ kind: 'game', ms: gtGameSortMs(g), html: gtRsvpGameCard(g) }); });
+  gtUpcomingCampDays().forEach(function(d){ items.push({ kind: 'camp', ms: new Date(d.date + 'T18:00:00').getTime(), html: gtRsvpCampCard(d) }); });
+  items.sort(function(a, b){ return a.ms - b.ms; });
+  var filtered = (filter === 'all') ? items : items.filter(function(it){ return it.kind === filter; });
+  var chips = [['all', 'All'], ['game', 'Games'], ['camp', 'Mini Camps']].map(function(c){
+    return '<button class="sched-chip' + (filter === c[0] ? ' active' : '') + '" onclick="gtSetRsvpFilter(\'' + c[0] + '\')">' + c[1] + '</button>';
+  }).join('');
   var html = '<div class="gt-title">📋 Availability</div>' +
     '<div class="gt-sub">Let the coaches know in advance which games & camps your player can make.</div>' +
-    gtRsvpIdentityPicker();
-  if (games.length) html += '<div class="section-title" style="margin:18px 0 12px">⚽ Upcoming Games</div>' + games.map(gtRsvpGameCard).join('');
-  if (camps.length) html += '<div class="section-title" style="margin:18px 0 12px">🏕️ Mini Camps</div>' + camps.map(gtRsvpCampCard).join('');
-  if (!games.length && !camps.length) html += '<div class="gt-empty">Nothing upcoming to RSVP for yet.</div>';
+    gtRsvpIdentityPicker() +
+    '<div class="sched-filters">' + chips + '</div>' +
+    (filtered.length ? filtered.map(function(it){ return it.html; }).join('')
+      : '<div class="gt-empty">Nothing upcoming' + (filter !== 'all' ? ' in this category' : ' to RSVP for') + '.</div>');
   view.innerHTML = html;
 }
+function gtSetRsvpFilter(f) { GT.rsvpFilter = f; gtRerender(true); }
 function gtRenderRsvp(view, gid) {
   var g = gtGame(gid), card = null, what = 'this game';
   if (g) card = gtRsvpGameCard(g);
