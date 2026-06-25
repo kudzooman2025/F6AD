@@ -103,8 +103,9 @@ function renderCondGrid() {
     var log = sessionLogData[s.id];
     var isLogged = log && log.completed;
 
+    var canceled = typeof canceledEvents !== 'undefined' && !!canceledEvents['cond_' + s.id];
     var card = document.createElement('div');
-    card.className = 'cond-card' + (isMine ? ' signed-up' : '');
+    card.className = 'cond-card' + (isMine ? ' signed-up' : '') + (canceled ? ' cond-canceled' : '');
 
     var dayDiv = document.createElement('div'); dayDiv.className = 'cond-day'; dayDiv.textContent = s.day;
     var dateDiv = document.createElement('div'); dateDiv.className = 'cond-date'; dateDiv.textContent = s.date;
@@ -117,6 +118,7 @@ function renderCondGrid() {
       badge.textContent = '✅ Logged';
       card.appendChild(badge);
     }
+    if(canceled) { var cb = document.createElement('span'); cb.className = 'cond-cancel-badge'; cb.textContent = 'Canceled'; card.appendChild(cb); }
 
     var countDiv = document.createElement('div'); countDiv.className = 'cond-count';
     countDiv.textContent = attendees.length > 0
@@ -187,8 +189,9 @@ function makeCondCard(s, myName, isPast) {
   var log = sessionLogData[s.id];
   var isLogged = log && log.completed;
 
+  var canceled = typeof canceledEvents !== 'undefined' && !!canceledEvents['cond_' + s.id];
   var card = document.createElement('div');
-  card.className = 'cond-card' + (isMine ? ' signed-up' : '');
+  card.className = 'cond-card' + (isMine ? ' signed-up' : '') + (canceled ? ' cond-canceled' : '');
   if(isPast) card.style.cssText = 'pointer-events:none;filter:grayscale(.3)';
 
   var dayDiv = document.createElement('div'); dayDiv.className = 'cond-day'; dayDiv.textContent = s.day;
@@ -202,6 +205,7 @@ function makeCondCard(s, myName, isPast) {
     badge.textContent = '✅ Logged';
     card.appendChild(badge);
   }
+  if(canceled) { var cb = document.createElement('span'); cb.className = 'cond-cancel-badge'; cb.textContent = 'Canceled'; card.appendChild(cb); }
 
   var countDiv = document.createElement('div'); countDiv.className = 'cond-count';
   countDiv.textContent = attendees.length > 0
@@ -316,6 +320,7 @@ function renderCampGrid() {
   grid.innerHTML = MINI_CAMPS.map(function(camp) {
     var attendees = condData[camp.id] || [];
     var isMine = myName && attendees.indexOf(myName) !== -1;
+    var campCanceled = typeof canceledEvents !== 'undefined' && !!(canceledEvents['camp_' + camp.id + '-d1'] || canceledEvents['camp_' + camp.id + '-d2']);
     var chipsHtml = attendees.map(function(n) {
       var mine = myName && n === myName;
       return '<span class="cond-attendee-chip' + (mine?' mine':'') + '">'
@@ -323,8 +328,9 @@ function renderCampGrid() {
         + (mine ? ' <button onclick="condLeave(\''+camp.id+'\',\''+n.replace(/\'/g,'')+'\')" title="Remove me">✕</button>' : '')
         + '</span>';
     }).join('');
-    return '<div class="cond-camp-card">'
+    return '<div class="cond-camp-card' + (campCanceled ? ' cond-canceled' : '') + '">'
       + '<span class="cond-camp-badge">Mini Camp</span>'
+      + (campCanceled ? '<span class="cond-cancel-badge">Canceled</span>' : '')
       + '<div class="cond-camp-name">'+camp.name+'</div>'
       + '<div class="cond-camp-dates">📅 '+camp.dates+'</div>'
       + '<div class="cond-camp-details">'

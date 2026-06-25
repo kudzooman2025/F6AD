@@ -600,6 +600,8 @@ function startListeners() {
     canceledEvents = {};
     snap.forEach(d => { canceledEvents[d.id] = true; });
     if (typeof renderSchedule === 'function') renderSchedule();
+    if (typeof renderCondGrid === 'function') renderCondGrid();
+    if (typeof renderCamps === 'function') renderCamps();
     if (typeof gtRerender === 'function') gtRerender();
   });
   db.collection('schedule').onSnapshot(snap => {

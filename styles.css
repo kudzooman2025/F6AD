@@ -767,3 +767,9 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-st-canceled{background:#fee2e2;color:#991b1b}
 .gt-gitem.canceled .gi-teams{text-decoration:line-through;color:var(--muted)}
 .gt-cancel-banner{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:12px;padding:10px 14px;font-weight:800;margin-bottom:14px;text-align:center}
+
+/* Conditioning: canceled sessions/camps */
+.cond-canceled{opacity:.72}
+.cond-canceled .cond-date,.cond-canceled .cond-camp-name{text-decoration:line-through;color:var(--muted)}
+.cond-cancel-badge{display:inline-block;background:#fee2e2;color:#991b1b;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:999px;margin:4px 0}
+.cond-canceled .cond-signup-btn{display:none}
