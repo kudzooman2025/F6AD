@@ -11,7 +11,10 @@ jobs:
       - name: Write service account key
         env:
           GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-        run: printf '%s' "$GCP_SA_KEY" > "${{ runner.temp }}/gcp-sa.json"
+        run: |
+          printf '%s' "$GCP_SA_KEY" > "${{ runner.temp }}/gcp-sa.json"
+          echo "credential file bytes: $(wc -c < "${{ runner.temp }}/gcp-sa.json")"
+          python3 -c "import json; d=json.load(open('${{ runner.temp }}/gcp-sa.json')); print('valid JSON | type:', d.get('type'), '| project:', d.get('project_id'), '| client_email set:', bool(d.get('client_email')))" || echo "!! credential file is empty or not valid JSON — check the GCP_SA_KEY secret"
       - name: Deploy
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-sa.json
