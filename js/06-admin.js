@@ -73,10 +73,10 @@ function copyLink(url,btn) {
 function renderSchedule() {
   const today = new Date(); today.setHours(0,0,0,0);
   const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
-    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: 'game', _gt: true, _rsvpId: g.id };
+    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: 'game', _gt: true, _rsvpId: g.id, _cancelId: 'game_' + g.id };
   }).filter(function(e){ return e.date; }) : [];
   const condEvents = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(s){
-    return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true };
+    return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true, _cancelId: 'cond_' + s.id };
   }) : [];
   const campEvents = [];
   if (typeof MINI_CAMPS !== 'undefined') {
@@ -85,12 +85,12 @@ function renderSchedule() {
       for (var off = 0; off < 2; off++) {
         var d = new Date(c.start + 'T00:00:00'); d.setDate(d.getDate() + off);
         var ds = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
-        campEvents.push({ name: c.name + ' (Day ' + (off+1) + ')', date: ds, time: '18:00', location: c.location || '', type: 'event', _auto: true, _rsvpId: c.id + '-d' + (off+1) });
+        campEvents.push({ name: c.name + ' (Day ' + (off+1) + ')', date: ds, time: '18:00', location: c.location || '', type: 'event', _auto: true, _rsvpId: c.id + '-d' + (off+1), _cancelId: 'camp_' + c.id + '-d' + (off+1) });
       }
     });
   }
   const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
-  const sorted = [...scheduleItems, ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
+  const sorted = [...scheduleItems.map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
   const vis = (typeof scheduleFilter !== 'undefined' && scheduleFilter !== 'all') ? sorted.filter(ev => ev.type === scheduleFilter) : sorted;
   const upcoming = vis.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
   const past     = vis.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
@@ -105,13 +105,16 @@ function renderSchedule() {
     const month = d.toLocaleString('en-US',{month:'short'});
     const day = d.getDate();
     const time = ev.time ? (() => { const [h,m]=ev.time.split(':'); const hr=+h; return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; })() : '';
-    return `<div class="event-item${isPast?' past':''}">
+    const canceled = !!(ev._cancelId && typeof canceledEvents !== 'undefined' && canceledEvents[ev._cancelId]);
+    const staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
+    return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}">
       <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
       <div class="event-info">
-        <div class="event-name">${ev.name}</div>
+        <div class="event-name"><span class="evn-text">${ev.name}</span>${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
         <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
-        ${(!isPast && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}">📋 RSVP / availability</a>` : ''}
+        ${(!isPast && !canceled && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}">📋 RSVP / availability</a>` : ''}
+        ${(staff && ev._cancelId) ? `<button class="sched-cancel" onclick="cancelEvent('${ev._cancelId}', ${canceled?'false':'true'})">${canceled?'↩ Un-cancel':'🚫 Mark canceled'}</button>` : ''}
       </div>
     </div>`;
   }
@@ -1081,3 +1084,13 @@ function showToast(msg) {
   setTimeout(function(){t.classList.remove('show');},2800);
 }
 
+function cancelEvent(cancelId, on) {
+  if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Coach/admin sign-in required.'); return; }
+  if (on) {
+    db.collection('cancellations').doc(cancelId).set({ canceled: true, by: (isAdminUnlocked() ? 'Admin' : (coachName || 'Coach')), at: firebase.firestore.FieldValue.serverTimestamp() })
+      .then(function(){ showToast('Event marked canceled.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  } else {
+    db.collection('cancellations').doc(cancelId).delete()
+      .then(function(){ showToast('Cancellation removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  }
+}

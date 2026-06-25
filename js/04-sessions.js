@@ -596,6 +596,11 @@ function startListeners() {
       if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVoteTally();
     });
   });
+  db.collection('cancellations').onSnapshot(snap => {
+    canceledEvents = {};
+    snap.forEach(d => { canceledEvents[d.id] = true; });
+    if (typeof renderSchedule === 'function') renderSchedule();
+  });
   db.collection('schedule').onSnapshot(snap => {
     scheduleItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderSchedule();
