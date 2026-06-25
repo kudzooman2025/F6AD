@@ -600,6 +600,7 @@ function startListeners() {
     canceledEvents = {};
     snap.forEach(d => { canceledEvents[d.id] = true; });
     if (typeof renderSchedule === 'function') renderSchedule();
+    if (typeof gtRerender === 'function') gtRerender();
   });
   db.collection('schedule').onSnapshot(snap => {
     scheduleItems=snap.docs.map(d=>({id:d.id,...d.data()}));

@@ -605,3 +605,6 @@ function gtToggleMyRsvpPlayer(pid) {
   if (i >= 0) arr.splice(i, 1); else arr.push(pid);
   gtSetMyRsvpPlayers(arr); gtRerender(true);
 }
+
+function gtGameCanceled(g) { return !!(g && typeof canceledEvents !== 'undefined' && canceledEvents['game_' + g.id]); }
+function gtCampDayCanceled(dayId) { return !!(typeof canceledEvents !== 'undefined' && canceledEvents['camp_' + dayId]); }

@@ -257,7 +257,7 @@ function gtRenderLive(view, gameId) {
   if (g.status === 'complete') { gtGo('/gametracker/review/' + g.id); return; }
   var canEdit = gtCanEdit();
   var inPK = gtIsPK(g), inOT = gtIsOT(g);
-  var html = gtLockBanner();
+  var html = gtLockBanner() + (gtGameCanceled(g) ? '<div class="gt-cancel-banner">🚫 This game has been canceled.</div>' : '');
   // clock bar
   html += '<div class="gt-clockbar">' +
     '<div class="gt-period" id="gt-period-label">' + gtEsc(gtPeriodLabel(g)) + '</div>' +
@@ -1273,7 +1273,8 @@ function gtRsvpIdentityPicker() {
     '<div class="rsvp-idchips">' + (chips || '<span style="color:var(--muted);font-size:.85rem">No players found.</span>') + '</div>' +
     (mineCount ? '' : '<div class="rsvp-idhint">Pick your player above, then set their status for each game below.</div>') + '</div>';
 }
-function gtRsvpCard(id, title, meta, rosterId, open) {
+function gtRsvpCard(id, title, meta, rosterId, open, canceled) {
+  if (canceled) open = false;
   var t = gtRsvpTally(id);
   var canEd = gtCanEdit();
   var all = gtRsvpPlayersFor(rosterId);
@@ -1302,7 +1303,7 @@ function gtRsvpCard(id, title, meta, rosterId, open) {
       hidden.map(function(p){ return '<button class="gt-minibtn" onclick="gtRsvpRestorePlayer(\'' + id + '\',\'' + p.id + '\')">↩ ' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</button>'; }).join('') + '</div>';
   }
   return '<div class="rsvp-card">' +
-    '<div class="rsvp-ghead"><span class="rsvp-gteams">' + title + '</span>' +
+    '<div class="rsvp-ghead"><span class="rsvp-gteams">' + title + (canceled ? ' <span class="cancel-badge">Canceled</span>' : '') + '</span>' +
     '<a class="gt-minibtn" style="padding:4px 10px;font-size:.72rem" onclick="gtCopyRsvpLink(\'' + id + '\')">🔗 RSVP link</a></div>' +
     '<div class="rsvp-gmeta">' + meta + '</div>' +
     '<div class="rsvp-tally"><span class="rsvp-b in">' + t.in + ' in</span><span class="rsvp-b maybe">' + t.maybe + ' maybe</span><span class="rsvp-b out">' + t.out + ' out</span>' + (canEd ? ' <span style="font-size:.72rem;color:var(--muted)">· ✕ to remove a player</span>' : '') + (open ? '' : '<span class="rsvp-locked">· closed</span>') + '</div>' +
@@ -1311,7 +1312,7 @@ function gtRsvpCard(id, title, meta, rosterId, open) {
 function gtRsvpGameCard(g) {
   var meta = gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '');
   var ourName = gtOurName(g) || 'FC Delco MLS Next AD U14';   // event team name, default to MLS Next squad
-  return gtRsvpCard(g.id, gtEsc(ourName) + ' vs ' + gtEsc(gtTheirName(g) || 'TBD'), meta, g.roster_id, gtRsvpOpen(g));
+  return gtRsvpCard(g.id, gtEsc(ourName) + ' vs ' + gtEsc(gtTheirName(g) || 'TBD'), meta, g.roster_id, gtRsvpOpen(g), gtGameCanceled(g));
 }
 // mini-camp availability (reuses the same RSVP machinery)
 function gtCampRosterId() {
@@ -1335,7 +1336,7 @@ function gtCampDays() {
 function gtCampDay(id) { return gtCampDays().find(function(d){ return d.id === id; }); }
 function gtCampDayOpen(day) { try { return new Date(day.date + 'T23:59:59').getTime() >= Date.now(); } catch (e) { return true; } }
 function gtUpcomingCampDays() { return gtCampDays().filter(gtCampDayOpen); }
-function gtRsvpCampCard(day) { return gtRsvpCard(day.id, day.label, day.meta, gtCampRosterId(), gtCampDayOpen(day)); }
+function gtRsvpCampCard(day) { return gtRsvpCard(day.id, day.label, day.meta, gtCampRosterId(), gtCampDayOpen(day), gtCampDayCanceled(day.id)); }
 function gtRenderAvailability(view) {
   var filter = GT.rsvpFilter || 'all';
   var items = [];

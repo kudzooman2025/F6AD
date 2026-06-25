@@ -8,7 +8,7 @@ function gtRenderReview(view, gameId) {
   var canEdit = gtCanEdit();
   var events = gtGameEvents(g.id);
   var res = g.status === 'complete' ? gtResult(g) : null;
-  var html = gtLockBanner() +
+  var html = gtLockBanner() + (gtGameCanceled(g) ? '<div class="gt-cancel-banner">🚫 This game has been canceled.</div>' : '') +
     '<div class="gt-card" style="text-align:center">' +
     '<div style="font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">' + gtEsc(g.game_type || 'game') + ' · ' + gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.players_per_side ? ' · ' + g.players_per_side + 'v' + g.players_per_side : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '') + '</div>' +
     ([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).length ? '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">📍 ' + gtEsc([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).join(', ')) + '</div>' : '') +
