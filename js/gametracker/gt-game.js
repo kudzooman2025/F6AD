@@ -1263,8 +1263,10 @@ function gtRsvpRosterPlayers() {
   return list.filter(function(p){ return !gtRsvpHiddenEverywhere(p.id); })
     .sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
 }
-function gtRsvpIdentityPicker() {
-  var players = gtRsvpRosterPlayers();
+function gtRsvpIdentityPicker(rosterId, eventId) {
+  var players = eventId
+    ? gtRsvpPlayersFor(rosterId).filter(function(p){ var r = gtRsvp(eventId, p.id); return !(r && r.hidden); })
+    : gtRsvpRosterPlayers();
   var mineCount = gtMyRsvpPlayers().length;
   var chips = players.map(function(p) {
     var mine = gtIsMyRsvpPlayer(p.id);
@@ -1358,13 +1360,13 @@ function gtRenderAvailability(view) {
 }
 function gtSetRsvpFilter(f) { GT.rsvpFilter = f; gtRerender(true); }
 function gtRenderRsvp(view, gid) {
-  var g = gtGame(gid), card = null, what = 'this game';
-  if (g) card = gtRsvpGameCard(g);
-  else { var day = gtCampDay(gid); if (day) { card = gtRsvpCampCard(day); what = 'this camp day'; } }
+  var g = gtGame(gid), card = null, what = 'this game', rosterId = null;
+  if (g) { card = gtRsvpGameCard(g); rosterId = g.roster_id; }
+  else { var day = gtCampDay(gid); if (day) { card = gtRsvpCampCard(day); what = 'this camp day'; rosterId = gtCampRosterId(); } }
   if (!card) { view.innerHTML = GT.loaded.games ? '<div class="gt-empty">Not found. <a href="#/gametracker/availability">See all upcoming</a></div>' : '<div class="gt-empty">Loading…</div>'; return; }
   var html = '<div class="gt-title">📋 RSVP</div>' +
     '<div class="gt-sub">Mark your player’s availability for ' + what + '.</div>' +
-    gtRsvpIdentityPicker() + card +
+    gtRsvpIdentityPicker(rosterId, gid) + card +
     '<div style="margin-top:16px"><a class="gt-minibtn" href="#/gametracker/availability">← All upcoming</a></div>';
   view.innerHTML = html;
 }
