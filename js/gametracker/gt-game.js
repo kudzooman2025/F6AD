@@ -1260,7 +1260,8 @@ function gtRsvpRosterPlayers() {
   var seen = {}, list = [];
   ids.forEach(function(rid){ gtRosterPlayers(rid).filter(function(p){ return !p.is_guest; }).forEach(function(p){ if (!seen[p.id]) { seen[p.id] = true; list.push(p); } }); });
   gtGuestPool().forEach(function(p){ if (!seen[p.id]) { seen[p.id] = true; list.push(p); } });
-  return list.sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
+  return list.filter(function(p){ return !gtRsvpHiddenEverywhere(p.id); })
+    .sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
 }
 function gtRsvpIdentityPicker() {
   var players = gtRsvpRosterPlayers();
@@ -1450,4 +1451,12 @@ function gtRsvpRestorePlayer(id, pid) {
     '<button class="gt-cbtn gt-cbtn-dark" onclick="gtCloseModal();gtSetRsvpHidden(\'' + id + '\',\'' + pid + '\',false)">Just this event</button>' +
     '<button class="gt-cbtn gt-cbtn-go" onclick="gtCloseModal();gtSetRsvpHiddenScope(\'' + id + '\',\'' + pid + '\',false)">Apply to ' + gtEsc(sc.label) + '</button>' +
     '</div>');
+}
+
+// A player removed by an admin from ALL upcoming events drops out of the "Who are
+// you here for?" picker (still shown if they're on at least one upcoming event).
+function gtRsvpHiddenEverywhere(pid) {
+  var evs = gtUpcomingGames().map(function(g){ return g.id; }).concat(gtUpcomingCampDays().map(function(d){ return d.id; }));
+  if (!evs.length) return false;
+  return evs.every(function(eid){ var r = gtRsvp(eid, pid); return !!(r && r.hidden); });
 }
