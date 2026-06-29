@@ -1286,14 +1286,14 @@ function gtRsvpCard(id, title, meta, rosterId, open, canceled) {
   var rows = players.map(function(p) {
     var st = gtRsvpStatus(id, p.id), r = gtRsvp(id, p.id), mine = gtIsMyRsvpPlayer(p.id);
     var ctrl;
-    if (mine && open) {
+    if ((mine || canEd) && open) {
       ctrl = '<span class="rsvp-toggle">' +
         '<button class="' + (st === 'in' ? 'on-in' : '') + '" onclick="gtSetRsvp(\'' + id + '\',\'' + p.id + '\',\'in\')">In</button>' +
         '<button class="' + (st === 'maybe' ? 'on-maybe' : '') + '" onclick="gtSetRsvp(\'' + id + '\',\'' + p.id + '\',\'maybe\')">Maybe</button>' +
         '<button class="' + (st === 'out' ? 'on-out' : '') + '" onclick="gtSetRsvp(\'' + id + '\',\'' + p.id + '\',\'out\')">Out</button></span>';
     } else { ctrl = gtRsvpStatusBadge(st); }
     var noteHtml = '';
-    if (mine && open && st) noteHtml = '<input class="rsvp-note" placeholder="Add a note (optional)" value="' + gtAttr(r && r.note || '') + '" onchange="gtSetRsvp(\'' + id + '\',\'' + p.id + '\',\'' + st + '\',this.value)"/>';
+    if ((mine || canEd) && open && st) noteHtml = '<input class="rsvp-note" placeholder="Add a note (optional)" value="' + gtAttr(r && r.note || '') + '" onchange="gtSetRsvp(\'' + id + '\',\'' + p.id + '\',\'' + st + '\',this.value)"/>';
     else if (r && r.note) noteHtml = '<span class="rsvp-noteshow">“' + gtEsc(r.note) + '”</span>';
     var coachX = canEd ? '<button class="rsvp-x" title="Remove from this event" onclick="gtRsvpRemovePlayer(\'' + id + '\',\'' + p.id + '\')">✕</button>' : '';
     return '<div class="rsvp-row' + (mine ? ' mine' : '') + '">' +
