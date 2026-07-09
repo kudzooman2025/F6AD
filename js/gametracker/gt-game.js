@@ -488,6 +488,8 @@ function gtOpenGameEdit(gid) {
     '<div class="gm-row"><div><label>Periods</label><select id="gt-ge-periods">' + [1, 2, 3, 4].map(function(n){ return '<option value="' + n + '"' + ((g.num_periods || 2) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Minutes per period</label><input type="number" id="gt-ge-dur" min="1" max="60" value="' + (g.period_duration_minutes || 35) + '"/></div></div>' +
     '<label>Players per side</label><input type="number" id="gt-ge-side" min="1" max="11" value="' + (g.players_per_side || 11) + '"/>' +
+    '<div class="gm-row"><div><label>Our Score</label><input type="number" id="gt-ge-usscore" min="0" value="' + gtOurScore(g) + '"/></div>' +
+    '<div><label>Opponent Score</label><input type="number" id="gt-ge-themscore" min="0" value="' + gtTheirScore(g) + '"/></div></div>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveGameEdit(\'' + gid + '\')">Save Changes</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
 }
@@ -515,6 +517,10 @@ function gtSaveGameEdit(gid) {
     field: document.getElementById('gt-ge-field').value.trim(),
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
+  var usScore = Math.max(0, parseInt((document.getElementById('gt-ge-usscore') || {}).value, 10) || 0);
+  var themScore = Math.max(0, parseInt((document.getElementById('gt-ge-themscore') || {}).value, 10) || 0);
+  data.home_score = side === 'home' ? usScore : themScore;
+  data.away_score = side === 'home' ? themScore : usScore;
   var dateStr = document.getElementById('gt-ge-date').value;
   if (dateStr) data.played_at = firebase.firestore.Timestamp.fromDate(new Date(dateStr + 'T12:00:00'));
   db.collection('gt_games').doc(gid).set(data, { merge: true })
@@ -1461,4 +1467,18 @@ function gtRsvpHiddenEverywhere(pid) {
   var evs = gtUpcomingGames().map(function(g){ return g.id; }).concat(gtUpcomingCampDays().map(function(d){ return d.id; }));
   if (!evs.length) return false;
   return evs.every(function(eid){ var r = gtRsvp(eid, pid); return !!(r && r.hidden); });
+}
+
+function gtOpenAddStat(gid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var chips = gtAvailIds(gid).map(function(pid){
+    var p = gtP(pid); if (!p) return '';
+    return '<button class="gt-pk-pchip" onclick="gtCloseModal();gtOpenEventPopup(\'' + gid + '\',\'' + pid + '\')">' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(pid)) + '</button>';
+  }).join('');
+  gtOpenModal('<h3>Add a stat<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.82rem;color:var(--muted);margin-bottom:8px">Pick a player to log a missed goal, assist, card, etc.</p>' +
+    '<div class="gt-pk-pchips">' + (chips || '<span style="color:var(--muted);font-size:.85rem">No players in this game.</span>') + '</div>' +
+    '<div class="gm-actions"><button class="gt-minibtn" onclick="gtCloseModal();gtLogOpponentGoal(\'' + gid + '\')">😣 Opponent Goal</button>' +
+    '<button class="gt-minibtn" onclick="gtCloseModal()">Close</button></div>');
 }

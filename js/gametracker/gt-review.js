@@ -74,6 +74,7 @@ function gtRenderReview(view, gameId) {
     '<button class="btn-primary" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Share</button>' +
     '<button class="btn-primary" onclick="gtExportGame(\'' + g.id + '\')">📋 Copy Summary</button>' +
     '<button class="btn-primary" onclick="gtExportGamePDF(\'' + g.id + '\')">📄 Export PDF</button>' +
+    (canEdit ? '<button class="btn-primary" onclick="gtOpenAddStat(\'' + g.id + '\')">➕ Add Stat</button>' : '') +
     '<button class="gt-minibtn" style="padding:10px 16px" onclick="gtGo(\'/gametracker\')">← All Games</button>' +
     (canEdit ? '<button class="gt-minibtn" style="padding:10px 16px;margin-left:auto" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button>' : '') +
     (canEdit ? '<button class="gt-minibtn danger" style="padding:10px 16px" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button>' : '') + '</div>';
