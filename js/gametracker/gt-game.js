@@ -322,7 +322,7 @@ function gtRenderLive(view, gameId) {
       var ae = gtGameAvailEntry(g.id, p.id) || {};
       var off = setup ? !ae.started : (onField[p.id] === false);
       var starterCls = (setup && ae.started) ? ' starter' : '';
-      var posShow = setup ? (p.default_position || '') : gtLastPosition(g.id, p.id);
+      var posShow = setup ? (ae.start_position || p.default_position || '') : gtLastPosition(g.id, p.id);
       var statusLabel = setup ? (ae.started ? 'START' : 'BENCH') : gtStatusShort(gtPlayerGameStatus(g.id, p.id));
       var pcHandlers = '';
       if (canEdit) {
