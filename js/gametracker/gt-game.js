@@ -304,7 +304,7 @@ function gtRenderLive(view, gameId) {
   var gtPps = g.players_per_side || 11;
   var gtTallyCls = gtOnCount === gtPps ? 'ok' : (gtOnCount > gtPps ? 'over' : 'under');
   var gtOnFieldTally = '<span class="gt-onfield ' + gtTallyCls + '">' + gtOnCount + '/' + gtPps + ' ' + (g.status === 'setup' ? 'starters' : 'on field') + '</span>';
-  html += '<div class="section-title" style="margin-bottom:12px">👕 Players ' + gtOnFieldTally + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters &amp; positions' : 'tap to sub on/off · hold for stats') + '</span>' : '') + '</div>';
+  html += '<div class="section-title" style="margin-bottom:12px">👕 Players ' + gtOnFieldTally + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters · hold for options (scratch, position)' : 'tap to sub on/off · hold for stats') + '</span>' : '') + '</div>';
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {
     html += '<div class="gt-pgrid">' + players.map(function(p) {
@@ -326,9 +326,7 @@ function gtRenderLive(view, gameId) {
       var statusLabel = setup ? (ae.started ? 'START' : 'BENCH') : gtStatusShort(gtPlayerGameStatus(g.id, p.id));
       var pcHandlers = '';
       if (canEdit) {
-        pcHandlers = setup
-          ? ' onclick="gtToggleStarter(\'' + g.id + '\',\'' + p.id + '\')"'
-          : ' onpointerdown="gtCardPressStart(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerup="gtCardPressEnd(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerleave="gtCardPressCancel()" onpointercancel="gtCardPressCancel()" oncontextmenu="return false"';
+        pcHandlers = ' onpointerdown="gtCardPressStart(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerup="gtCardPressEnd(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerleave="gtCardPressCancel()" onpointercancel="gtCardPressCancel()" oncontextmenu="return false"';
       }
       return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + '"' + pcHandlers + '>' +
         '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
@@ -964,7 +962,10 @@ function gtCardPressStart(e, gid, pid) {
   GT._press = { gid: gid, pid: pid };
   GT._pressTimer = setTimeout(function() {
     var pr = GT._press; GT._press = null; GT._pressTimer = null;
-    if (pr) gtOpenEventPopup(pr.gid, pr.pid);
+    if (!pr) return;
+    var gg = gtGame(pr.gid);
+    if (gg && gg.status === 'setup') gtOpenSetupPlayerPopup(pr.gid, pr.pid);
+    else gtOpenEventPopup(pr.gid, pr.pid);
   }, 450);
 }
 function gtCardPressEnd(e, gid, pid) {
@@ -1481,4 +1482,31 @@ function gtOpenAddStat(gid) {
     '<div class="gt-pk-pchips">' + (chips || '<span style="color:var(--muted);font-size:.85rem">No players in this game.</span>') + '</div>' +
     '<div class="gm-actions"><button class="gt-minibtn" onclick="gtCloseModal();gtLogOpponentGoal(\'' + gid + '\')">😣 Opponent Goal</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Close</button></div>');
+}
+
+function gtOpenSetupPlayerPopup(gid, pid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var p = gtP(pid); if (!p) return;
+  var ae = gtGameAvailEntry(gid, pid) || {};
+  var started = !!ae.started;
+  var scratched = ae.available === false;
+  var pos = ae.start_position || p.default_position || '';
+  var title = '<h3>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pid)) + (p.is_guest ? ' <span class="gt-guest-badge">Guest</span>' : '') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>';
+  var body;
+  if (scratched) {
+    body = title +
+      '<p style="font-size:.88rem;color:#991b1b;font-weight:700;margin:4px 0 14px">🚫 Scratched from this game.</p>' +
+      '<div class="gm-actions"><button class="btn-primary" onclick="gtAddPlayerToGame(\'' + gid + '\',\'' + pid + '\')">↩ Add back to roster</button>' +
+      '<button class="gt-minibtn" onclick="gtCloseModal()">Close</button></div>';
+  } else {
+    body = title +
+      '<label>Starting</label><div class="gt-avail-toggle">' +
+      '<button class="' + (started ? 'on-yes' : '') + '" onclick="gtSetStarter(\'' + gid + '\',\'' + pid + '\',true,\'' + gtAttr(pos) + '\');gtCloseModal()">On field</button>' +
+      '<button class="' + (!started ? 'on-yes' : '') + '" onclick="gtSetStarter(\'' + gid + '\',\'' + pid + '\',false,\'\');gtCloseModal()">Bench</button></div>' +
+      (started ? '<label>Starting position</label><select onchange="gtSetStarter(\'' + gid + '\',\'' + pid + '\',true,this.value)">' + gtPositionOptions(pos) + '</select>' : '') +
+      '<div class="gm-actions"><button class="gt-minibtn danger" onclick="gtScratchPlayer(\'' + gid + '\',\'' + pid + '\')">🚫 Scratch from this game</button>' +
+      '<button class="gt-minibtn" onclick="gtCloseModal()">Close</button></div>';
+  }
+  gtOpenModal(body);
 }
