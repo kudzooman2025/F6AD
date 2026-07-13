@@ -1,3 +1,7 @@
+// Mom fields only fall back to the legacy single-parent fields when no dad info
+// exists (a pre-mom/dad record). Prevents dad's name/phone leaking into mom.
+function gtMomName(p) { if (!p) return ''; return p.mom_name || ((p.dad_name || p.dad_phone) ? '' : (p.parent_name || '')); }
+function gtMomPhone(p) { if (!p) return ''; return p.mom_phone || ((p.dad_name || p.dad_phone) ? '' : (p.parent_phone || '')); }
 // ---------- ROSTER MANAGER ----------
 function gtRenderRoster(view) {
   var canEdit = gtCanEdit();
@@ -49,8 +53,8 @@ function gtRenderRoster(view) {
           '<td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' +
           (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</td>' +
           '<td>' + gtEsc(p.position || '—') + '</td>' +
-          '<td>' + ([(p.mom_name || p.parent_name) ? 'M: ' + gtEsc(p.mom_name || p.parent_name) : '', p.dad_name ? 'D: ' + gtEsc(p.dad_name) : ''].filter(Boolean).join('<br>') || '—') + '</td>' +
-          '<td>' + ([(p.mom_phone || p.parent_phone) ? gtEsc(p.mom_phone || p.parent_phone) : '', p.dad_phone ? gtEsc(p.dad_phone) : ''].filter(Boolean).join('<br>') || '—') + '</td>' +
+          '<td>' + ([gtMomName(p) ? 'M: ' + gtEsc(gtMomName(p)) : '', p.dad_name ? 'D: ' + gtEsc(p.dad_name) : ''].filter(Boolean).join('<br>') || '—') + '</td>' +
+          '<td>' + ([gtMomPhone(p) ? gtEsc(gtMomPhone(p)) : '', p.dad_phone ? gtEsc(p.dad_phone) : ''].filter(Boolean).join('<br>') || '—') + '</td>' +
           (canEdit ? '<td style="white-space:nowrap"><button class="gt-minibtn" onclick="gtOpenPlayerForm(\'' + sel.id + '\',\'' + p.id + '\')">Edit</button> ' +
             (p.is_guest ? '<button class="gt-minibtn" onclick="gtConvertGuest(\'' + p.id + '\')">⬆ Full Player</button> ' : '<button class="gt-minibtn" onclick="gtMakeGuest(\'' + p.id + '\')">⬇ Make Guest</button> ') +
             '<button class="gt-minibtn danger" onclick="gtDeletePlayer(\'' + p.id + '\')">Remove</button></td>' : '') +
@@ -181,8 +185,8 @@ function gtOpenPlayerForm(rid, pid) {
     '<div class="gm-row"><div><label>Jersey #</label><input type="number" id="gt-pf-num" value="' + (p && p.jersey_number != null ? p.jersey_number : '') + '" min="0" max="99"/></div>' +
     '<div><label>Position</label><input type="text" id="gt-pf-pos" value="' + gtAttr(p ? p.position : '') + '" placeholder="GK, DEF, MID, FWD"/></div></div>' +
     '<label>Default Lineup Position (used for starters &amp; subs)</label><select id="gt-pf-defpos">' + gtPositionOptions(p ? p.default_position : '') + '</select>' +
-    '<div class="gm-row"><div><label>Mom / Guardian</label><input type="text" id="gt-pf-mom" value="' + gtAttr(p ? (p.mom_name || p.parent_name || '') : '') + '"/></div>' +
-    '<div><label>Mom Phone (E.164)</label><input type="tel" id="gt-pf-momphone" value="' + gtAttr(p ? (p.mom_phone || p.parent_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div>' +
+    '<div class="gm-row"><div><label>Mom / Guardian</label><input type="text" id="gt-pf-mom" value="' + gtAttr(p ? gtMomName(p) : '') + '"/></div>' +
+    '<div><label>Mom Phone (E.164)</label><input type="tel" id="gt-pf-momphone" value="' + gtAttr(p ? gtMomPhone(p) : '') + '" placeholder="+1XXXXXXXXXX"/></div>' +
     '<div><label>Mom Email</label><input type="email" id="gt-pf-momemail" value="' + gtAttr(p ? (p.mom_email || '') : '') + '" placeholder="mom@email.com"/></div></div>' +
     '<div class="gm-row"><div><label>Dad / Guardian</label><input type="text" id="gt-pf-dad" value="' + gtAttr(p ? (p.dad_name || '') : '') + '"/></div>' +
     '<div><label>Dad Phone (E.164)</label><input type="tel" id="gt-pf-dadphone" value="' + gtAttr(p ? (p.dad_phone || '') : '') + '" placeholder="+1XXXXXXXXXX"/></div>' +
@@ -213,8 +217,8 @@ function gtWirePlayerAutocomplete() {
     el = document.getElementById('gt-pf-num');   if(el) el.value = pl.jersey_number != null ? pl.jersey_number : '';
     el = document.getElementById('gt-pf-pos');   if(el) el.value = pl.position || '';
     el = document.getElementById('gt-pf-defpos'); if(el) el.value = pl.default_position || '';
-    el = document.getElementById('gt-pf-mom'); if(el) el.value = pl.mom_name || pl.parent_name || '';
-    el = document.getElementById('gt-pf-momphone'); if(el) el.value = pl.mom_phone || pl.parent_phone || '';
+    el = document.getElementById('gt-pf-mom'); if(el) el.value = gtMomName(pl);
+    el = document.getElementById('gt-pf-momphone'); if(el) el.value = gtMomPhone(pl);
     el = document.getElementById('gt-pf-momemail'); if(el) el.value = pl.mom_email || '';
     el = document.getElementById('gt-pf-dad'); if(el) el.value = pl.dad_name || '';
     el = document.getElementById('gt-pf-dadphone'); if(el) el.value = pl.dad_phone || '';
