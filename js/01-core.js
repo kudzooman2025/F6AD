@@ -40,7 +40,7 @@ db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
 
 // ===================== DATA =====================
 const CONFIRMED_IDS = [8, 13, 20, 6];
-const POSSIBILITY_IDS = [6];
+const POSSIBILITY_IDS = [];   // Penn Fusion (id 6) is now confirmed/registered
 
 const SUMMER_TOURNAMENTS = [
   {id:1,name:"CRUSA Invitational (17th Annual)",host:"FC Bucks",location:"Richboro, PA",distance:30,dates:"Aug 1-2, 2026",format:"11v11",fee:"$800",deadline:"Jul 10, 2026",website:"fcbucks.com/august-invitational-tournament/",notes:"Uses new Fall 2026 Aug-Jul age matrix. Premier preseason testing ground."},
