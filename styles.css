@@ -837,3 +837,4 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .ts-badge{display:inline-block;background:#fee2e2;color:#991b1b;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
 .type-tournament{background:#b45309;color:#fff}
 .type-friendly{background:#0f766e;color:#fff}
+.gt-src-badge{display:inline-block;background:var(--accent-soft);color:var(--purple);font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}

@@ -1,3 +1,22 @@
+// GameTracker game_type -> site schedule type (league games are just "game")
+function gtScheduleType(g) {
+  var t = String((g && g.game_type) || '').toLowerCase();
+  if (t === 'tournament') return 'tournament';
+  if (t === 'friendly') return 'friendly';
+  return 'game';
+}
+// A GameTracker game rendered as a schedule row
+function gtScheduleRow(g) {
+  return {
+    id: 'gt:' + g.id,
+    name: gtOurName(g) + ' vs ' + gtTheirName(g),
+    date: gtGameDateStr(g),
+    time: g.kickoff_time || '',
+    location: [g.venue, g.field].filter(Boolean).join(' · '),
+    type: gtScheduleType(g),
+    _gt: true
+  };
+}
 // ===================== VOTE TALLY (admin) =====================
 function renderVoteTally() {
   var container=document.getElementById('vote-tally-body'); if(!container) return;
@@ -73,7 +92,7 @@ function copyLink(url,btn) {
 function renderSchedule() {
   const today = new Date(); today.setHours(0,0,0,0);
   const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
-    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: 'game', _gt: true, _rsvpId: g.id, _cancelId: 'game_' + g.id };
+    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: gtScheduleType(g), _gt: true, _rsvpId: g.id, _cancelId: 'game_' + g.id };
   }).filter(function(e){ return e.date; }) : [];
   const condEvents = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(s){
     return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true, _cancelId: 'cond_' + s.id };
@@ -153,18 +172,20 @@ function toggleArchive() {
 }
 
 function renderAdminSchedule() {
-  const items = [...scheduleItems].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const gtRows = (typeof GT !== 'undefined' && GT.games)
+    ? GT.games.map(gtScheduleRow).filter(e => e.date) : [];
+  const items = [...scheduleItems, ...gtRows].sort((a,b) => new Date(a.date) - new Date(b.date));
   const el = document.getElementById('admin-schedule-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
   el.innerHTML = items.map(ev => `
     <div class="admin-item">
       <div class="admin-item-info">
-        <strong>${ev.name}</strong>
+        <strong>${ev.name}</strong>${ev._gt?' <span class="gt-src-badge">GameTracker</span>':''}
         <span>${ev.date}${ev.time?' · '+ev.time:''} · ${ev.location} · ${ev.type}</span>
       </div>
       <div class="admin-item-actions">
         <button class="btn-edit" onclick="editEvent('${ev.id}')">Edit</button>
-        <button class="btn-danger" onclick="deleteEvent('${ev.id}')">Delete</button>
+        ${ev._gt ? '' : `<button class="btn-danger" onclick="deleteEvent('${ev.id}')">Delete</button>`}
       </div>
     </div>`).join('');
 }
@@ -222,6 +243,30 @@ function saveEvent() {
   const time = document.getElementById('ev-time').value;
   const location = document.getElementById('ev-location').value.trim();
   if (!name || !date) { showToast('Name and date are required.'); return; }
+  // A GameTracker game: write the changes back to gt_games, not the schedule collection.
+  if (String(editingEventId || '').indexOf('gt:') === 0) {
+    const gid = String(editingEventId).slice(3);
+    const g = (typeof gtGame === 'function') ? gtGame(gid) : null;
+    const parts = location.split(' · ');
+    const upd = {
+      game_type: type === 'tournament' ? 'tournament' : type === 'friendly' ? 'friendly' : 'league',
+      kickoff_time: time || '',
+      venue: (parts[0] || '').trim(),
+      field: parts.length > 1 ? parts.slice(1).join(' · ').trim() : '',
+      updated_at: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (date) upd.played_at = firebase.firestore.Timestamp.fromDate(new Date(date + 'T12:00:00'));
+    const vs = name.split(/\s+vs\.?\s+/i);
+    if (g && vs.length === 2) {
+      const ours = vs[0].trim(), theirs = vs[1].trim();
+      if (g.f6ad_side === 'away') { upd.away_team = ours; upd.home_team = theirs; }
+      else { upd.home_team = ours; upd.away_team = theirs; }
+    }
+    db.collection('gt_games').doc(gid).set(upd, { merge: true })
+      .then(() => { cancelEventEdit(); showToast('✅ GameTracker game updated!'); })
+      .catch(e => showToast('Error: ' + e.message));
+    return;
+  }
   const data = {name, type, date, time, location};
   // Editing pins the event: merge (so source/club survive) and flag it so the
   // TeamSnap sync will not overwrite your changes on its next run.
@@ -234,7 +279,14 @@ function saveEvent() {
 }
 
 function editEvent(id) {
-  const ev = scheduleItems.find(e => e.id === id);
+  let ev;
+  if (String(id).indexOf('gt:') === 0) {
+    const g = (typeof gtGame === 'function') ? gtGame(String(id).slice(3)) : null;
+    if (!g) return;
+    ev = gtScheduleRow(g);
+  } else {
+    ev = scheduleItems.find(e => e.id === id);
+  }
   if (!ev) return;
   editingEventId = id;
   document.getElementById('ev-name').value = ev.name;

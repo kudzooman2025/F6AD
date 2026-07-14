@@ -15,7 +15,10 @@ function gtListen() {
       GT.loaded[def[1]] = true;
       if (def[1] === 'chat') { if (typeof gtRenderChatMessages === 'function') gtRenderChatMessages(); return; }
       gtRerender();
-      if (def[1] === 'games' && typeof renderSchedule === 'function') renderSchedule();
+      if (def[1] === 'games') {
+        if (typeof renderSchedule === 'function') renderSchedule();
+        if (typeof renderAdminSchedule === 'function' && document.getElementById('admin-schedule-list')) renderAdminSchedule();
+      }
     }, function(err) { showToast('GameTracker sync error: ' + err.message); });
   });
 }
