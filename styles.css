@@ -773,3 +773,19 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .cond-canceled .cond-date,.cond-canceled .cond-camp-name{text-decoration:line-through;color:var(--muted)}
 .cond-cancel-badge{display:inline-block;background:#fee2e2;color:#991b1b;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 8px;border-radius:999px;margin:4px 0}
 .cond-canceled .cond-signup-btn{display:none}
+
+/* Announcement comments */
+.ann-ctoggle{margin-top:10px;background:none;border:1px solid var(--border-strong);border-radius:999px;padding:4px 12px;font-size:.76rem;font-weight:700;color:var(--purple);cursor:pointer}
+.ann-ctoggle:hover{background:var(--accent-soft)}
+.ann-comments{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.ann-comment{background:var(--gray);border-radius:10px;padding:8px 12px;margin-bottom:8px}
+.ac-head{display:flex;align-items:center;gap:8px}
+.ac-name{font-weight:800;font-size:.82rem}
+.ac-time{font-size:.7rem;color:var(--muted)}
+.ac-del{margin-left:auto;border:none;background:none;cursor:pointer;font-size:.78rem;opacity:.6}
+.ac-del:hover{opacity:1}
+.ac-text{font-size:.86rem;line-height:1.5;margin-top:2px;white-space:pre-wrap}
+.ac-empty{font-size:.82rem;color:var(--muted);margin-bottom:8px}
+.ann-cform{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.ann-cform input,.ann-cform textarea{border:1px solid var(--border-strong);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:.86rem;width:100%}
+.ann-cform button{align-self:flex-start;padding:7px 16px;font-size:.82rem}

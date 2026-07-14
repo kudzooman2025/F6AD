@@ -267,12 +267,78 @@ function renderAnnouncements() {
   const empty = document.getElementById('ann-empty');
   if (!active.length) { list.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display = 'none';
-  list.innerHTML = active.map(a => `
+  const staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
+  list.innerHTML = active.map(a => {
+    const cs = annCommentsFor(a.id);
+    const open = !!openAnnComments[a.id];
+    return `
     <div class="ann-item">
       <div class="ann-date">${a.date}</div>
       <div class="ann-title">${a.title}</div>
       <div class="ann-body">${a.body}</div>
-    </div>`).join('');
+      <button class="ann-ctoggle" onclick="toggleAnnComments('${a.id}')">💬 ${cs.length ? cs.length + (cs.length === 1 ? ' comment' : ' comments') : 'Add a comment'}</button>
+      ${open ? `
+      <div class="ann-comments">
+        ${cs.length ? cs.map(c => `
+          <div class="ann-comment">
+            <div class="ac-head"><span class="ac-name">${annEsc(c.name || 'Anonymous')}</span><span class="ac-time">${annCommentTime(c.created_at)}</span>${staff ? `<button class="ac-del" title="Delete comment" onclick="deleteAnnComment('${c.id}')">🗑</button>` : ''}</div>
+            <div class="ac-text">${annEsc(c.text || '')}</div>
+          </div>`).join('') : '<div class="ac-empty">No comments yet — be the first.</div>'}
+        <div class="ann-cform">
+          <input type="text" id="acn-${a.id}" placeholder="Your name" value="${annEsc(annCommentName())}"/>
+          <textarea id="act-${a.id}" placeholder="Write a comment…" rows="2"></textarea>
+          <button class="btn-primary" onclick="postAnnComment('${a.id}')">Post Comment</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ---------- Announcement comments (open to parents, staff can moderate) ----------
+function annEsc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function annCommentTime(ts) {
+  var d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+  if (!d || isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' · ' +
+         d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+function annCommentsFor(annId) {
+  return annComments.filter(function(c){ return c.ann_id === annId; })
+    .sort(function(a, b){ return ((a.created_at && a.created_at.seconds) || 0) - ((b.created_at && b.created_at.seconds) || 0); });
+}
+function annCommentName() {
+  try { return localStorage.getItem('f6ad_comment_name') || (typeof getCondName === 'function' ? (getCondName() || '') : '') || ''; }
+  catch (e) { return ''; }
+}
+function setAnnCommentName(v) { try { localStorage.setItem('f6ad_comment_name', v); } catch (e) {} }
+function toggleAnnComments(annId) {
+  openAnnComments[annId] = !openAnnComments[annId];
+  renderAnnouncements();
+}
+function postAnnComment(annId) {
+  var nameEl = document.getElementById('acn-' + annId);
+  var textEl = document.getElementById('act-' + annId);
+  var name = ((nameEl && nameEl.value) || '').trim();
+  var text = ((textEl && textEl.value) || '').trim();
+  if (!name) { showToast('Add your name first.'); return; }
+  if (!text) { showToast('Write a comment first.'); return; }
+  setAnnCommentName(name);
+  db.collection('ann_comments').add({
+    ann_id: annId, name: name, text: text,
+    created_at: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){ if (textEl) textEl.value = ''; showToast('Comment posted ✓'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function deleteAnnComment(id) {
+  if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Coach/admin only.'); return; }
+  if (!confirm('Delete this comment?')) return;
+  db.collection('ann_comments').doc(id).delete()
+    .then(function(){ showToast('Comment deleted.'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 
 function renderAdminAnnouncements() {

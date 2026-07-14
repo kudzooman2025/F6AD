@@ -161,6 +161,8 @@ let announcementItems = [];
 let venueItems = [];
 let scheduleFilter = 'all';
 let canceledEvents = {};
+let annComments = [];
+let openAnnComments = {};
 let allVotesFall = {}, allNotesFall = {};
 let allVotesWinter = {}, allNotesWinter = {};
 let allVotesSpring = {}, allNotesSpring = {};
