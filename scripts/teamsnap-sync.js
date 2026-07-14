@@ -34,7 +34,13 @@ function classify(summary) {
   const cutoff = Date.now() - 30 * 24 * 3600 * 1000; // keep last 30 days + future
   const seen = new Set();
   const batch = db.batch();
-  let added = 0;
+  let added = 0, pinned = 0;
+
+  // Existing TeamSnap-sourced docs; any the coach has edited are "pinned" and
+  // must not be overwritten or deleted by the sync.
+  const existingSnap = await db.collection('schedule').where('source', '==', 'teamsnap').get();
+  const existing = {};
+  existingSnap.forEach(d => { existing[d.id] = d.data() || {}; });
 
   for (const key of Object.keys(data)) {
     const ev = data[key];
@@ -45,6 +51,8 @@ function classify(summary) {
     const uid = String(ev.uid || key).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 120);
     const id = 'ts_' + uid;
     seen.add(id);
+
+    if (existing[id] && existing[id].manual_override) { pinned++; continue; }  // keep coach's edits
 
     batch.set(db.collection('schedule').doc(id), {
       name: String(ev.summary || 'TeamSnap event'),
@@ -59,11 +67,14 @@ function classify(summary) {
     added++;
   }
 
-  // Drop TeamSnap events that no longer exist in the feed (cancelled/removed).
-  const existing = await db.collection('schedule').where('source', '==', 'teamsnap').get();
+  // Drop TeamSnap events that no longer exist in the feed (cancelled/removed),
+  // but never delete ones the coach has edited.
   let removed = 0;
-  existing.forEach(doc => { if (!seen.has(doc.id)) { batch.delete(doc.ref); removed++; } });
+  existingSnap.forEach(doc => {
+    const d = doc.data() || {};
+    if (!seen.has(doc.id) && !d.manual_override) { batch.delete(doc.ref); removed++; }
+  });
 
   await batch.commit();
-  console.log(`TeamSnap sync complete — ${added} event(s) upserted, ${removed} stale removed.`);
+  console.log(`TeamSnap sync complete — ${added} upserted, ${pinned} pinned (locally edited, left alone), ${removed} stale removed.`);
 })().catch(err => { console.error('TeamSnap sync failed:', err); process.exit(1); });

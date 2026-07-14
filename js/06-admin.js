@@ -223,8 +223,11 @@ function saveEvent() {
   const location = document.getElementById('ev-location').value.trim();
   if (!name || !date) { showToast('Name and date are required.'); return; }
   const data = {name, type, date, time, location};
+  // Editing pins the event: merge (so source/club survive) and flag it so the
+  // TeamSnap sync will not overwrite your changes on its next run.
+  if (editingEventId) data.manual_override = true;
   const p = editingEventId
-    ? db.collection('schedule').doc(editingEventId).set(data)
+    ? db.collection('schedule').doc(editingEventId).set(data, { merge: true })
     : db.collection('schedule').add(data);
   p.then(() => { cancelEventEdit(); showToast('✅ Event saved!'); })
    .catch(e => showToast('Error: ' + e.message));
@@ -241,6 +244,8 @@ function editEvent(id) {
   document.getElementById('ev-location').value = ev.location;
   document.getElementById('schedule-form-title').textContent = '✏️ Edit Event';
   document.getElementById('cancel-ev-btn').style.display = 'inline-block';
+  var ft = document.getElementById('schedule-form-title');
+  if (ft && ft.scrollIntoView) ft.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 function cancelEventEdit() {
