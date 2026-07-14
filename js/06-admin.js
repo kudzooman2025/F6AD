@@ -110,7 +110,7 @@ function renderSchedule() {
     return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}">
       <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
       <div class="event-info">
-        <div class="event-name"><span class="evn-text">${ev.name}</span>${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
+        <div class="event-name"><span class="evn-text">${ev.name}</span>${ev.source==='teamsnap'?' <span class="ts-badge">FC Delco</span>':''}${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
         <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
         ${(!isPast && !canceled && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}">📋 RSVP / availability</a>` : ''}

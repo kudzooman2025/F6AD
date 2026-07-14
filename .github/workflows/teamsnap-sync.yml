@@ -1,0 +1,21 @@
+name: Sync TeamSnap Schedule
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch:         # and on-demand from the Actions tab
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/New_York   # so event dates/times land in Eastern, not UTC
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install firebase-admin node-ical --no-save
+      - name: Sync TeamSnap -> Firestore schedule
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          TEAMSNAP_ICS_URL: ${{ secrets.TEAMSNAP_ICS_URL }}
+        run: node scripts/teamsnap-sync.js
