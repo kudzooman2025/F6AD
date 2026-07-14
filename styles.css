@@ -133,7 +133,7 @@ select.filter-select:focus{outline:none;border-color:var(--purple)}
 .ann-item{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:14px;padding:15px 18px}
 .ann-date{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
 .ann-title{font-weight:700;font-size:.93rem;margin-bottom:4px}
-.ann-body{font-size:.85rem;color:#555;line-height:1.55}
+.ann-body{font-size:.85rem;color:#555;line-height:1.55;white-space:pre-wrap}
 
 /* ADMIN MODAL OVERLAY */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
