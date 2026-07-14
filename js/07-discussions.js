@@ -92,7 +92,8 @@ function discPostCard(p) {
     '<div class="disc-vote"><button class="disc-up' + (discHasVoted('p', p.id) ? ' on' : '') + '" onclick="voteDiscussion(\'' + p.id + '\')" title="Upvote">▲</button>' +
     '<span class="disc-score">' + (p.votes || 0) + '</span></div>' +
     '<div class="disc-main"><a class="disc-title" href="#/discussions/' + p.id + '">' + discEsc(p.title || '(untitled)') + '</a>' +
-    '<div class="disc-meta">' + discEsc(p.author || 'Anonymous') + ' · ' + discTime(p.created_at) + ' · 💬 ' + n + ' comment' + (n === 1 ? '' : 's') + '</div></div></div>';
+    '<div class="disc-meta">' + discEsc(p.author || 'Anonymous') + ' · ' + discTime(p.created_at) + ' · 💬 ' + n + ' comment' + (n === 1 ? '' : 's') +
+    ' <button class="disc-link" onclick="discCopyLink(\'' + p.id + '\')">🔗 Copy link</button></div></div></div>';
 }
 function renderDiscussionDetail(root, pid) {
   var p = discussionItems.find(function(x){ return x.id === pid; });
@@ -106,6 +107,7 @@ function renderDiscussionDetail(root, pid) {
       '<span class="disc-score">' + (p.votes || 0) + '</span></div>' +
       '<div class="disc-main"><div class="disc-ptitle">' + discEsc(p.title || '(untitled)') + '</div>' +
       '<div class="disc-meta">' + discEsc(p.author || 'Anonymous') + ' · ' + discTime(p.created_at) +
+        ' <button class="disc-link" onclick="discCopyLink(\'' + pid + '\')">🔗 Copy link</button>' +
         (staff ? ' <button class="disc-del" onclick="deleteDiscussion(\'' + pid + '\')">🗑 Delete post</button>' : '') + '</div>' +
       (p.body ? '<div class="disc-body">' + discEsc(p.body) + '</div>' : '') +
       '</div></div>';
@@ -197,4 +199,12 @@ function deleteDiscComment(cid) {
     .forEach(function(r){ batch.delete(db.collection('discussion_comments').doc(r.id)); });
   batch.commit().then(function(){ showToast('Comment deleted.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+
+function discCopyLink(pid) {
+  var url = window.location.origin + window.location.pathname + '#/discussions/' + pid;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function(){ showToast('Post link copied!'); })
+      .catch(function(){ window.prompt('Copy this post link:', url); });
+  } else { window.prompt('Copy this post link:', url); }
 }
