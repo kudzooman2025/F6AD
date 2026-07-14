@@ -90,6 +90,8 @@
     <div class="sched-filters" id="sched-filters">
       <button class="sched-chip active" onclick="setScheduleFilter('all',this)">All</button>
       <button class="sched-chip" onclick="setScheduleFilter('game',this)">⚽ Games</button>
+      <button class="sched-chip" onclick="setScheduleFilter('tournament',this)">🏆 Tournaments</button>
+      <button class="sched-chip" onclick="setScheduleFilter('friendly',this)">🤝 Friendlies</button>
       <button class="sched-chip" onclick="setScheduleFilter('practice',this)">🏃 Practices</button>
       <button class="sched-chip" onclick="setScheduleFilter('event',this)">📅 Events</button>
     </div>
@@ -369,7 +371,7 @@
             <div class="form-row">
               <div class="form-group"><label>Event Name</label><input type="text" id="ev-name" placeholder="vs. Red Lightning"/></div>
               <div class="form-group"><label>Type</label>
-                <select id="ev-type"><option value="game">Game</option><option value="practice">Practice</option><option value="event">Event</option></select>
+                <select id="ev-type"><option value="game">Game</option><option value="tournament">Tournament</option><option value="friendly">Friendly</option><option value="practice">Practice</option><option value="event">Event</option></select>
               </div>
             </div>
             <div class="form-row">

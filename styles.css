@@ -835,3 +835,5 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .confirmed-card.fcdelco .cc-head{background:linear-gradient(135deg,#991b1b,#7f1d1d)}
 .fc-badge{display:inline-block;background:rgba(255,255,255,.25);color:#fff;font-size:.6rem;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
 .ts-badge{display:inline-block;background:#fee2e2;color:#991b1b;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.type-tournament{background:#b45309;color:#fff}
+.type-friendly{background:#0f766e;color:#fff}
