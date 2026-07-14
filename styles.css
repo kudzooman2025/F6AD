@@ -828,3 +828,9 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .disc-none{font-size:.85rem;color:var(--muted);padding:6px 0}
 .disc-link{border:none;background:none;cursor:pointer;font-size:.74rem;font-weight:700;color:var(--purple);opacity:.85;padding:0}
 .disc-link:hover{opacity:1;text-decoration:underline}
+
+/* FC Delco conflicts + club events */
+.t-card.conflict{border-color:#dc2626;background:#fef2f2}
+.t-conflict{background:#fee2e2;color:#991b1b;font-size:.72rem;font-weight:800;padding:5px 10px;border-radius:8px;margin-top:8px;line-height:1.4}
+.confirmed-card.fcdelco .cc-head{background:linear-gradient(135deg,#991b1b,#7f1d1d)}
+.fc-badge{display:inline-block;background:rgba(255,255,255,.25);color:#fff;font-size:.6rem;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}

@@ -40,6 +40,13 @@ db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
 
 // ===================== DATA =====================
 const CONFIRMED_IDS = [8, 13, 20, 6];
+
+// FC Delco club events — our players are committed with the CLUB (not F6AD) on
+// these dates. Shown in the locked-in section and used to flag date conflicts.
+const FC_DELCO_EVENTS = [
+  {id:901,club:"FC Delco",name:"Spirit Kickoff Classic",host:"FC Delco",location:"FC Delco club event",dates:"Aug 15-16, 2026",start:"2026-08-15",end:"2026-08-16",format:"11v11",fee:"Club event",deadline:"Via FC Delco",website:"fcdelco.com",notes:"Scheduled FC Delco event. Our players are committed with the club on this weekend, not with F6AD."},
+  {id:902,club:"FC Delco",name:"FC Delco Fall Showcase",host:"FC Delco",location:"FC Delco club event",dates:"Nov 21-22, 2026",start:"2026-11-21",end:"2026-11-22",format:"11v11",fee:"Club event",deadline:"Via FC Delco",website:"fcdelco.com",notes:"Scheduled FC Delco event. Our players are committed with the club on this weekend, not with F6AD."}
+];
 const POSSIBILITY_IDS = [];   // Penn Fusion (id 6) is now confirmed/registered
 
 const SUMMER_TOURNAMENTS = [

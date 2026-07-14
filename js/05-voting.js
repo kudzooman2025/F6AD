@@ -1,3 +1,30 @@
+// ---- FC Delco conflict detection ----
+function parseDateRange(str) {
+  var m = String(str || '').match(/([A-Z][a-z]{2})\s*(\d{1,2})\s*(?:[-\u2013]\s*(\d{1,2}))?,?\s*(\d{4})/);
+  if (!m) return null;
+  var months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  var mo = months[m[1]];
+  if (mo === undefined) return null;
+  var y = parseInt(m[4], 10), d1 = parseInt(m[2], 10), d2 = m[3] ? parseInt(m[3], 10) : d1;
+  return { s: new Date(y, mo, d1, 0, 0, 0), e: new Date(y, mo, d2, 23, 59, 59) };
+}
+function fcDelcoConflict(t) {
+  if (!t || t.club === 'FC Delco' || typeof FC_DELCO_EVENTS === 'undefined') return null;
+  var r = parseDateRange(t.dates);
+  if (!r) return null;
+  for (var i = 0; i < FC_DELCO_EVENTS.length; i++) {
+    var fe = FC_DELCO_EVENTS[i];
+    var fs = new Date(fe.start + 'T00:00:00'), feEnd = new Date(fe.end + 'T23:59:59');
+    if (r.s <= feEnd && r.e >= fs) return fe;
+  }
+  return null;
+}
+function fcConflictBanner(t) {
+  var c = fcDelcoConflict(t);
+  return c ? '<div class="t-conflict">\u26a0\ufe0f Conflict with FC Delco scheduled event \u2014 ' + c.name + ' (' + c.dates + ')</div>' : '';
+}
+function fcConflictClass(t) { return fcDelcoConflict(t) ? ' conflict' : ''; }
+
 // ===================== VOTER =====================
 function setVoter() {
   const n=document.getElementById('voter-name-input').value.trim();
@@ -55,14 +82,16 @@ function filterSeasonDist(season, maxDist, btn) {
 
 // ===================== CONFIRMED SUMMER =====================
 function renderConfirmedSummer() {
-  var confirmed=SUMMER_TOURNAMENTS.filter(function(t){return CONFIRMED_IDS.indexOf(t.id)!==-1;});
+  var confirmed=SUMMER_TOURNAMENTS.filter(function(t){return CONFIRMED_IDS.indexOf(t.id)!==-1;})
+    .concat(typeof FC_DELCO_EVENTS !== 'undefined' ? FC_DELCO_EVENTS : []);
   var grid=document.getElementById('confirmed-grid');
   if(!grid) return;
   grid.innerHTML=confirmed.map(function(t){
     var fd=t.fee==='TBD'?'Fee TBD':t.fee.split('(')[0].trim();
-    return '<div class="confirmed-card">'
-      +'<div class="cc-head"><div class="cc-name">'+t.name+'</div>'
-      +'<div class="cc-meta"><span>'+t.dates+'</span><span>'+t.location+'</span><span>'+t.distance+' mi</span></div></div>'
+    var isFC = t.club === 'FC Delco';
+    return '<div class="confirmed-card'+(isFC?' fcdelco':'')+'">'
+      +'<div class="cc-head"><div class="cc-name">'+t.name+(isFC?' <span class="fc-badge">FC DELCO</span>':'')+'</div>'
+      +'<div class="cc-meta"><span>'+t.dates+'</span><span>'+t.location+'</span>'+(isFC?'':'<span>'+t.distance+' mi</span>')+'</div></div>'
       +'<div class="cc-body"><div class="cc-fee">'+fd+'</div>'
       +'<div style="font-size:.75rem;color:#444;margin-bottom:8px">Format: '+t.format+'</div>'
       +'<button class="cc-notes-toggle" onclick="toggleCC('+t.id+')">Show details</button>'
@@ -71,7 +100,9 @@ function renderConfirmedSummer() {
       +'<em>'+t.notes+'</em><br><br>'
       +'<strong>Website:</strong> <a href="https://'+t.website+'" target="_blank" style="color:#16a34a;word-break:break-all">'+t.website+'</a>'
       +'</div></div>'
-      +(POSSIBILITY_IDS.indexOf(t.id)!==-1
+      +(isFC
+        ?'<div class="cc-footer" style="background:#991b1b">FC DELCO EVENT &nbsp;&#183;&nbsp; Club commitment \u2014 not F6AD</div>'
+        :POSSIBILITY_IDS.indexOf(t.id)!==-1
         ?'<div class="cc-footer" style="background:#d97706">POSSIBILITY &nbsp;&#183;&nbsp; Registration likely but not yet confirmed</div>'
         :'<div class="cc-footer">CONFIRMED &nbsp;&#183;&nbsp; Registration locked in</div>')
       +'</div>';
@@ -101,10 +132,11 @@ function renderSummerGrid() {
   if(!grid) return;
   grid.innerHTML=list.map(function(t){
     var fd=t.fee==='TBD'?'<span style="color:var(--muted);font-size:.85rem">Fee TBD</span>':'<span class="t-fee">'+t.fee.split('(')[0].trim()+'</span>';
-    return '<div class="t-card no-vote">'
+    return '<div class="t-card no-vote'+fcConflictClass(t)+'">'
       +'<div class="t-card-head"><div class="t-card-row1"><span class="t-name">'+t.name+'</span></div>'
       +'<div class="t-meta"><span class="t-tag highlight">'+t.dates+'</span>'
-      +'<span class="t-tag">'+t.location+'</span><span class="t-tag">'+t.distance+' mi</span></div></div>'
+      +'<span class="t-tag">'+t.location+'</span><span class="t-tag">'+t.distance+' mi</span></div>'
+      +fcConflictBanner(t)+'</div>'
       +'<div class="t-body"><div class="t-fee-row">'+fd+'<span class="t-deadline">Deadline: '+t.deadline+'</span></div>'
       +'<button class="t-notes-toggle" onclick="toggleBN('+t.id+')">Show details</button>'
       +'<div class="t-notes" id="bn-'+t.id+'">'
@@ -196,9 +228,10 @@ function renderSeasonGrid(season) {
         +notes.map(function(n){return '<div class="public-note-item"><div class="public-note-author">'+n.voter+(n.credits>0?' ('+n.credits+' credits)':'')+'</div><div class="public-note-text">'+n.note+'</div></div>';}).join('')
         +'</div></div>'
       :'';
-    return '<div class="t-card '+cardClass+'" id="card-'+season+'-'+t.id+'">'
+    return '<div class="t-card '+cardClass+fcConflictClass(t)+'" id="card-'+season+'-'+t.id+'">'
       +'<div class="t-card-head"><div class="t-card-row1"><span class="t-name">'+t.name+'</span></div>'
-      +'<div class="t-meta"><span class="t-tag highlight">'+t.dates+'</span><span class="t-tag">'+t.location+'</span><span class="t-tag">'+t.distance+' mi</span></div></div>'
+      +'<div class="t-meta"><span class="t-tag highlight">'+t.dates+'</span><span class="t-tag">'+t.location+'</span><span class="t-tag">'+t.distance+' mi</span></div>'
+      +fcConflictBanner(t)+'</div>'
       +'<div class="t-body"><div class="t-fee-row">'+fd+'<span class="t-deadline">Deadline: '+t.deadline+'</span></div>'
       +'<div style="font-size:.78rem;color:var(--muted);margin-bottom:6px">Format: '+t.format+'</div>'
       +'<button class="t-notes-toggle" onclick="toggleSN(\''+season+'\','+t.id+')">Show notes &amp; details</button>'
