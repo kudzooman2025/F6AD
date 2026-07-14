@@ -614,6 +614,14 @@ function startListeners() {
     if(typeof renderVenueDatalist==='function') renderVenueDatalist();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVenuesAdmin();
   });
+  db.collection('discussions').onSnapshot(snap => {
+    discussionItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (typeof renderDiscussions === 'function') renderDiscussions();
+  });
+  db.collection('discussion_comments').onSnapshot(snap => {
+    discussionComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (typeof renderDiscussions === 'function') renderDiscussions();
+  });
   db.collection('ann_comments').onSnapshot(snap => {
     annComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (typeof renderAnnouncements === 'function') renderAnnouncements();

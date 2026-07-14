@@ -58,6 +58,18 @@ service cloud.firestore {
     match /gt_rsvp/{doc}         { allow read, write: if true; }
     match /cancellations/{doc}  { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /ann_comments/{doc}   { allow read, create: if true; allow update, delete: if isStaff() || isAdmin(); }
+    // Discussions: anyone can read/post; anyone may change ONLY the vote count;
+    // content edits and deletes are staff-only.
+    match /discussions/{doc} {
+      allow read, create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']) || isStaff() || isAdmin();
+      allow delete: if isStaff() || isAdmin();
+    }
+    match /discussion_comments/{doc} {
+      allow read, create: if true;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']) || isStaff() || isAdmin();
+      allow delete: if isStaff() || isAdmin();
+    }
 
     // ---- Legacy coach PIN collection: locked down, no longer used ----
     match /coaches/{doc} { allow read, write: if isAdmin(); }

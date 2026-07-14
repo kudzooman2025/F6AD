@@ -26,7 +26,8 @@ var SITE_PAGES = {
   home: ['home-cards', 'announcements'],
   schedule: ['schedule'],
   conditioning: ['conditioning', 'summer-overview'],
-  tournaments: ['confirmed-summer', 'tournaments']
+  tournaments: ['confirmed-summer', 'tournaments'],
+  discussions: ['discussions']
 };
 var SITE_LEGACY = { announcements: 'home', news: 'home', schedule: 'schedule', conditioning: 'conditioning', tournaments: 'tournaments' };
 function sitePage() {
@@ -50,6 +51,7 @@ function siteRender() {
   document.querySelectorAll('nav a.site-link').forEach(function(a) {
     a.classList.toggle('nav-active', a.getAttribute('data-page') === page);
   });
+  if (page === 'discussions' && typeof renderDiscussions === 'function') renderDiscussions();
 }
 function gtRoute() {
   var h = window.location.hash || '';

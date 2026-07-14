@@ -27,6 +27,7 @@
       <a href="#/schedule" class="site-link" data-page="schedule">Schedule</a>
       <a href="#/conditioning" class="site-link" data-page="conditioning">Conditioning</a>
       <a href="#/tournaments" class="site-link" data-page="tournaments">Tournaments</a>
+      <a href="#/discussions" class="site-link" data-page="discussions">Discussions</a>
       <a href="#/gametracker/availability" class="site-link">Availability</a>
       <a href="#/gametracker" class="nav-gt">GameTracker</a>
       <a href="#" id="nav-auth" style="display:none" onclick="navAuthClick(event)">Sign In</a>
@@ -58,6 +59,15 @@
       <a class="gt-bigbtn" href="#/tournaments"><span class="bb-icon">03</span><span class="bb-label">Tournaments</span><span class="bb-desc">Vote on next season</span></a>
       <a class="gt-bigbtn" href="#/gametracker"><span class="bb-icon">04</span><span class="bb-label">GameTracker</span><span class="bb-desc">Live games &amp; season stats</span></a>
     </div>
+  </section>
+
+  <!-- DISCUSSIONS -->
+  <section id="discussions" class="ann-section" style="display:none">
+    <div class="section-header">
+      <div class="section-title">💬 Discussions</div>
+    </div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Team message board — post an idea, ask a question, upvote what you like. Anyone can post; just add your name.</p>
+    <div id="discussions-root"></div>
   </section>
 
   <!-- ANNOUNCEMENTS -->
@@ -519,6 +529,7 @@
 <script src="js/gametracker/gt-review.js"></script>
 <script src="js/gametracker/gt-tournaments.js"></script>
 <script src="js/gametracker/gt-seasons.js"></script>
+<script src="js/07-discussions.js"></script>
 <script src="js/08-init.js"></script>
 </body>
 </html>
