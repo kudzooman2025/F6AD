@@ -600,6 +600,7 @@ function startListeners() {
     canceledEvents = {};
     snap.forEach(d => { canceledEvents[d.id] = true; });
     if (typeof renderSchedule === 'function') renderSchedule();
+    if (typeof renderAdminSchedule === 'function' && document.getElementById('admin-schedule-list')) renderAdminSchedule();
     if (typeof renderCondGrid === 'function') renderCondGrid();
     if (typeof renderCamps === 'function') renderCamps();
     if (typeof gtRerender === 'function') gtRerender();

@@ -14,7 +14,8 @@ function gtScheduleRow(g) {
     time: g.kickoff_time || '',
     location: [g.venue, g.field].filter(Boolean).join(' · '),
     type: gtScheduleType(g),
-    _gt: true
+    _gt: true,
+    _cancelId: 'game_' + g.id
   };
 }
 // ===================== VOTE TALLY (admin) =====================
@@ -174,16 +175,17 @@ function toggleArchive() {
 function renderAdminSchedule() {
   const gtRows = (typeof GT !== 'undefined' && GT.games)
     ? GT.games.map(gtScheduleRow).filter(e => e.date) : [];
-  const items = [...scheduleItems, ...gtRows].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const items = [...scheduleItems.map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows].sort((a,b) => new Date(a.date) - new Date(b.date));
   const el = document.getElementById('admin-schedule-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
   el.innerHTML = items.map(ev => `
     <div class="admin-item">
       <div class="admin-item-info">
-        <strong>${ev.name}</strong>${ev._gt?' <span class="gt-src-badge">GameTracker</span>':''}
+        <strong style="${(typeof canceledEvents!=='undefined'&&ev._cancelId&&canceledEvents[ev._cancelId])?'text-decoration:line-through;color:var(--muted)':''}">${ev.name}</strong>${ev._gt?' <span class="gt-src-badge">GameTracker</span>':''}${(typeof canceledEvents!=='undefined'&&ev._cancelId&&canceledEvents[ev._cancelId])?' <span class="cancel-badge">Canceled</span>':''}
         <span>${ev.date}${ev.time?' · '+ev.time:''} · ${ev.location} · ${ev.type}</span>
       </div>
       <div class="admin-item-actions">
+        ${ev._cancelId ? `<button class="btn-edit" onclick="cancelEvent('${ev._cancelId}', ${(typeof canceledEvents!=='undefined'&&canceledEvents[ev._cancelId])?'false':'true'})">${(typeof canceledEvents!=='undefined'&&canceledEvents[ev._cancelId])?'↩ Un-cancel':'🚫 Cancel'}</button>` : ''}
         <button class="btn-edit" onclick="editEvent('${ev.id}')">Edit</button>
         ${ev._gt ? '' : `<button class="btn-danger" onclick="deleteEvent('${ev.id}')">Delete</button>`}
       </div>
