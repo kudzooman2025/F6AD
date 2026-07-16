@@ -175,7 +175,21 @@ function toggleArchive() {
 function renderAdminSchedule() {
   const gtRows = (typeof GT !== 'undefined' && GT.games)
     ? GT.games.map(gtScheduleRow).filter(e => e.date) : [];
-  const items = [...scheduleItems.map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const condRows = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(cs){
+    return { id: 'cond_' + cs.id, name: 'Summer Conditioning', date: cs.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true, _readonly: true, _cancelId: 'cond_' + cs.id };
+  }) : [];
+  const campRows = [];
+  if (typeof MINI_CAMPS !== 'undefined') {
+    MINI_CAMPS.forEach(function(c){
+      if (!c.start) return;
+      for (var off = 0; off < 2; off++) {
+        var d = new Date(c.start + 'T00:00:00'); d.setDate(d.getDate() + off);
+        var ds = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+        campRows.push({ id: 'camp_' + c.id + '-d' + (off+1), name: c.name + ' (Day ' + (off+1) + ')', date: ds, time: '18:00', location: c.location || '', type: 'event', _auto: true, _readonly: true, _cancelId: 'camp_' + c.id + '-d' + (off+1) });
+      }
+    });
+  }
+  const items = [...scheduleItems.map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
   const el = document.getElementById('admin-schedule-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
   el.innerHTML = items.map(ev => `
@@ -186,8 +200,8 @@ function renderAdminSchedule() {
       </div>
       <div class="admin-item-actions">
         ${ev._cancelId ? `<button class="btn-edit" onclick="cancelEvent('${ev._cancelId}', ${(typeof canceledEvents!=='undefined'&&canceledEvents[ev._cancelId])?'false':'true'})">${(typeof canceledEvents!=='undefined'&&canceledEvents[ev._cancelId])?'↩ Un-cancel':'🚫 Cancel'}</button>` : ''}
-        <button class="btn-edit" onclick="editEvent('${ev.id}')">Edit</button>
-        ${ev._gt ? '' : `<button class="btn-danger" onclick="deleteEvent('${ev.id}')">Delete</button>`}
+        ${ev._readonly ? '' : `<button class="btn-edit" onclick="editEvent('${ev.id}')">Edit</button>`}
+        ${(ev._gt || ev._readonly) ? '' : `<button class="btn-danger" onclick="deleteEvent('${ev.id}')">Delete</button>`}
       </div>
     </div>`).join('');
 }
