@@ -863,3 +863,11 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 /* Compact dropdown identity picker on Availability */
 .rsvp-idselect{margin-top:4px;width:100%;max-width:340px;padding:9px 12px;font-size:.9rem;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);cursor:pointer;}
 .rsvp-idx{opacity:.6;font-size:.7rem;margin-left:2px;}
+
+/* Collapsible availability cards */
+.rsvp-ghead.rsvp-clickable{cursor:pointer;align-items:center;}
+.rsvp-chev{display:inline-block;margin-right:8px;color:#5A3FD6;font-size:.8rem;transition:transform .15s;transform:rotate(0deg);}
+.rsvp-chev.open{transform:rotate(90deg);}
+.rsvp-card.collapsed{padding-bottom:12px;}
+.rsvp-card.collapsed .rsvp-tally{margin-bottom:0;}
+.rsvp-expand-hint{font-size:.72rem;color:#5A3FD6;font-weight:600;}
