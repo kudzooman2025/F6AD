@@ -846,3 +846,9 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 
 /* Knockout round badge on game list items */
 .gt-status-pill.gt-st-round{background:#EDE9FE;color:#5A3FD6;border:1px solid #C4B5FD;font-weight:700;text-transform:uppercase;letter-spacing:.02em;}
+
+/* Click-to-edit schedule cards (staff) */
+.event-item.editable{cursor:pointer;transition:box-shadow .12s,border-color .12s;}
+.event-item.editable:hover{box-shadow:0 2px 10px rgba(90,63,214,.12);border-color:#C4B5FD;}
+.sched-edit{display:inline-block;margin-top:8px;margin-right:8px;padding:4px 10px;font-size:.78rem;font-weight:700;color:#5A3FD6;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:8px;cursor:pointer;}
+.sched-edit:hover{background:#DDD6FE;}

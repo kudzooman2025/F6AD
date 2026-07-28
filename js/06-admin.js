@@ -127,14 +127,15 @@ function renderSchedule() {
     const time = ev.time ? (() => { const [h,m]=ev.time.split(':'); const hr=+h; return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; })() : '';
     const canceled = !!(ev._cancelId && typeof canceledEvents !== 'undefined' && canceledEvents[ev._cancelId]);
     const staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
-    return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}">
+    return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}${staff?' editable':''}"${staff&&ev._cancelId?` onclick="schedEditEvent('${ev._cancelId}')" title="Click to edit this event"`:''}>
       <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
       <div class="event-info">
         <div class="event-name"><span class="evn-text">${ev.name}</span>${ev.source==='teamsnap'?' <span class="ts-badge">FC Delco</span>':''}${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
         <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
-        ${(!isPast && !canceled && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}">📋 RSVP / availability</a>` : ''}
-        ${(staff && ev._cancelId) ? `<button class="sched-cancel" onclick="cancelEvent('${ev._cancelId}', ${canceled?'false':'true'})">${canceled?'↩ Un-cancel':'🚫 Mark canceled'}</button>` : ''}
+        ${(!isPast && !canceled && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}" onclick="event.stopPropagation()">📋 RSVP / availability</a>` : ''}
+        ${(staff && ev._cancelId) ? `<button class="sched-edit" onclick="event.stopPropagation();schedEditEvent('${ev._cancelId}')">✏️ Edit</button>` : ''}
+        ${(staff && ev._cancelId) ? `<button class="sched-cancel" onclick="event.stopPropagation();cancelEvent('${ev._cancelId}', ${canceled?'false':'true'})">${canceled?'↩ Un-cancel':'🚫 Mark canceled'}</button>` : ''}
       </div>
     </div>`;
   }
@@ -1231,5 +1232,41 @@ function cancelEvent(cancelId, on) {
   } else {
     db.collection('cancellations').doc(cancelId).delete()
       .then(function(){ showToast('Cancellation removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  }
+}
+
+
+// ===== Click-to-edit any event from the public Schedule page (staff only) =====
+function schedActivateAdminTab(tab) {
+  var btn = document.querySelector('.admin-tab[onclick*="\'' + tab + '\'"]');
+  if (btn && typeof switchTab === 'function') switchTab(tab, btn);
+}
+function schedEditEvent(cancelId) {
+  var staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
+  if (!staff || !cancelId) return;
+  var us = cancelId.indexOf('_');
+  if (us < 0) return;
+  var kind = cancelId.slice(0, us);
+  var rest = cancelId.slice(us + 1);
+  if (kind === 'game') {
+    if (typeof gtOpenGameEdit === 'function') gtOpenGameEdit(rest);
+    else if (typeof showToast === 'function') showToast('Open GameTracker to edit this game.');
+    return;
+  }
+  if (kind === 'sched') {
+    if (typeof openAdmin === 'function') openAdmin();
+    schedActivateAdminTab('schedule');
+    if (typeof editEvent === 'function') editEvent(rest);
+    return;
+  }
+  if (kind === 'camp') {
+    if (typeof openAdmin === 'function') openAdmin();
+    schedActivateAdminTab('camps');
+    if (typeof showToast === 'function') showToast('Edit camp details on the Camps tab.');
+    return;
+  }
+  if (kind === 'cond') {
+    if (typeof showToast === 'function') showToast('Conditioning sessions are auto-generated \u2014 use Mark canceled to cancel one.');
+    return;
   }
 }
