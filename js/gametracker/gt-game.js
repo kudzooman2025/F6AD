@@ -1321,8 +1321,9 @@ function gtRsvpCard(id, title, meta, rosterId, open, canceled) {
   }).join('');
   var hiddenHtml = '';
   if (canEd && hidden.length) {
-    hiddenHtml = '<div class="rsvp-removed"><div class="rsvp-removed-lbl">Removed from this event — tap to add back:</div>' +
-      hidden.map(function(p){ return '<button class="gt-minibtn" onclick="gtRsvpRestorePlayer(\'' + id + '\',\'' + p.id + '\')">↩ ' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</button>'; }).join('') + '</div>';
+    var hopts = '<option value="">↩ Add a removed player back…</option>' + hidden.map(function(p){ return '<option value="' + p.id + '">' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</option>'; }).join('');
+    hiddenHtml = '<div class="rsvp-removed"><div class="rsvp-removed-lbl">Removed from this event (' + hidden.length + '):</div>' +
+      '<select class="rsvp-idselect rsvp-removed-select" onchange="if(this.value){gtRsvpRestorePlayer(\'' + id + '\',this.value);this.value=\'\';}">' + hopts + '</select></div>';
   }
   return '<div class="rsvp-card">' +
     '<div class="rsvp-ghead"><span class="rsvp-gteams">' + title + (canceled ? ' <span class="cancel-badge">Canceled</span>' : '') + '</span>' +
