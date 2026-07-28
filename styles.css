@@ -859,3 +859,7 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 /* "Full game details" (promote to GameTracker) button on schedule cards */
 .sched-fulledit{display:inline-block;margin-top:8px;margin-right:8px;padding:4px 10px;font-size:.78rem;font-weight:700;color:#fff;background:#5A3FD6;border:1px solid #5A3FD6;border-radius:8px;cursor:pointer;}
 .sched-fulledit:hover{background:#4930b0;}
+
+/* Compact dropdown identity picker on Availability */
+.rsvp-idselect{margin-top:4px;width:100%;max-width:340px;padding:9px 12px;font-size:.9rem;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);cursor:pointer;}
+.rsvp-idx{opacity:.6;font-size:.7rem;margin-left:2px;}

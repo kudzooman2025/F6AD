@@ -1279,12 +1279,20 @@ function gtRsvpIdentityPicker(rosterId, eventId) {
     ? gtRsvpPlayersFor(rosterId).filter(function(p){ var r = gtRsvp(eventId, p.id); return !(r && r.hidden); })
     : gtRsvpRosterPlayers();
   var mineCount = gtMyRsvpPlayers().length;
-  var chips = players.map(function(p) {
-    var mine = gtIsMyRsvpPlayer(p.id);
-    return '<button class="rsvp-idchip' + (mine ? ' on' : '') + '" onclick="gtToggleMyRsvpPlayer(\'' + p.id + '\')">' + (mine ? '✓ ' : '') + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</button>';
+  var selected = players.filter(function(p){ return gtIsMyRsvpPlayer(p.id); });
+  var unselected = players.filter(function(p){ return !gtIsMyRsvpPlayer(p.id); });
+  var selChips = selected.map(function(p) {
+    return '<button class="rsvp-idchip on" onclick="gtToggleMyRsvpPlayer(\'' + p.id + '\')" title="Remove">✓ ' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + ' <span class="rsvp-idx">✕</span></button>';
   }).join('');
-  return '<div class="rsvp-idbox"><div class="rsvp-idlabel">Who are you here for? <span style="font-weight:500;color:var(--muted)">tap your player(s) — saved on this device</span></div>' +
-    '<div class="rsvp-idchips">' + (chips || '<span style="color:var(--muted);font-size:.85rem">No players found.</span>') + '</div>' +
+  var opts = '<option value="">＋ Add your player…</option>' + unselected.map(function(p) {
+    return '<option value="' + p.id + '">' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</option>';
+  }).join('');
+  var picker = players.length
+    ? '<select class="rsvp-idselect" onchange="if(this.value){gtToggleMyRsvpPlayer(this.value);this.value=\'\';}">' + opts + '</select>'
+    : '<span style="color:var(--muted);font-size:.85rem">No players found.</span>';
+  return '<div class="rsvp-idbox"><div class="rsvp-idlabel">Who are you here for? <span style="font-weight:500;color:var(--muted)">choose your player(s) — saved on this device</span></div>' +
+    (selChips ? '<div class="rsvp-idchips">' + selChips + '</div>' : '') +
+    picker +
     (mineCount ? '' : '<div class="rsvp-idhint">Pick your player above, then set their status for each game below.</div>') + '</div>';
 }
 function gtRsvpCard(id, title, meta, rosterId, open, canceled) {
