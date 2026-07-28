@@ -1327,11 +1327,11 @@ function gtRsvpCard(id, title, meta, rosterId, open, canceled, collapsible) {
   }
   var expanded = !collapsible || (GT.rsvpExpanded && GT.rsvpExpanded[id]);
   var head = '<div class="rsvp-ghead' + (collapsible ? ' rsvp-clickable' : '') + '"' + (collapsible ? ' onclick="gtToggleRsvpCard(\'' + id + '\')"' : '') + '>' +
-    (collapsible ? '<span class="rsvp-chev' + (expanded ? ' open' : '') + '">▸</span>' : '') +
+    (collapsible ? '<span class="rsvp-chev' + (expanded ? ' open' : '') + '">' + (expanded ? '\u25be Collapse' : '\u25b8 Expand') + '</span>' : '') +
     '<span class="rsvp-gteams">' + title + (canceled ? ' <span class="cancel-badge">Canceled</span>' : '') + '</span>' +
     '<a class="gt-minibtn" style="padding:4px 10px;font-size:.72rem" onclick="event.stopPropagation();gtCopyRsvpLink(\'' + id + '\')">🔗 RSVP link</a></div>';
   var summary = '<div class="rsvp-gmeta">' + meta + '</div>' +
-    '<div class="rsvp-tally"><span class="rsvp-b in">' + t.in + ' in</span><span class="rsvp-b maybe">' + t.maybe + ' maybe</span><span class="rsvp-b out">' + t.out + ' out</span>' + ((canEd && expanded) ? ' <span style="font-size:.72rem;color:var(--muted)">· ✕ to remove a player</span>' : '') + (open ? '' : '<span class="rsvp-locked">· closed</span>') + (collapsible && !expanded ? ' <span class="rsvp-expand-hint">· tap to open</span>' : '') + '</div>';
+    '<div class="rsvp-tally"><span class="rsvp-b in">' + t.in + ' in</span><span class="rsvp-b maybe">' + t.maybe + ' maybe</span><span class="rsvp-b out">' + t.out + ' out</span>' + ((canEd && expanded) ? ' <span style="font-size:.72rem;color:var(--muted)">· ✕ to remove a player</span>' : '') + (open ? '' : '<span class="rsvp-locked">· closed</span>') + '</div>';
   var body = expanded ? ('<div class="rsvp-rows">' + (rows || '<div class="gt-empty">No players.</div>') + '</div>' + hiddenHtml) : '';
   return '<div class="rsvp-card' + (collapsible && !expanded ? ' collapsed' : '') + '">' + head + summary + body + '</div>';
 }
