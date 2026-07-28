@@ -10,7 +10,7 @@ function gtRenderReview(view, gameId) {
   var res = g.status === 'complete' ? gtResult(g) : null;
   var html = gtLockBanner() + (gtGameCanceled(g) ? '<div class="gt-cancel-banner">🚫 This game has been canceled.</div>' : '') +
     '<div class="gt-card" style="text-align:center">' +
-    '<div style="font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">' + gtEsc(g.game_type || 'game') + ' · ' + gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.players_per_side ? ' · ' + g.players_per_side + 'v' + g.players_per_side : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '') + '</div>' +
+    '<div style="font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">' + gtEsc(g.game_type || 'game') + (g.round ? ' · ' + gtRoundLabel(g.round) : '') + ' · ' + gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.players_per_side ? ' · ' + g.players_per_side + 'v' + g.players_per_side : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '') + '</div>' +
     ([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).length ? '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">📍 ' + gtEsc([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).join(', ')) + '</div>' : '') +
     '<div style="font-size:1.25rem;font-weight:900;margin-top:8px">' + gtEsc(gtHomeName(g)) + ' <span style="font-size:1.6rem;color:var(--purple)">' + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span> ' + gtEsc(gtAwayName(g)) + '</div>' +
     (g.pk_winner ? '<div style="font-size:.85rem;color:var(--muted);margin-top:2px">🥅 Penalties: ' + gtEsc(gtOurName(g)) + ' ' + gtPkScore(g).us + '–' + gtPkScore(g).them + ' ' + gtEsc(gtTheirName(g)) + '</div>' : '') +
@@ -180,6 +180,7 @@ function gtSeasonGames() {
     if (rid && g.roster_id !== rid) return false;
     if (g.status !== 'complete') return false;
     if (f.type !== 'all' && g.game_type !== f.type) return false;
+    if (f.round && (g.round || '') !== f.round) return false;
     if (f.team && gtOurName(g) !== f.team) return false;
     if (f.opp) {
       var opp = gtTheirName(g) || '';
@@ -213,6 +214,7 @@ function gtRenderSeason(view) {
     (seasonTeams.length >= 1 ? '<select onchange="GT.seasonFilters.team=this.value;gtRerender(true)"><option value="">All teams</option>' + seasonTeams.map(function(tn){ return '<option value="' + gtAttr(tn) + '"' + (f.team === tn ? ' selected' : '') + '>' + gtEsc(tn) + '</option>'; }).join('') + '</select>' : '') +
     '<select onchange="GT.seasonFilters.type=this.value;gtRerender(true)">' +
     ['all', 'league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (f.type === t ? ' selected' : '') + '>' + (t === 'all' ? 'All types' : t.charAt(0).toUpperCase() + t.slice(1)) + '</option>'; }).join('') + '</select>' +
+    '<select onchange="GT.seasonFilters.round=this.value;gtRerender(true)"><option value="">All rounds</option>' + GT_ROUNDS.map(function(r){ return '<option value="' + r[0] + '"' + (f.round === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>' +
     '<input type="date" value="' + gtAttr(f.from) + '" onchange="GT.seasonFilters.from=this.value;gtRerender(true)" title="From date"/>' +
     '<input type="date" value="' + gtAttr(f.to) + '" onchange="GT.seasonFilters.to=this.value;gtRerender(true)" title="To date"/>' +
     '<input type="text" value="' + gtAttr(f.opp) + '" placeholder="Opponent…" onchange="GT.seasonFilters.opp=this.value;gtRerender(true)"/>' +
@@ -251,7 +253,7 @@ function gtRenderSeason(view) {
         '<td style="font-weight:700">' + gtEsc(gtTheirName(g)) + '</td>' +
         '<td class="num"><span class="gt-result-' + r.toLowerCase() + '">' + r + '</span></td>' +
         '<td class="num" style="font-weight:800">' + gtOurScore(g) + '–' + gtTheirScore(g) + '</td>' +
-        '<td>' + gtEsc(g.game_type || '') + '</td><td>' + gtEsc(g.venue || '') + '</td></tr>';
+        '<td>' + gtEsc(g.game_type || '') + (g.round ? ' · ' + gtRoundLabel(g.round) : '') + '</td><td>' + gtEsc(g.venue || '') + '</td></tr>';
     });
     html += '</tbody></table></div>';
   }

@@ -838,3 +838,8 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .type-tournament{background:#b45309;color:#fff}
 .type-friendly{background:#0f766e;color:#fff}
 .gt-src-badge{display:inline-block;background:var(--accent-soft);color:var(--purple);font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle}
+/* Knockout round checkboxes (game setup) */
+.gt-round-checks{display:flex;gap:8px;flex-wrap:wrap}
+.gt-round-check{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border-strong);border-radius:10px;padding:8px 12px;font-size:.86rem;font-weight:600;cursor:pointer}
+.gt-round-check.on{background:var(--accent-soft);border-color:var(--purple);color:var(--purple-dark)}
+.gt-round-check input{width:16px;height:16px}

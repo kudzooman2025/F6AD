@@ -9,7 +9,7 @@ function gtStartSetup() {
     num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
     roster_id: act ? act.id : '',
     avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null, season_id: null,
-    started: {}, startPos: {}, team_name: ''
+    started: {}, startPos: {}, team_name: '', round: ''
   };
   gtGo('/gametracker/new');
 }
@@ -61,6 +61,8 @@ function gtRenderNew(view) {
       '</select></div>' +
       '<div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Venue</label>' +
       '<input type="text" id="gt-su-venue" list="venue-datalist" onchange="gtFillVenueFields(\'gt-su-venue\',\'gt-su-vaddr\',\'gt-su-vcity\',\'gt-su-vstate\',\'gt-su-vzip\')" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue) + '" placeholder="Kohler Field, Blue Bell"/></div></div>' +
+      '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Knockout Round <span style="font-weight:500;text-transform:none;color:var(--muted)">(optional)</span></label>' +
+      '<div class="gt-round-checks">' + GT_ROUNDS.map(function(r){ return '<label class="gt-round-check' + (s.round === r[0] ? ' on' : '') + '"><input type="checkbox"' + (s.round === r[0] ? ' checked' : '') + ' onchange="gtSetupField(\'round\', this.checked ? \'' + r[0] + '\' : \'\');gtSetupCapture();gtRerender(true)"/> ' + r[1] + '</label>'; }).join('') + '</div>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Address</label>' +
       '<input type="text" id="gt-su-vaddr" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue_address || '') + '" placeholder="223 Keith Valley Rd"/>' +
       '<div class="gm-row" style="margin-top:10px"><div><label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:4px">City</label><input type="text" id="gt-su-vcity" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.venue_city || '') + '"/></div>' +
@@ -205,7 +207,7 @@ function gtCreateGame() {
   var gameRef = db.collection('gt_games').doc();
   batch.set(gameRef, {
     roster_id: s.roster_id, tournament_id: s.tournament_id || null, season_id: s.season_id || null, home_team: s.home_team, away_team: s.away_team, f6ad_side: s.f6ad_side,
-    game_type: s.game_type, venue: s.venue, venue_address: s.venue_address || '', venue_city: s.venue_city || '', venue_state: s.venue_state || '', venue_zip: s.venue_zip || '', num_periods: s.num_periods,
+    game_type: s.game_type, round: s.round || '', venue: s.venue, venue_address: s.venue_address || '', venue_city: s.venue_city || '', venue_state: s.venue_state || '', venue_zip: s.venue_zip || '', num_periods: s.num_periods,
     period_duration_minutes: s.period_duration_minutes, players_per_side: s.players_per_side || 11, kickoff_time: s.kickoff_time || '', field: s.field || '',
     status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
     period_elapsed: {}, home_score: 0, away_score: 0,
@@ -475,6 +477,7 @@ function gtOpenGameEdit(gid) {
     '<label>Opponent</label><input type="text" id="gt-ge-opp" value="' + gtAttr(opp) + '"/>' +
     '<label>We are playing</label><div class="gt-avail-toggle"><button type="button" id="gt-ge-home" class="' + (g.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-away\').classList.remove(\'on-yes\')">🏠 Home</button><button type="button" id="gt-ge-away" class="' + (g.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-home\').classList.remove(\'on-yes\')">✈️ Away</button></div>' +
     '<div class="gm-row"><div><label>Game Type</label><select id="gt-ge-type">' + ['league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (g.game_type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') + '</select></div>' +
+    '<div><label>Knockout Round</label><select id="gt-ge-round"><option value="">— None —</option>' + GT_ROUNDS.map(function(r){ return '<option value="' + r[0] + '"' + ((g.round || '') === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Date</label><input type="date" id="gt-ge-date" value="' + dateVal + '"/></div></div>' +
     '<label>Start Time (kickoff)</label><input type="time" id="gt-ge-time" value="' + gtAttr(g.kickoff_time || '') + '"/>' +
     '<label>Field Assignment</label><input type="text" id="gt-ge-field" value="' + gtAttr(g.field || '') + '" placeholder="Field 11"/>' +
@@ -503,6 +506,7 @@ function gtSaveGameEdit(gid) {
     home_team: side === 'home' ? ourName : opp,
     away_team: side === 'home' ? opp : ourName,
     game_type: document.getElementById('gt-ge-type').value,
+    round: (document.getElementById('gt-ge-round') || {}).value || '',
     venue: document.getElementById('gt-ge-venue').value.trim(),
     venue_address: document.getElementById('gt-ge-vaddr').value.trim(),
     venue_city: document.getElementById('gt-ge-vcity').value.trim(),

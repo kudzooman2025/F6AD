@@ -13,7 +13,7 @@ var GT = {
   openFeedItem: null,
   seasonSort: { col: 'goals', dir: -1 },
   seasonShowGuests: false,
-  seasonFilters: { type: 'all', from: '', to: '', opp: '', team: '' },
+  seasonFilters: { type: 'all', from: '', to: '', opp: '', team: '', round: '' },
   rosterSel: null,
   chatDraft: ''
 };
@@ -608,3 +608,6 @@ function gtToggleMyRsvpPlayer(pid) {
 
 function gtGameCanceled(g) { return !!(g && typeof canceledEvents !== 'undefined' && canceledEvents['game_' + g.id]); }
 function gtCampDayCanceled(dayId) { return !!(typeof canceledEvents !== 'undefined' && canceledEvents['camp_' + dayId]); }
+
+var GT_ROUNDS = [['qf', 'Quarterfinal'], ['sf', 'Semifinal'], ['final', 'Final']];
+function gtRoundLabel(r) { var m = { qf: 'Quarterfinal', sf: 'Semifinal', final: 'Final' }; return m[r] || ''; }
