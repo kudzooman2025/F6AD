@@ -159,7 +159,7 @@ function gtStatusPill(g) {
     setup: ['gt-st-setup', 'Ready'], in_progress: ['gt-st-live', '● Live'],
     paused: ['gt-st-paused', 'Paused'], between_periods: ['gt-st-paused', 'Break'],
     pk_shootout: ['gt-st-live', '● PKs'],
-    complete: ['gt-st-complete', 'Final']
+    complete: ['gt-st-complete', 'Full Time']
   };
   var m = map[g.status] || map.setup;
   return '<span class="gt-status-pill ' + m[0] + '">' + m[1] + '</span>';
@@ -170,7 +170,7 @@ function gtGameItem(g) {
   if (g.status === 'complete') target = '#/gametracker/review/' + g.id;
   var res = g.status === 'complete' ? '<span class="gt-result-' + gtResult(g).toLowerCase() + '">' + gtResult(g) + '</span> ' : '';
   return '<div class="gt-gitem' + (gtGameCanceled(g) ? ' canceled' : '') + '" onclick="gtGo(\'' + target.slice(1) + '\')">' +
-    gtStatusPill(g) + (gtGameCanceled(g) ? '<span class="gt-status-pill gt-st-canceled">🚫 Canceled</span>' : '') +
+    gtStatusPill(g) + (gtGameCanceled(g) ? '<span class="gt-status-pill gt-st-canceled">🚫 Canceled</span>' : '') + (g.round ? '<span class="gt-status-pill gt-st-round">' + gtEsc(gtRoundLabel(g.round)) + '</span>' : '') +
     '<span class="gi-teams">' + gtEsc(gtHomeName(g)) + ' vs ' + gtEsc(gtAwayName(g)) + '</span>' +
     '<span class="gi-score">' + res + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span>' +
     '<span class="gi-meta">' + gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + ' · ' + gtEsc(g.game_type || '') + (g.players_per_side ? ' · ' + g.players_per_side + 'v' + g.players_per_side : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '') + '</span>' +
