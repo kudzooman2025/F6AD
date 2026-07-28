@@ -110,7 +110,7 @@ function renderSchedule() {
     });
   }
   const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
-  const sorted = [...scheduleItems.map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
+  const sorted = [...scheduleItems.filter(it => !it.promoted).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
   const vis = (typeof scheduleFilter !== 'undefined' && scheduleFilter !== 'all') ? sorted.filter(ev => ev.type === scheduleFilter) : sorted;
   const upcoming = vis.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
   const past     = vis.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
@@ -134,6 +134,7 @@ function renderSchedule() {
         <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
         ${(!isPast && !canceled && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}" onclick="event.stopPropagation()">📋 RSVP / availability</a>` : ''}
+        ${(staff && ev._cancelId && ev._cancelId.indexOf('sched_')===0 && (ev.type==='game'||ev.type==='tournament'||ev.type==='friendly')) ? `<button class="sched-fulledit" onclick="event.stopPropagation();schedPromoteToGame('${ev._cancelId.slice(6)}')">🎮 Full game details</button>` : ''}
         ${(staff && ev._cancelId) ? `<button class="sched-edit" onclick="event.stopPropagation();schedEditEvent('${ev._cancelId}')">✏️ Edit</button>` : ''}
         ${(staff && ev._cancelId) ? `<button class="sched-cancel" onclick="event.stopPropagation();cancelEvent('${ev._cancelId}', ${canceled?'false':'true'})">${canceled?'↩ Un-cancel':'🚫 Mark canceled'}</button>` : ''}
       </div>
@@ -190,7 +191,7 @@ function renderAdminSchedule() {
       }
     });
   }
-  const items = [...scheduleItems.map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const items = [...scheduleItems.filter(it => !it.promoted).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
   const el = document.getElementById('admin-schedule-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
   el.innerHTML = items.map(ev => `
@@ -1269,4 +1270,65 @@ function schedEditEvent(cancelId) {
     if (typeof showToast === 'function') showToast('Conditioning sessions are auto-generated \u2014 use Mark canceled to cancel one.');
     return;
   }
+}
+
+
+// ===== Promote a TeamSnap (or manual) game/tournament into a full GameTracker game =====
+function schedParseMatchup(name) {
+  var raw = String(name || '').trim();
+  var ourRe = /f6ad|delco/i;
+  var def = 'FC Delco MLS Next AD U14';
+  function pick(a, b, aIsHome) {
+    a = a.trim(); b = b.trim();
+    var aOurs = ourRe.test(a), bOurs = ourRe.test(b);
+    if (aOurs && !bOurs) return { ours: a, opp: b, side: aIsHome ? 'home' : 'away' };
+    if (bOurs && !aOurs) return { ours: b, opp: a, side: aIsHome ? 'away' : 'home' };
+    return { ours: a, opp: b, side: aIsHome ? 'home' : 'away' };
+  }
+  var vs = raw.split(/\s+vs\.?\s+/i);
+  if (vs.length === 2) return pick(vs[0], vs[1], true);
+  var at = raw.split(/\s+@\s+|\s+\bat\b\s+/i);
+  if (at.length === 2) return pick(at[0], at[1], false);
+  return { ours: def, opp: raw, side: 'home' };
+}
+function schedPromoteToGame(schedId) {
+  var staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
+  if (!staff) return;
+  var ev = scheduleItems.find(function(e){ return e.id === schedId; });
+  if (!ev) { if (typeof showToast === 'function') showToast('Event not found.'); return; }
+  // Already promoted: just reopen the linked game's full editor.
+  if (ev.gt_game_id && typeof gtGame === 'function' && gtGame(ev.gt_game_id)) {
+    if (typeof gtOpenGameEdit === 'function') gtOpenGameEdit(ev.gt_game_id);
+    return;
+  }
+  var roster = (typeof gtActiveRoster === 'function' && gtActiveRoster()) || (typeof GT !== 'undefined' && GT.rosters && GT.rosters[0]);
+  if (!roster) { if (typeof showToast === 'function') showToast('Create a roster in GameTracker first, then try again.'); return; }
+  var m = schedParseMatchup(ev.name);
+  var gtype = ev.type === 'tournament' ? 'tournament' : ev.type === 'friendly' ? 'friendly' : 'league';
+  var parts = String(ev.location || '').split(' \u00b7 ');
+  var ts = firebase.firestore.FieldValue.serverTimestamp();
+  var gameRef = db.collection('gt_games').doc();
+  var data = {
+    roster_id: roster.id, tournament_id: null, season_id: null,
+    home_team: m.side === 'away' ? m.opp : m.ours,
+    away_team: m.side === 'away' ? m.ours : m.opp,
+    f6ad_side: m.side,
+    game_type: gtype, round: '',
+    venue: (parts[0] || '').trim(), venue_address: '', venue_city: '', venue_state: '', venue_zip: '',
+    num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
+    kickoff_time: ev.time || '', field: parts.length > 1 ? parts.slice(1).join(' \u00b7 ').trim() : '',
+    status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
+    period_elapsed: {}, home_score: 0, away_score: 0,
+    played_at: ev.date ? firebase.firestore.Timestamp.fromDate(new Date(ev.date + 'T12:00:00')) : null,
+    source: ev.source || '', from_schedule_id: schedId,
+    created_at: ts, updated_at: ts
+  };
+  var batch = db.batch();
+  batch.set(gameRef, data);
+  // Pin + hide the original schedule row so it won't duplicate or get overwritten by future TeamSnap syncs.
+  batch.set(db.collection('schedule').doc(schedId), { promoted: true, gt_game_id: gameRef.id, manual_override: true, updated_at: ts }, { merge: true });
+  batch.commit().then(function(){
+    if (typeof showToast === 'function') showToast('Converted to a full game \u2713 Fill in the details.');
+    if (typeof gtOpenGameEdit === 'function') gtOpenGameEdit(gameRef.id);
+  }).catch(function(e){ if (typeof showToast === 'function') showToast('Error: ' + e.message); });
 }
