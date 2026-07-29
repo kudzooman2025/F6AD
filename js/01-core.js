@@ -40,6 +40,12 @@ db.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
 
 // ===================== DATA =====================
 const CONFIRMED_IDS = [8, 13, 20, 6];
+// Hard-coded tournament results (for events not tracked in GameTracker), keyed by
+// SUMMER/FALL tournament id. key: 'champion' | 'finalist' | 'semifinalist' | 'done'.
+// Optional record like '3W-1L'. These take precedence over any GameTracker match.
+const MANUAL_TOURNAMENT_RESULTS = {
+  8: { key: 'finalist', label: '\ud83e\udd48 Finalists', record: '' }   // The Cup 26
+};
 
 // FC Delco club events — our players are committed with the CLUB (not F6AD) on
 // these dates. Shown in the locked-in section and used to flag date conflicts.
