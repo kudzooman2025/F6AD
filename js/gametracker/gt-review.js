@@ -53,8 +53,11 @@ function gtRenderReview(view, gameId) {
       }).join('') + '</div>';
   }
   // player stat table
-  html += '<div class="section-title" style="margin:26px 0 12px">📊 Player Stats' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove a player · ✏️ to edit minutes</span>' : '') + '</div>';
-  var availIds = gtAvailIds(g.id);
+  var availIds = gtWhoPlayedIds(g.id);
+  var availSet = {}; gtAvailIds(g.id).forEach(function(pid){ availSet[pid] = true; });
+  var inferredCount = availIds.filter(function(pid){ return !availSet[pid]; }).length;
+  html += '<div class="section-title" style="margin:26px 0 12px">📊 Player Stats &amp; Who Played' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove a player · ✏️ to edit minutes</span>' : '') + '</div>';
+  if (inferredCount) html += '<div style="font-size:.74rem;color:var(--muted);margin:-4px 0 10px">Includes ' + inferredCount + ' player' + (inferredCount === 1 ? '' : 's') + ' added from logged stats/subs (no lineup was set for this game).</div>';
   if (availIds.length) {
     var mins = gtMinutesMap(g.id);
     html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Player</th><th class="num">⚽ G</th><th class="num">🅰️ A</th><th class="num">🎯 SOT</th><th class="num">💨 SH</th><th class="num">🟨</th><th class="num">🟥</th><th class="num">🧤 SV</th><th class="num">🛡️ T</th><th class="num">Min</th></tr></thead><tbody>';

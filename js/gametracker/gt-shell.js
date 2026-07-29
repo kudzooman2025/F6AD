@@ -170,7 +170,7 @@ function gtGameItem(g) {
   if (g.status === 'complete') target = '#/gametracker/review/' + g.id;
   var res = g.status === 'complete' ? '<span class="gt-result-' + gtResult(g).toLowerCase() + '">' + gtResult(g) + '</span> ' : '';
   var completed = g.status === 'complete';
-  var nPlayed = (completed && typeof gtAvailIds === 'function') ? gtAvailIds(g.id).length : 0;
+  var nPlayed = (completed && typeof gtWhoPlayedIds === 'function') ? gtWhoPlayedIds(g.id).length : 0;
   var nStart = (completed && typeof gtStarters === 'function') ? gtStarters(g.id).length : 0;
   var cta = completed
     ? '<span class="gi-cta">📊 View stats &amp; roster' + (nPlayed ? ' · 👥 ' + nPlayed + ' played' : '') + (nStart ? ' · ⭐ ' + nStart + ' XI' : '') + ' →</span>'

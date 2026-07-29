@@ -239,6 +239,16 @@ function gtGameAvailEntry(gid, pid) { return gtGameAvail(gid).find(function(a){ 
 function gtAvailIds(gid) {
   return gtGameAvail(gid).filter(function(a){ return a.available; }).map(function(a){ return a.player_id; });
 }
+// Everyone who appears in a game: marked-available players PLUS anyone with a logged
+// event (goal/assist/card/save/etc.) or a substitution — so the roster shows up even
+// for games where a formal lineup/availability was never set.
+function gtWhoPlayedIds(gid) {
+  var set = {};
+  gtAvailIds(gid).forEach(function(pid){ if (pid) set[pid] = true; });
+  gtGameEvents(gid).forEach(function(e){ if (e.player_id) set[e.player_id] = true; });
+  gtGameSubs(gid).forEach(function(sb){ if (sb.player_in_id) set[sb.player_in_id] = true; if (sb.player_out_id) set[sb.player_out_id] = true; });
+  return Object.keys(set);
+}
 function gtOurScore(g) { return g.f6ad_side === 'away' ? (g.away_score || 0) : (g.home_score || 0); }
 function gtTheirScore(g) { return g.f6ad_side === 'away' ? (g.home_score || 0) : (g.away_score || 0); }
 function gtOurName(g) {
