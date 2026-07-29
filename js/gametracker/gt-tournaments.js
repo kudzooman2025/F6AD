@@ -7,6 +7,50 @@ function gtTournamentGames(tid) {
     .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
 }
 function gtTournLineup(t) { return (t && t.lineup) || {}; }
+// A tournament is "played" once it has games and all of them are complete.
+function gtTournComplete(t) {
+  var gms = gtTournamentGames(t.id).filter(function(g){ return !gtGameCanceled(g); });
+  return gms.length > 0 && gms.every(function(g){ return g.status === 'complete'; });
+}
+function gtTournRecord(tid) {
+  var w = 0, l = 0, d = 0;
+  gtTournamentGames(tid).filter(function(g){ return g.status === 'complete' && !gtGameCanceled(g); }).forEach(function(g){
+    var r = gtResult(g); if (r === 'W') w++; else if (r === 'L') l++; else d++;
+  });
+  return { w: w, l: l, d: d };
+}
+function gtTournRecordStr(tid) {
+  var r = gtTournRecord(tid);
+  return r.w + 'W-' + r.l + 'L' + (r.d ? '-' + r.d + 'D' : '');
+}
+// Derive our finish from knockout-round tags + results: won the Final -> Champions,
+// lost the Final -> Finalists, won a Semifinal (no final logged yet) -> Finalists,
+// lost a Semifinal -> Semifinalists.
+function gtTournPlacement(tid) {
+  var games = gtTournamentGames(tid).filter(function(g){ return g.status === 'complete' && !gtGameCanceled(g); });
+  if (!games.length) return null;
+  var finals = games.filter(function(g){ return g.round === 'final'; });
+  if (finals.length) {
+    return finals.some(function(g){ return gtResult(g) === 'W'; })
+      ? { key: 'champion', label: '🏆 Champions' }
+      : { key: 'finalist', label: '🥈 Finalists' };
+  }
+  var sfs = games.filter(function(g){ return g.round === 'sf'; });
+  if (sfs.length) {
+    return sfs.some(function(g){ return gtResult(g) === 'W'; })
+      ? { key: 'finalist', label: '🥈 Finalists' }
+      : { key: 'semifinalist', label: '🥉 Semifinalists' };
+  }
+  return null;
+}
+function gtTournStatusPill(t) {
+  var pl = gtTournPlacement(t.id);
+  if (pl) return '<span class="gt-status-pill tb-' + pl.key + '">' + pl.label + '</span>';
+  if (gtTournComplete(t)) return '<span class="gt-status-pill gt-st-complete">✔ Played</span>';
+  var gms = gtTournamentGames(t.id).filter(function(g){ return !gtGameCanceled(g); });
+  if (gms.some(function(g){ return g.status !== 'complete' && g.status !== 'setup'; })) return '<span class="gt-status-pill gt-st-live">🟢 In progress</span>';
+  return '';
+}
 
 function gtRenderTournaments(view) {
   var canEdit = gtCanEdit();
@@ -26,10 +70,12 @@ function gtRenderTournaments(view) {
     var ud = gd.filter(function(d, i){ return gd.indexOf(d) === i; }).sort();
     var dateLabel = ud.length ? ud.map(gtFmtDate).join(', ')
       : (t.start_date ? gtFmtDate(t.start_date) + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') : '');
-    return '<div class="gt-gitem" onclick="gtGo(\'/gametracker/tournament/' + t.id + '\')">' +
+    var complete = gtTournComplete(t);
+    return '<div class="gt-gitem' + (complete ? ' done' : '') + '" onclick="gtGo(\'/gametracker/tournament/' + t.id + '\')">' +
+      gtTournStatusPill(t) +
       '<span class="gi-teams">' + gtEsc(t.name) + '</span>' +
       '<span class="gi-meta">' + dateLabel + (t.venue ? ' · ' + gtEsc(t.venue) : '') +
-        ' · ' + avail + ' available · ' + paid + '/' + avail + ' paid · ' + games + ' game' + (games === 1 ? '' : 's') + '</span>' +
+        ' · ' + avail + ' available · ' + paid + '/' + avail + ' paid · ' + games + ' game' + (games === 1 ? '' : 's') + (complete ? ' · ' + gtTournRecordStr(t.id) : '') + '</span>' +
       '</div>';
   }).join('') + '</div>';
   view.innerHTML = html;
@@ -126,6 +172,13 @@ function gtRenderTournament(view, tid) {
     '<div class="gt-title">🏆 ' + gtEsc(t.name) + '</div>' +
     '<div class="gt-sub">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') + '</div>' +
     ([t.venue_address, t.venue_city, t.venue_state, t.venue_zip].filter(Boolean).length ? '<div class="gt-sub" style="margin-top:-4px">📍 ' + gtEsc([t.venue_address, t.venue_city, t.venue_state, t.venue_zip].filter(Boolean).join(', ')) + '</div>' : '');
+  var _pl = gtTournPlacement(tid), _complete = gtTournComplete(t);
+  if (_pl) {
+    var _titles = { champion: '🏆 Tournament Champions', finalist: '🥈 Tournament Finalists', semifinalist: '🥉 Semifinalists' };
+    html += '<div class="gt-tourn-banner tb-' + _pl.key + '"><span class="gtb-title">' + _titles[_pl.key] + '</span><span class="gtb-rec">' + gtTournRecordStr(tid) + '</span></div>';
+  } else if (_complete) {
+    html += '<div class="gt-tourn-banner tb-done"><span class="gtb-title">✔ Tournament complete</span><span class="gtb-rec">' + gtTournRecordStr(tid) + '</span></div>';
+  }
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + availCount + '</div><div class="sb-label">Available</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + (entries.length - availCount) + '</div><div class="sb-label">Out</div></div>' +

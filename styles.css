@@ -877,3 +877,15 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-gitem.done{cursor:pointer;}
 .gi-cta{flex-basis:100%;margin-top:6px;font-size:.78rem;font-weight:700;color:#5A3FD6;}
 .gt-gitem.done:hover .gi-cta{text-decoration:underline;}
+
+/* Tournament result badges & banner */
+.gt-status-pill.tb-champion{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;font-weight:800;}
+.gt-status-pill.tb-finalist{background:#E5E7EB;color:#374151;border:1px solid #D1D5DB;font-weight:800;}
+.gt-status-pill.tb-semifinalist{background:#FDE8D7;color:#9A3412;border:1px solid #FBBF77;font-weight:800;}
+.gt-tourn-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 4px;padding:14px 18px;border-radius:12px;font-weight:800;}
+.gt-tourn-banner .gtb-title{font-size:1.15rem;}
+.gt-tourn-banner .gtb-rec{font-size:.9rem;font-weight:700;opacity:.85;}
+.gt-tourn-banner.tb-champion{background:linear-gradient(135deg,#FEF9C3,#FDE68A);color:#854D0E;border:1px solid #FCD34D;}
+.gt-tourn-banner.tb-finalist{background:linear-gradient(135deg,#F3F4F6,#E5E7EB);color:#374151;border:1px solid #D1D5DB;}
+.gt-tourn-banner.tb-semifinalist{background:linear-gradient(135deg,#FFEDD5,#FED7AA);color:#9A3412;border:1px solid #FDBA74;}
+.gt-tourn-banner.tb-done{background:#F5F3FF;color:#5A3FD6;border:1px solid #C4B5FD;}
