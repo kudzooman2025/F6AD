@@ -891,7 +891,13 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-tourn-banner.tb-done{background:#F5F3FF;color:#5A3FD6;border:1px solid #C4B5FD;}
 
 /* Result footers on the main-site confirmed tournament cards (from GameTracker) */
-.cc-footer.cc-champion{background:linear-gradient(135deg,#ca8a04,#a16207)!important;}
-.cc-footer.cc-finalist{background:#4b5563!important;}
-.cc-footer.cc-semifinalist{background:#c2410c!important;}
-.cc-footer.cc-done{background:#5A3FD6!important;}
+.confirmed-card .cc-footer.cc-champion,
+.confirmed-card .cc-footer.cc-finalist,
+.confirmed-card .cc-footer.cc-semifinalist,
+.confirmed-card .cc-footer.cc-done{color:#fff!important;font-weight:800;border-top-color:rgba(255,255,255,.25)}
+.confirmed-card .cc-footer.cc-champion{background:linear-gradient(135deg,#b45309,#92400e)!important;}
+.confirmed-card .cc-footer.cc-finalist{background:#374151!important;}
+.confirmed-card .cc-footer.cc-semifinalist{background:#9a3412!important;}
+.confirmed-card .cc-footer.cc-done{background:#4c33b8!important;}
+/* Also lift text contrast on the inline-colored FC Delco / possibility footers */
+.confirmed-card .cc-footer[style*="background"]{color:#fff!important;font-weight:700;border-top-color:rgba(255,255,255,.25)}
