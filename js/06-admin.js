@@ -334,10 +334,24 @@ function deleteEvent(id) {
 }
 
 // ===================== ANNOUNCEMENTS =====================
+function summerWrapNote() {
+  // Auto-posted, date-gated note. Appears on/after Sep 1, 2026 with no manual step.
+  var flip = (typeof SEASON_FLIP_DATE !== 'undefined') ? SEASON_FLIP_DATE : new Date('2026-09-01T00:00:00');
+  if (new Date() < flip) return null;
+  return {
+    id: 'auto-summer-wrap-2026',
+    date: 'Sep 1, 2026',
+    title: '☀️ Summer wrapped up — on to Fall!',
+    body: 'That\u2019s a wrap on the summer tournament season \u2014 thank you to every player, parent, and coach who made it a great one. The Summer \u201926 slate is now in the archives (still viewable under the Summer tab), and the Tournaments page has rolled over to our Fall \u201926 season. Let\u2019s keep it rolling. \ud83d\udcaa\u26bd',
+    _auto: true
+  };
+}
 function renderAnnouncements() {
   const active = [...announcementItems]
     .filter(a => !a.archived)
     .sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+  const _sw = summerWrapNote();
+  if (_sw) active.unshift(_sw);   // pin the auto note to the top once it's live
   const list = document.getElementById('announcements-list');
   const empty = document.getElementById('ann-empty');
   if (!active.length) { list.innerHTML=''; empty.style.display='block'; return; }

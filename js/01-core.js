@@ -181,7 +181,10 @@ let allVotesSpring = {}, allNotesSpring = {};
 let allVotesSummer27 = {}, allNotesSummer27 = {};
 
 // ===================== STATE =====================
-let activeSeason = 'summer';
+// Default Tournaments season auto-flips to Fall on/after Sep 1, 2026 (Summer stays
+// selectable via its tab). Paired with the date-gated "Summer wrapped up" note.
+const SEASON_FLIP_DATE = new Date('2026-09-01T00:00:00');
+let activeSeason = (new Date() >= SEASON_FLIP_DATE) ? 'fall' : 'summer';
 let _summerFilter = 'all', _summerSort = 'date';
 let seasonSorts = {fall:'date', winter:'date', spring:'date', summer27:'date'};
 let editingEventId = null;

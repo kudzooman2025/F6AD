@@ -11,6 +11,11 @@ document.addEventListener('DOMContentLoaded', function() {
   startCondListeners();
   renderConfirmedSummer();
   renderSummerGrid();
+  // If the default season flipped (e.g. Fall on/after Sep 1), select that tab on load.
+  if (typeof activeSeason !== 'undefined' && activeSeason !== 'summer') {
+    var _stab = document.getElementById('stab-' + activeSeason);
+    if (_stab && typeof switchSeason === 'function') switchSeason(activeSeason, _stab);
+  }
   startListeners();
   gtListen();
   window.addEventListener('hashchange', gtRoute);
