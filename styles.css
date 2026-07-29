@@ -872,3 +872,8 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .rsvp-card.collapsed{padding-bottom:12px;}
 .rsvp-card.collapsed .rsvp-tally{margin-bottom:0;}
 .rsvp-expand-hint{font-size:.72rem;color:#5A3FD6;font-weight:600;}
+
+/* Completed-game "view stats & roster" call-to-action in the games list */
+.gt-gitem.done{cursor:pointer;}
+.gi-cta{flex-basis:100%;margin-top:6px;font-size:.78rem;font-weight:700;color:#5A3FD6;}
+.gt-gitem.done:hover .gi-cta{text-decoration:underline;}
