@@ -81,6 +81,38 @@ function filterSeasonDist(season, maxDist, btn) {
 }
 
 // ===================== CONFIRMED SUMMER =====================
+// Fuzzy-match a confirmed (constant) tournament to a GameTracker tournament by name,
+// so we can surface the result we've logged in GameTracker on the main Tournaments page.
+function gtNormName(x) {
+  return String(x || '').toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/\b(annual|the|of|at|20\d\d|\d+(st|nd|rd|th))\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+function gtMatchTournamentByName(name) {
+  if (typeof GT === 'undefined' || !GT.tournaments || !GT.tournaments.length) return null;
+  var n = gtNormName(name); if (!n) return null;
+  var nTok = n.split(' ').filter(Boolean), best = null, bestScore = 0;
+  GT.tournaments.forEach(function(t) {
+    var m = gtNormName(t.name); if (!m) return;
+    var score = 0;
+    if (m === n) score = 100;
+    else if (m.indexOf(n) >= 0 || n.indexOf(m) >= 0) score = 80;
+    else { var mTok = m.split(' ').filter(Boolean); var ov = nTok.filter(function(x){ return mTok.indexOf(x) >= 0; }).length; score = ov >= 2 ? 40 + ov : 0; }
+    if (score > bestScore) { bestScore = score; best = t; }
+  });
+  return bestScore >= 40 ? best : null;
+}
+function ccResultFooter(t) {
+  if (t.club === 'FC Delco') return null;
+  var gt = gtMatchTournamentByName(t.name); if (!gt) return null;
+  var pl = (typeof gtTournPlacement === 'function') ? gtTournPlacement(gt.id) : null;
+  var complete = (typeof gtTournComplete === 'function') ? gtTournComplete(gt) : false;
+  if (!pl && !complete) return null;
+  var rec = (typeof gtTournRecordStr === 'function') ? gtTournRecordStr(gt.id) : '';
+  return { gtId: gt.id, key: pl ? pl.key : 'done', text: ((pl ? pl.label : '\u2714 Played') + (rec ? ' \u00b7 ' + rec : '')).toUpperCase() };
+}
 function renderConfirmedSummer() {
   var confirmed=SUMMER_TOURNAMENTS.filter(function(t){return CONFIRMED_IDS.indexOf(t.id)!==-1;})
     .concat(typeof FC_DELCO_EVENTS !== 'undefined' ? FC_DELCO_EVENTS : []);
@@ -89,6 +121,7 @@ function renderConfirmedSummer() {
   grid.innerHTML=confirmed.map(function(t){
     var fd=t.fee==='TBD'?'Fee TBD':t.fee.split('(')[0].trim();
     var isFC = t.club === 'FC Delco';
+    var rf = ccResultFooter(t);
     return '<div class="confirmed-card'+(isFC?' fcdelco':'')+'">'
       +'<div class="cc-head"><div class="cc-name">'+t.name+(isFC?' <span class="fc-badge">FC DELCO</span>':'')+'</div>'
       +'<div class="cc-meta"><span>'+t.dates+'</span><span>'+t.location+'</span>'+(isFC?'':'<span>'+t.distance+' mi</span>')+'</div></div>'
@@ -104,6 +137,8 @@ function renderConfirmedSummer() {
         ?'<div class="cc-footer" style="background:#991b1b">FC DELCO EVENT &nbsp;&#183;&nbsp; Club commitment \u2014 not F6AD</div>'
         :POSSIBILITY_IDS.indexOf(t.id)!==-1
         ?'<div class="cc-footer" style="background:#d97706">POSSIBILITY &nbsp;&#183;&nbsp; Registration likely but not yet confirmed</div>'
+        :rf
+        ?'<div class="cc-footer cc-'+rf.key+'" style="cursor:pointer" onclick="location.hash=\'#/gametracker/tournament/'+rf.gtId+'\'">'+rf.text+' &nbsp;&#183;&nbsp; View in GameTracker &#8594;</div>'
         :'<div class="cc-footer">CONFIRMED &nbsp;&#183;&nbsp; Registration locked in</div>')
       +'</div>';
   }).join('');

@@ -19,6 +19,9 @@ function gtListen() {
         if (typeof renderSchedule === 'function') renderSchedule();
         if (typeof renderAdminSchedule === 'function' && document.getElementById('admin-schedule-list')) renderAdminSchedule();
       }
+      if (def[1] === 'games' || def[1] === 'tournaments') {
+        if (typeof renderConfirmedSummer === 'function') renderConfirmedSummer();
+      }
     }, function(err) { showToast('GameTracker sync error: ' + err.message); });
   });
 }

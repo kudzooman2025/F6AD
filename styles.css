@@ -889,3 +889,9 @@ nav a.nav-active{color:var(--purple)!important;background:transparent;font-weigh
 .gt-tourn-banner.tb-finalist{background:linear-gradient(135deg,#F3F4F6,#E5E7EB);color:#374151;border:1px solid #D1D5DB;}
 .gt-tourn-banner.tb-semifinalist{background:linear-gradient(135deg,#FFEDD5,#FED7AA);color:#9A3412;border:1px solid #FDBA74;}
 .gt-tourn-banner.tb-done{background:#F5F3FF;color:#5A3FD6;border:1px solid #C4B5FD;}
+
+/* Result footers on the main-site confirmed tournament cards (from GameTracker) */
+.cc-footer.cc-champion{background:linear-gradient(135deg,#ca8a04,#a16207)!important;}
+.cc-footer.cc-finalist{background:#4b5563!important;}
+.cc-footer.cc-semifinalist{background:#c2410c!important;}
+.cc-footer.cc-done{background:#5A3FD6!important;}
