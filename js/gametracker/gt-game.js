@@ -1257,10 +1257,22 @@ function gtRsvpStatusBadge(status) {
   return '<span class="rsvp-b none">—</span>';
 }
 // roster (non-guest) players + the guest pool, so guests can RSVP too
-function gtRsvpPlayersFor(rosterId) {
+// Guests actually attached to a specific event: they have an availability record
+// (added at setup / via Add Player) OR have RSVP'd for it. Used to scope each
+// game's availability to its own roster + its own guests (not the global pool).
+function gtEventGuestIds(eventId) {
+  var set = {};
+  if (!eventId) return set;
+  (GT.avail || []).forEach(function(a){ if (a.game_id === eventId && a.player_id) set[a.player_id] = true; });
+  (GT.rsvp || []).forEach(function(r){ if (r.game_id === eventId && r.player_id) set[r.player_id] = true; });
+  return set;
+}
+function gtRsvpPlayersFor(rosterId, eventId) {
   var list = rosterId ? gtRosterPlayers(rosterId).filter(function(p){ return !p.is_guest; }) : [];
   list = list.slice().sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
-  var guests = gtGuestPool().slice().sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
+  var pool = gtGuestPool();
+  if (eventId) { var eg = gtEventGuestIds(eventId); pool = pool.filter(function(p){ return eg[p.id]; }); }
+  var guests = pool.slice().sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
   return list.concat(guests);
 }
 function gtRsvpRosterPlayers() {
@@ -1299,7 +1311,7 @@ function gtRsvpCard(id, title, meta, rosterId, open, canceled, collapsible) {
   if (canceled) open = false;
   var t = gtRsvpTally(id);
   var canEd = gtCanEdit();
-  var all = gtRsvpPlayersFor(rosterId);
+  var all = gtRsvpPlayersFor(rosterId, id);   // roster players + guests attached to THIS event only
   var hidden = all.filter(function(p){ var r = gtRsvp(id, p.id); return r && r.hidden; });
   var players = all.filter(function(p){ var r = gtRsvp(id, p.id); return !(r && r.hidden); });
   var rows = players.map(function(p) {
