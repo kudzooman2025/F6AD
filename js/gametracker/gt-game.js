@@ -1332,10 +1332,21 @@ function gtRsvpCard(id, title, meta, rosterId, open, canceled, collapsible) {
       ctrl + noteHtml + coachX + '</div>';
   }).join('');
   var hiddenHtml = '';
-  if (canEd && hidden.length) {
-    var hopts = '<option value="">↩ Add a removed player back…</option>' + hidden.map(function(p){ return '<option value="' + p.id + '">' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</option>'; }).join('');
-    hiddenHtml = '<div class="rsvp-removed"><div class="rsvp-removed-lbl">Removed from this event (' + hidden.length + '):</div>' +
-      '<select class="rsvp-idselect rsvp-removed-select" onchange="if(this.value){gtRsvpRestorePlayer(\'' + id + '\',this.value);this.value=\'\';}">' + hopts + '</select></div>';
+  if (canEd) {
+    // Add-back dropdown draws from the FULL roster + FULL guest pool (not just this
+    // event's players), so a coach can pull anyone into the event, including
+    // previously-removed players and guests not yet attached.
+    var visibleSet = {}; players.forEach(function(p){ visibleSet[p.id] = true; });
+    var seenC = {};
+    var candidates = gtRosterPlayers(rosterId).filter(function(p){ return !p.is_guest; }).concat(gtGuestPool())
+      .filter(function(p){ if (visibleSet[p.id] || seenC[p.id]) return false; seenC[p.id] = true; return true; })
+      .sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
+    if (candidates.length) {
+      var hopts = '<option value="">➕ Add a player or guest to this event…</option>' +
+        candidates.map(function(p){ return '<option value="' + p.id + '">' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' (guest)' : '') + '</option>'; }).join('');
+      hiddenHtml = '<div class="rsvp-removed"><div class="rsvp-removed-lbl">Add someone to this event (' + candidates.length + ' available):</div>' +
+        '<select class="rsvp-idselect rsvp-removed-select" onchange="if(this.value){gtRsvpAddToEvent(\'' + id + '\',this.value);this.value=\'\';}">' + hopts + '</select></div>';
+    }
   }
   var expanded = !collapsible || (GT.rsvpExpanded && GT.rsvpExpanded[id]);
   var head = '<div class="rsvp-ghead' + (collapsible ? ' rsvp-clickable' : '') + '"' + (collapsible ? ' onclick="gtToggleRsvpCard(\'' + id + '\')"' : '') + '>' +
@@ -1428,6 +1439,11 @@ function gtApplyRsvpsToGame(gid) {
   batch.commit().then(function(){ showToast('RSVPs applied to availability ✓'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 
+function gtRsvpAddToEvent(id, pid) {
+  if (!gtCanEdit()) { showToast('Coach sign-in required.'); return; }
+  gtSetRsvpHidden(id, pid, false);   // creates/attaches the RSVP record (unhidden) for this event
+  showToast(gtPlayerName(pid) + ' added to this event.');
+}
 function gtSetRsvpHidden(id, pid, hidden) {
   if (!gtCanEdit()) { showToast('Coach sign-in required.'); return; }
   db.collection('gt_rsvp').doc(id + '_' + pid).set({ game_id: id, player_id: pid, hidden: !!hidden, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
