@@ -642,9 +642,10 @@ footer strong{color:#fff}
   .gt-pgrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 }
 
-.nav-gt{color:#fff!important;border:1px solid var(--purple);border-radius:10px;background:var(--purple)!important;padding:9px 16px;font-weight:600;box-shadow:0 8px 18px -10px var(--purple)}
-.nav-gt:hover{filter:brightness(.93)}
-nav a.nav-active{color:var(--purple)!important;background:transparent;font-weight:700}
+.nav-gt{color:var(--ink-2)!important;background:transparent!important;border:none;box-shadow:none;border-radius:9px;padding:8px 13px;font-weight:500}
+.nav-gt:hover{color:var(--text)!important;background:#F2F1F5!important}
+nav a.nav-active,nav a.nav-gt.nav-active{color:#fff!important;background:var(--purple)!important;font-weight:700;box-shadow:0 8px 18px -10px var(--purple)}
+nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;filter:brightness(.94)}
 
 
 /* GameTracker: starting-XI highlight (tap-to-toggle in setup) */
