@@ -176,32 +176,13 @@
       <button class="btn-share" onclick="shareVotes()" style="display:none">&#x1F4CB; Copy My Votes</button>
     </div>
     <div class="season-tabs">
-      <button class="season-tab active" id="stab-summer" onclick="switchSeason('summer',this)">&#x2600;&#xFE0F; Summer &#x27;26</button>
-      <button class="season-tab" id="stab-fall" onclick="switchSeason('fall',this)">&#x1F342; Fall &#x27;26</button>
+      <button class="season-tab active" id="stab-fall" onclick="switchSeason('fall',this)">&#x1F342; Fall &#x27;26</button>
       <button class="season-tab" id="stab-winter" onclick="switchSeason('winter',this)">&#x2744;&#xFE0F; Winter &#x27;26</button>
       <button class="season-tab" id="stab-spring" onclick="switchSeason('spring',this)">&#x1F338; Spring &#x27;27</button>
       <button class="season-tab" id="stab-summer27" onclick="switchSeason('summer27',this)">&#x2600;&#xFE0F; Summer &#x27;27</button>
     </div>
-    <!-- SUMMER PANEL -->
-    <div id="season-panel-summer" class="season-panel active">
-      <p class="vote-intro" style="margin-bottom:20px">Other summer tournaments that were researched but not selected. Shown here for reference.</p>
-      <div class="filters">
-        <span class="filter-label">Distance <span style="font-size:.7rem;color:#666">(from Conshy)</span>:</span>
-        <button class="filter-btn active" onclick="filterSummer('all',this)">All</button>
-        <button class="filter-btn" onclick="filterSummer('nearby',this)">&le;50 mi</button>
-        <button class="filter-btn" onclick="filterSummer('mid',this)">&le;100 mi</button>
-        <button class="filter-btn" onclick="filterSummer('far',this)">&le;150 mi</button>
-        <span class="filter-label" style="margin-left:8px">Sort:</span>
-        <select class="filter-select" onchange="sortSummer(this.value)">
-          <option value="date">By Date</option>
-          <option value="distance">By Distance</option>
-          <option value="fee">By Fee</option>
-        </select>
-      </div>
-      <div class="t-grid" id="summer-grid"></div>
-    </div>
     <!-- FALL PANEL -->
-    <div id="season-panel-fall" class="season-panel">
+    <div id="season-panel-fall" class="season-panel active">
       <p class="vote-intro" style="margin-bottom:20px">Help choose which Fall 2026 tournaments F6AD registers for. Each family gets <strong>1,000 credits</strong> to spread across as many as they like &mdash; max 200 per tournament.</p>
       <div class="vote-summary-bar" id="vote-summary-bar-fall" style="display:none">
         <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-fall">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-fall"></span></div>
