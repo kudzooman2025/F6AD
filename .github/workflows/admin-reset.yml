@@ -1,0 +1,31 @@
+name: Admin password reset
+
+# Manually run to set (or create) the password for a site admin account, bypassing
+# the reset-email flow. The password you type is used only for this run.
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'Account email'
+        required: true
+        default: 'kudzooman@gmail.com'
+      new_password:
+        description: 'New password (min 6 characters)'
+        required: true
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Admin SDK
+        run: npm install firebase-admin@12
+      - name: Set the password
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          TARGET_EMAIL: ${{ github.event.inputs.email }}
+          NEW_PW: ${{ github.event.inputs.new_password }}
+        run: node scripts/admin-reset.js
