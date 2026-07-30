@@ -121,10 +121,21 @@ function authCreateAccount(email, pw, errEl) {
     .catch(function(e){ authShowErr(errEl, authErrMsg(e)); });
 }
 function authSendReset(email) {
-  if (!email) { showToast('Enter your email first.'); return; }
+  email = (email || '').trim();
+  if (!email) {
+    email = (window.prompt('Enter the email address for your account:') || '').trim();
+    if (!email) return;
+  }
   firebase.auth().sendPasswordResetEmail(email)
-    .then(function(){ showToast('Password reset email sent to ' + email); })
-    .catch(function(e){ showToast(authErrMsg(e)); });
+    .then(function(){ showToast('If an account exists for ' + email + ', a reset link is on its way. Check your inbox AND spam — it can take a few minutes.'); })
+    .catch(function(e){
+      var c = e.code || '';
+      if (c.indexOf('user-not-found') >= 0) { showToast('No account found for ' + email + '. Check the address, or have the owner create it.'); return; }
+      if (c.indexOf('invalid-email') >= 0) { showToast('That is not a valid email address.'); return; }
+      if (c.indexOf('too-many-requests') >= 0) { showToast('Too many attempts — wait a few minutes and try again.'); return; }
+      if (c.indexOf('operation-not-allowed') >= 0) { showToast('Email/password sign-in is not enabled in Firebase (Authentication -> Sign-in method).'); return; }
+      showToast(authErrMsg(e));
+    });
 }
 function authSignOut() {
   firebase.auth().signOut().then(function(){ showToast('Signed out.'); });
