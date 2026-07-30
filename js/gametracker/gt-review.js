@@ -300,6 +300,11 @@ function gtSeasonSortBy(col) {
   GT.seasonSort = { col: col, dir: GT.seasonSort.col === col ? -GT.seasonSort.dir : (col === 'name' ? 1 : -1) };
   gtRerender(true);
 }
+function gtPlayerSortBy(col) {
+  var ps = GT.playerSort || { col: 'date', dir: -1 };
+  GT.playerSort = { col: col, dir: ps.col === col ? -ps.dir : (col === 'opp' ? 1 : -1) };
+  gtRerender(true);
+}
 function gtSeasonPlayerStats(games, rid) {
   var map = {};
   games.forEach(function(g) {
@@ -363,7 +368,34 @@ function gtRenderPlayerProfile(view, pid) {
   html += '<div class="section-title" style="margin-bottom:12px">📜 Game by Game</div>';
   if (!rows.length) html += '<div class="gt-empty">No completed games yet.</div>';
   else {
-    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Date</th><th>Opponent</th><th class="num">Result</th><th class="num">⚽</th><th class="num">🅰️</th><th class="num">🎯</th><th class="num">💨</th><th class="num">🧤</th><th class="num">🛡️</th><th class="num">Min</th><th>Highlights</th></tr></thead><tbody>';
+    var ps = GT.playerSort || { col: 'date', dir: -1 };
+    var pv = function(r, col) {
+      var g = r.g, st = r.st;
+      switch (col) {
+        case 'date': return gtTsMillis(g.played_at || g.created_at);
+        case 'opp': return gtTheirName(g) || '';
+        case 'result': return gtOurScore(g) - gtTheirScore(g);
+        case 'goal': return st.goal || 0;
+        case 'assist': return st.assist || 0;
+        case 'sot': return st.shot_on_target || 0;
+        case 'sh': return st.shot || 0;
+        case 'save': return st.save || 0;
+        case 'tackle': return st.tackle || 0;
+        case 'min': return r.mins || 0;
+      }
+      return 0;
+    };
+    rows.sort(function(a, b) {
+      var va = pv(a, ps.col), vb = pv(b, ps.col);
+      if (typeof va === 'string') return va.localeCompare(vb) * ps.dir;
+      return ((va || 0) - (vb || 0)) * ps.dir;
+    });
+    var pcols = [['date', 'Date'], ['opp', 'Opponent'], ['result', 'Result'], ['goal', '⚽'], ['assist', '🅰️'], ['sot', '🎯'], ['sh', '💨'], ['save', '🧤'], ['tackle', '🛡️'], ['min', 'Min']];
+    var phead = pcols.map(function(c) {
+      var isNum = c[0] !== 'date' && c[0] !== 'opp';
+      return '<th class="' + (isNum ? 'num ' : '') + (ps.col === c[0] ? 'sorted' : '') + '" style="cursor:pointer" onclick="gtPlayerSortBy(\'' + c[0] + '\')">' + c[1] + (ps.col === c[0] ? (ps.dir > 0 ? ' \u25b2' : ' \u25bc') : '') + '</th>';
+    }).join('') + '<th>Highlights</th>';
+    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr>' + phead + '</tr></thead><tbody>';
     rows.forEach(function(r) {
       var g = r.g, res = gtResult(g);
       html += '<tr><td style="cursor:pointer" onclick="gtGo(\'/gametracker/review/' + g.id + '\')">' + gtFmtDate(g.played_at || g.created_at) + '</td>' +
