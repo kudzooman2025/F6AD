@@ -333,15 +333,34 @@ function gtSeasonPlayerStats(games, rid) {
 }
 
 // ---------- PLAYER PROFILE ----------
+function gtPlayerFilteredGames(pid) {
+  var f = GT.playerFilters;
+  return GT.games.filter(function(g) {
+    if (g.status !== 'complete') return false;
+    if (gtAvailIds(g.id).indexOf(pid) < 0) return false;
+    if (f.type !== 'all' && g.game_type !== f.type) return false;
+    if (f.round && (g.round || '') !== f.round) return false;
+    if (f.team && gtOurName(g) !== f.team) return false;
+    if (f.opp) { var opp = gtTheirName(g) || ''; if (opp.toLowerCase().indexOf(f.opp.toLowerCase()) < 0) return false; }
+    var when = gtTsMillis(g.played_at || g.created_at);
+    if (f.from && when < new Date(f.from + 'T00:00:00').getTime()) return false;
+    if (f.to && when > new Date(f.to + 'T23:59:59').getTime()) return false;
+    return true;
+  }).sort(function(a, b){ return gtTsMillis(b.played_at || b.created_at) - gtTsMillis(a.played_at || a.created_at); });
+}
 function gtRenderPlayerProfile(view, pid) {
   var p = gtP(pid);
   if (!p) {
     view.innerHTML = GT.loaded.players ? '<div class="gt-empty">Player not found. <a href="#/gametracker/roster">Back to Roster</a></div>' : '<div class="gt-empty">Loading…</div>';
     return;
   }
-  var games = GT.games.filter(function(g) {
+  var allGames = GT.games.filter(function(g) {
     return g.status === 'complete' && gtAvailIds(g.id).indexOf(pid) >= 0;
-  }).sort(function(a, b){ return gtTsMillis(b.played_at || b.created_at) - gtTsMillis(a.played_at || a.created_at); });
+  });
+  var pteams = [];
+  allGames.forEach(function(g){ var tn = gtOurName(g); if (tn && pteams.indexOf(tn) < 0) pteams.push(tn); });
+  pteams.sort();
+  var games = gtPlayerFilteredGames(pid);
   var tot = { goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, tackles: 0, min: 0 };
   var rows = games.map(function(g) {
     var events = gtGameEvents(g.id);
@@ -355,6 +374,16 @@ function gtRenderPlayerProfile(view, pid) {
   var html = '<div class="gt-title">' + (p.jersey_number != null ? '<span style="color:var(--purple)">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(pid)) +
     (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</div>' +
     '<div class="gt-sub">' + gtEsc(p.position || '') + (gtRoster(p.roster_id) ? (p.position ? ' · ' : '') + gtEsc(gtRoster(p.roster_id).name) : '') + '</div>';
+  var pf = GT.playerFilters;
+  html += '<div class="gt-filters">' +
+    (pteams.length >= 1 ? '<select onchange="GT.playerFilters.team=this.value;gtRerender(true)"><option value="">All teams</option>' + pteams.map(function(tn){ return '<option value="' + gtAttr(tn) + '"' + (pf.team === tn ? ' selected' : '') + '>' + gtEsc(tn) + '</option>'; }).join('') + '</select>' : '') +
+    '<select onchange="GT.playerFilters.type=this.value;gtRerender(true)">' +
+    ['all', 'league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (pf.type === t ? ' selected' : '') + '>' + (t === 'all' ? 'All types' : t.charAt(0).toUpperCase() + t.slice(1)) + '</option>'; }).join('') + '</select>' +
+    '<select onchange="GT.playerFilters.round=this.value;gtRerender(true)"><option value="">All rounds</option>' + GT_ROUNDS.map(function(r){ return '<option value="' + r[0] + '"' + (pf.round === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>' +
+    '<input type="date" value="' + gtAttr(pf.from) + '" onchange="GT.playerFilters.from=this.value;gtRerender(true)" title="From date"/>' +
+    '<input type="date" value="' + gtAttr(pf.to) + '" onchange="GT.playerFilters.to=this.value;gtRerender(true)" title="To date"/>' +
+    '<input type="text" value="' + gtAttr(pf.opp) + '" placeholder="Opponent…" onchange="GT.playerFilters.opp=this.value;gtRerender(true)"/>' +
+    '</div>';
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + games.length + '</div><div class="sb-label">Games</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + tot.goals + '</div><div class="sb-label">Goals</div></div>' +
@@ -366,7 +395,7 @@ function gtRenderPlayerProfile(view, pid) {
     '<div class="gt-stat-box"><div class="sb-num">' + tot.min + '</div><div class="sb-label">Minutes</div></div>' +
     '</div>';
   html += '<div class="section-title" style="margin-bottom:12px">📜 Game by Game</div>';
-  if (!rows.length) html += '<div class="gt-empty">No completed games yet.</div>';
+  if (!rows.length) html += '<div class="gt-empty">' + ((pf.team || pf.opp || pf.from || pf.to || (pf.type && pf.type !== 'all') || pf.round) ? 'No games match these filters.' : 'No completed games yet.') + '</div>';
   else {
     var ps = GT.playerSort || { col: 'date', dir: -1 };
     var pv = function(r, col) {

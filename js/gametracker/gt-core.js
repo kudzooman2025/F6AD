@@ -14,6 +14,7 @@ var GT = {
   seasonSort: { col: 'goals', dir: -1 },
   seasonShowGuests: false,
   seasonFilters: { type: 'all', from: '', to: '', opp: '', team: '', round: '' },
+  playerFilters: { type: 'all', from: '', to: '', opp: '', team: '', round: '' },
   rosterSel: null,
   chatDraft: ''
 };
