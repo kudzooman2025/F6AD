@@ -20,9 +20,9 @@ const pw = process.env.NEW_PW || '';
   let user = null;
   try {
     user = await admin.auth().getUserByEmail(email);
-    console.log('Found account for ' + email + ' (uid ' + user.uid + '). Updating password...');
-    await admin.auth().updateUser(user.uid, { password: pw });
-    console.log('✅ Password updated. You can now sign in as ' + email + '.');
+    console.log('Found account for ' + email + ' (uid ' + user.uid + '). Updating password + marking email verified...');
+    await admin.auth().updateUser(user.uid, { password: pw, emailVerified: true });
+    console.log('✅ Password updated and email marked verified. You can now sign in as ' + email + '.');
   } catch (e) {
     if (e.code === 'auth/user-not-found') {
       console.log('No account existed for ' + email + ' — creating one now...');
