@@ -1349,9 +1349,21 @@ function schedPromoteToGame(schedId) {
 }
 
 // ===== Section visibility flags (lightweight, admin-controlled) =====
+// Every main menu item can be hidden from the nav without deleting the page/data.
+var SITE_SECTIONS = [
+  { key: 'home',         label: 'Home',         sel: 'nav a[data-page="home"]' },
+  { key: 'schedule',     label: 'Schedule',     sel: 'nav a[data-page="schedule"]' },
+  { key: 'conditioning', label: 'Conditioning', sel: 'nav a[data-page="conditioning"]' },
+  { key: 'tournaments',  label: 'Voting',       sel: 'nav a[data-page="tournaments"]' },
+  { key: 'discussions',  label: 'Discussions',  sel: 'nav a[data-page="discussions"]' },
+  { key: 'availability', label: 'Availability', sel: 'nav a[href="#/gametracker/availability"]' },
+  { key: 'gametracker',  label: 'GameTracker',  sel: 'nav a.nav-gt' }
+];
 function applySiteFlags() {
-  var link = document.querySelector('nav a[data-page="conditioning"]');
-  if (link) link.style.display = (siteFlags && siteFlags.hide_conditioning) ? 'none' : '';
+  SITE_SECTIONS.forEach(function(sec){
+    var link = document.querySelector(sec.sel);
+    if (link) link.style.display = (siteFlags && siteFlags['hide_' + sec.key]) ? 'none' : '';
+  });
 }
 function toggleSiteFlag(key) {
   if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
@@ -1364,10 +1376,13 @@ function toggleSiteFlag(key) {
 function renderSiteFlags() {
   var box = document.getElementById('site-flags-box');
   if (!box) return;
-  var hidden = !!(siteFlags && siteFlags.hide_conditioning);
-  box.innerHTML = '<p style="font-weight:800;font-size:.9rem;margin:0 0 10px">Site Sections</p>' +
-    '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
-    '<span style="font-size:.86rem">Conditioning <span style="color:var(--muted)">(' + (hidden ? 'hidden from menu' : 'visible') + ')</span></span>' +
-    '<button class="btn-edit" onclick="toggleSiteFlag(\'hide_conditioning\')">' + (hidden ? '↩ Show in menu' : '🙈 Hide from menu') + '</button></div>' +
-    '<p style="font-size:.75rem;color:var(--muted);margin-top:8px">Hidden sections stay on the site — data is kept and the page is still reachable by direct link. Toggle back anytime.</p>';
+  var rows = SITE_SECTIONS.map(function(sec){
+    var hidden = !!(siteFlags && siteFlags['hide_' + sec.key]);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--border)">' +
+      '<span style="font-size:.86rem">' + sec.label + ' <span style="color:var(--muted);font-size:.78rem">(' + (hidden ? 'hidden' : 'visible') + ')</span></span>' +
+      '<button class="btn-edit" onclick="toggleSiteFlag(\'hide_' + sec.key + '\')">' + (hidden ? '↩ Show' : '🙈 Hide') + '</button></div>';
+  }).join('');
+  box.innerHTML = '<p style="font-weight:800;font-size:.9rem;margin:0 0 6px">Site Sections</p>' +
+    '<p style="font-size:.75rem;color:var(--muted);margin:0 0 6px">Hide any menu item. The page and its data stay — it\'s just removed from the top menu and can be shown again anytime.</p>' +
+    rows;
 }
