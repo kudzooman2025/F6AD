@@ -46,6 +46,7 @@ function sitePage() {
   return SITE_LEGACY[h.replace('#', '')] || 'home';
 }
 function updateSiteNav() {
+  if (typeof applySiteFlags === 'function') applySiteFlags();
   var h = window.location.hash || '#/home';
   var isAvail = h.indexOf('#/gametracker/availability') === 0 || h.indexOf('#/gametracker/rsvp') === 0;
   var isGt = h.indexOf('#/gametracker') === 0 && !isAvail;

@@ -596,6 +596,11 @@ function startListeners() {
       if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVoteTally();
     });
   });
+  db.collection('site_flags').doc('main').onSnapshot(function(doc){
+    siteFlags = (doc && doc.exists) ? (doc.data() || {}) : {};
+    if (typeof applySiteFlags === 'function') applySiteFlags();
+    if (typeof renderSiteFlags === 'function') renderSiteFlags();
+  }, function(){});
   db.collection('cancellations').onSnapshot(snap => {
     canceledEvents = {};
     snap.forEach(d => { canceledEvents[d.id] = true; });

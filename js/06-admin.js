@@ -649,6 +649,7 @@ function showAdminPanel() {
   renderAdminSchedule();
   renderAdminAnnouncements();
   renderVoteTally();
+  renderSiteFlags();
 }
 
 function switchTab(tab, btn) {
@@ -1345,4 +1346,28 @@ function schedPromoteToGame(schedId) {
     if (typeof showToast === 'function') showToast('Converted to a full game \u2713 Fill in the details.');
     if (typeof gtOpenGameEdit === 'function') gtOpenGameEdit(gameRef.id);
   }).catch(function(e){ if (typeof showToast === 'function') showToast('Error: ' + e.message); });
+}
+
+// ===== Section visibility flags (lightweight, admin-controlled) =====
+function applySiteFlags() {
+  var link = document.querySelector('nav a[data-page="conditioning"]');
+  if (link) link.style.display = (siteFlags && siteFlags.hide_conditioning) ? 'none' : '';
+}
+function toggleSiteFlag(key) {
+  if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
+  var val = !(siteFlags && siteFlags[key]);
+  var data = {}; data[key] = val;
+  db.collection('site_flags').doc('main').set(data, { merge: true })
+    .then(function(){ showToast(val ? 'Hidden from the menu.' : 'Shown in the menu.'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function renderSiteFlags() {
+  var box = document.getElementById('site-flags-box');
+  if (!box) return;
+  var hidden = !!(siteFlags && siteFlags.hide_conditioning);
+  box.innerHTML = '<p style="font-weight:800;font-size:.9rem;margin:0 0 10px">Site Sections</p>' +
+    '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+    '<span style="font-size:.86rem">Conditioning <span style="color:var(--muted)">(' + (hidden ? 'hidden from menu' : 'visible') + ')</span></span>' +
+    '<button class="btn-edit" onclick="toggleSiteFlag(\'hide_conditioning\')">' + (hidden ? '↩ Show in menu' : '🙈 Hide from menu') + '</button></div>' +
+    '<p style="font-size:.75rem;color:var(--muted);margin-top:8px">Hidden sections stay on the site — data is kept and the page is still reachable by direct link. Toggle back anytime.</p>';
 }
