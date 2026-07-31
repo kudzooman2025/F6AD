@@ -30,6 +30,20 @@ function gtParentTrackPid(g) {
   if (GT.parentTrackPid && mine.indexOf(GT.parentTrackPid) >= 0) return GT.parentTrackPid;
   return mine[0] || null;
 }
+function gtParentSetTrack(pid) {
+  GT.parentTrackPid = pid || null;
+  if (pid) { var arr = gtMyRsvpPlayers(); if (arr.indexOf(pid) < 0) { arr.push(pid); gtSetMyRsvpPlayers(arr); } }
+  gtRerender(true);
+}
+function gtParentTrackSelect(g, pid) {
+  var avail = gtAvailIds(g.id).map(function(id){ return gtP(id); }).filter(Boolean)
+    .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
+  return '<label class="gt-parent-lbl">Which player are you tracking?</label>' +
+    '<select class="rsvp-idselect" style="max-width:280px;margin-bottom:12px" onchange="gtParentSetTrack(this.value)">' +
+    '<option value="">Choose your player…</option>' +
+    avail.map(function(p){ return '<option value="' + p.id + '"' + (p.id === pid ? ' selected' : '') + '>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(p.id)) + '</option>'; }).join('') +
+    '</select>';
+}
 
 // ---- data accessors ----
 function gtParentEventsFor(gid, pid) { return (GT.parentEvents || []).filter(function(e){ return e.game_id === gid && (!pid || e.player_id === pid); }); }
@@ -129,22 +143,19 @@ function gtParentClock(g, e) {
 }
 function gtParentPanelHtml(g) {
   if (!g || g.status === 'complete' || gtGameCanceled(g)) return '';
-  var mine = gtMyRsvpPlayers().filter(function(pid){ return gtAvailIds(g.id).indexOf(pid) >= 0; });
   var avail = gtAvailIds(g.id).map(function(pid){ return gtP(pid); }).filter(Boolean)
     .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
   var head = '<div class="gt-parent-head">👨‍👩‍👧 Track My Player <span class="gt-parent-sub">private to you until you share</span></div>';
-  if (!mine.length) {
-    if (!avail.length) return '';
-    var opts = avail.map(function(p){ return '<option value="' + p.id + '">' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(p.id)) + '</option>'; }).join('');
-    return '<div class="gt-parent">' + head + '<div class="gt-parent-body"><label class="gt-parent-lbl">Which player are you here for?</label>' +
-      '<select class="rsvp-idselect" onchange="if(this.value){gtToggleMyRsvpPlayer(this.value);GT.parentTrackPid=this.value;gtRerender(true);}"><option value="">Choose your player…</option>' + opts + '</select></div></div>';
-  }
+  if (!avail.length) return '';
   var pid = gtParentTrackPid(g);
-  var switcher = mine.length > 1
-    ? '<select class="rsvp-idselect" style="max-width:240px;margin-bottom:10px" onchange="GT.parentTrackPid=this.value;gtRerender(true)">' + mine.map(function(id){ return '<option value="' + id + '"' + (id === pid ? ' selected' : '') + '>' + gtEsc(gtPlayerName(id)) + '</option>'; }).join('') + '</select>'
-    : '';
+  var selector = gtParentTrackSelect(g, pid);
+  // no player chosen yet — just show the dropdown
+  if (!pid) {
+    return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector + '</div></div>';
+  }
+  // player chosen, but no name yet
   if (!gtParentName()) {
-    return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + switcher +
+    return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector +
       '<label class="gt-parent-lbl">Your name (so stats are attributed):</label>' +
       '<div class="gt-chat-bar"><input id="gt-chat-name" placeholder="Your name…" onkeydown="if(event.key===\'Enter\')gtSetChatName()"/><button class="btn-primary" onclick="gtSetChatName()">Start tracking</button></div></div></div>';
   }
@@ -163,7 +174,7 @@ function gtParentPanelHtml(g) {
       gtEsc(e.type === 'note' ? ('“' + e.text + '”') : t.label) + (e.visibility === 'public' ? ' <span class="gt-plog-pub">shared</span>' : '') +
       '<button class="gt-plog-x" title="Delete" onclick="gtParentDelete(\'' + e.id + '\')">✕</button></div>';
   }).join('') : '<div class="gt-parent-empty">No stats logged yet — tap a button above.</div>';
-  return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + switcher +
+  return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector +
     '<div class="gt-parent-who">Tracking <strong>' + gtEsc(gtPlayerName(pid)) + '</strong> as ' + gtEsc(gtParentName()) + ' · <a onclick="gtSetChatName(true)">change name</a></div>' +
     '<div class="gt-claim-row"><span class="gt-claim-lbl">I\'m tracking:</span>' + claimChips + '</div>' +
     '<div class="gt-pstat-grid">' + statBtns + '</div>' +
