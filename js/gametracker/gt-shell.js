@@ -93,6 +93,7 @@ function gtRoute() {
   var page = parts[1] || 'home';
   GT.route = { page: page, arg: parts[2] || null };
   if (page !== 'live' && GT.clockTimer) { clearInterval(GT.clockTimer); GT.clockTimer = null; }
+  if (page !== 'review' && GT.filmTimer) { clearInterval(GT.filmTimer); GT.filmTimer = null; if (GT.film) GT.film.on = false; }
   window.scrollTo(0, 0);
   gtRenderNav();
   gtRerender(true);

@@ -102,9 +102,10 @@ function gtParentToggleClaim(gid, pid, type) {
 function gtParentLog(gid, pid, type) {
   if (!gtParentName()) { showToast('Add your name in the panel first so stats are attributed.'); return; }
   var g = gtGame(gid); if (!g) return;
+  var _t = gtParentEventTime(g);
   db.collection('gt_parent_events').add({
     game_id: gid, player_id: pid, author_token: gtParentToken(), author_name: gtParentName(),
-    type: type, game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
+    type: type, game_clock_seconds: _t.sec, period: _t.period, mode: _t.mode,
     text: '', visibility: 'private', created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ showToast(gtParentType(type).emoji + ' ' + gtParentType(type).label + ' logged (private)'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
@@ -113,9 +114,10 @@ function gtParentNote(gid, pid) {
   if (!gtParentName()) { showToast('Add your name first.'); return; }
   var inp = document.getElementById('gt-pnote-input'); var text = (inp ? inp.value : '').trim(); if (!text) return;
   var g = gtGame(gid); if (!g) return;
+  var _t = gtParentEventTime(g);
   db.collection('gt_parent_events').add({
     game_id: gid, player_id: pid, author_token: gtParentToken(), author_name: gtParentName(),
-    type: 'note', game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
+    type: 'note', game_clock_seconds: _t.sec, period: _t.period, mode: _t.mode,
     text: text, visibility: 'private', created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ GT.pnoteDraft = ''; var i = document.getElementById('gt-pnote-input'); if (i) { i.value = ''; i.focus(); } })
     .catch(function(e){ showToast('Error: ' + e.message); });
@@ -159,6 +161,11 @@ function gtParentPanelHtml(g) {
       '<label class="gt-parent-lbl">Your name (so stats are attributed):</label>' +
       '<div class="gt-chat-bar"><input id="gt-chat-name" placeholder="Your name…" onkeydown="if(event.key===\'Enter\')gtSetChatName()"/><button class="btn-primary" onclick="gtSetChatName()">Start tracking</button></div></div></div>';
   }
+  return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector + gtParentBodyHtml(g, pid) + '</div></div>';
+}
+// Shared inner UI (who-line, claim chips, stat grid, note bar, log) used by both the
+// live panel and the film-session panel. Logging auto-detects the active clock.
+function gtParentBodyHtml(g, pid) {
   var others = gtParentOtherClaims(g.id, pid), myClaims = gtParentMyClaims(g.id, pid);
   var claimChips = GT_PARENT_CLAIMABLE.map(function(ty){
     var t = gtParentType(ty), on = myClaims.indexOf(ty) >= 0, oth = others[ty];
@@ -171,16 +178,14 @@ function gtParentPanelHtml(g) {
   var logHtml = mylog.length ? mylog.slice().reverse().map(function(e){
     var t = gtParentType(e.type);
     return '<div class="gt-plog-row"><span class="gt-plog-t">[' + gtParentClock(g, e) + ']</span> ' + t.emoji + ' ' +
-      gtEsc(e.type === 'note' ? ('“' + e.text + '”') : t.label) + (e.visibility === 'public' ? ' <span class="gt-plog-pub">shared</span>' : '') +
+      gtEsc(e.type === 'note' ? ('“' + e.text + '”') : t.label) + (e.mode === 'film' ? ' <span class="gt-film-tag">film</span>' : '') + (e.visibility === 'public' ? ' <span class="gt-plog-pub">shared</span>' : '') +
       '<button class="gt-plog-x" title="Delete" onclick="gtParentDelete(\'' + e.id + '\')">✕</button></div>';
   }).join('') : '<div class="gt-parent-empty">No stats logged yet — tap a button above.</div>';
-  return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector +
-    '<div class="gt-parent-who">Tracking <strong>' + gtEsc(gtPlayerName(pid)) + '</strong> as ' + gtEsc(gtParentName()) + ' · <a onclick="gtSetChatName(true)">change name</a></div>' +
+  return '<div class="gt-parent-who">Tracking <strong>' + gtEsc(gtPlayerName(pid)) + '</strong> as ' + gtEsc(gtParentName()) + ' · <a onclick="gtSetChatName(true)">change name</a></div>' +
     '<div class="gt-claim-row"><span class="gt-claim-lbl">I\'m tracking:</span>' + claimChips + '</div>' +
     '<div class="gt-pstat-grid">' + statBtns + '</div>' +
     '<div class="gt-chat-bar" style="margin-top:8px"><input id="gt-pnote-input" placeholder="Timestamped note (private)…" value="' + gtAttr(GT.pnoteDraft || '') + '" oninput="GT.pnoteDraft=this.value" onkeydown="if(event.key===\'Enter\')gtParentNote(\'' + g.id + '\',\'' + pid + '\')"/><button class="btn-primary" onclick="gtParentNote(\'' + g.id + '\',\'' + pid + '\')">Note</button></div>' +
-    '<div class="gt-plog">' + logHtml + '</div>' +
-    '</div></div>';
+    '<div class="gt-plog">' + logHtml + '</div>';
 }
 
 // ---- review: share panel (my private items) ----
@@ -217,4 +222,74 @@ function gtParentReviewSectionHtml(g) {
       (canEd ? '<button class="gt-plog-x" title="Remove" onclick="gtParentDelete(\'' + e.id + '\')">✕</button>' : '') + '</div>';
   }).join('');
   return '<div class="section-title" style="margin:26px 0 12px">👨‍👩‍👧 Parent-Reported' + (canEd ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove</span>' : '') + '</div><div class="gt-feed">' + rows + '</div>';
+}
+
+
+// ===================== FILM SESSION (post-game watch-back) =====================
+// A device-local clock the parent syncs to their video. Stats logged during a film
+// session are timestamped from this clock (not the game's finished clock).
+function gtFilmActive(gid) { return !!(GT.film && GT.film.on && GT.film.gameId === gid); }
+function gtFilmSeconds() {
+  if (!GT.film) return 0;
+  var b = GT.film.base || 0;
+  if (GT.film.running && GT.film.startedAt) b += (Date.now() - GT.film.startedAt) / 1000;
+  return Math.max(0, b);
+}
+function gtFilmToPeriod(g, T) {
+  var dur = (g.period_duration_minutes || 0) * 60, np = g.num_periods || 2;
+  if (dur <= 0) return { period: 1, sec: Math.round(T) };
+  var period = Math.min(np, Math.floor(T / dur) + 1);
+  return { period: period, sec: Math.round(T - (period - 1) * dur) };
+}
+function gtParentEventTime(g) {
+  if (gtFilmActive(g.id)) { var m = gtFilmToPeriod(g, gtFilmSeconds()); return { period: m.period, sec: m.sec, mode: 'film' }; }
+  return { period: g.current_period || 1, sec: gtClockSeconds(g), mode: 'live' };
+}
+function gtFilmStartTimer() {
+  if (GT.filmTimer) return;
+  GT.filmTimer = setInterval(function() {
+    var el = document.getElementById('gt-film-clock');
+    if (!el) { clearInterval(GT.filmTimer); GT.filmTimer = null; return; }
+    el.textContent = gtFmtMMSS(Math.floor(gtFilmSeconds()));
+  }, 500);
+}
+function gtFilmOpen(gid) { GT.film = { gameId: gid, on: true, running: false, base: 0, startedAt: null }; gtFilmStartTimer(); gtRerender(true); }
+function gtFilmToggle(gid) {
+  if (!gtFilmActive(gid)) return;
+  if (GT.film.running) { GT.film.base = gtFilmSeconds(); GT.film.running = false; GT.film.startedAt = null; }
+  else { GT.film.running = true; GT.film.startedAt = Date.now(); gtFilmStartTimer(); }
+  gtRerender(true);
+}
+function gtFilmSet(gid) {
+  if (!gtFilmActive(gid)) return;
+  var el = document.getElementById('gt-film-set');
+  var mmss = gtParseMMSS(el ? el.value : '');
+  if (mmss == null) { showToast('Enter the time as MM:SS.'); return; }
+  GT.film.base = mmss; if (GT.film.running) GT.film.startedAt = Date.now();
+  showToast('Film clock synced to ' + gtFmtMMSS(mmss)); gtRerender(true);
+}
+function gtParentFilmPanelHtml(g) {
+  if (!g || g.status !== 'complete' || gtGameCanceled(g)) return '';
+  var avail = gtAvailIds(g.id).map(function(id){ return gtP(id); }).filter(Boolean);
+  if (!avail.length) return '';
+  var head = '<div class="gt-parent-head">🎬 Film Session <span class="gt-parent-sub">log stats while you rewatch — synced to your video</span></div>';
+  if (!gtFilmActive(g.id)) {
+    return '<div class="gt-parent">' + head + '<div class="gt-parent-body"><div class="gt-parent-note" style="margin:0 0 12px">Watching the game video? Start a film session, sync the clock to your video, then log stats for your player as you watch. Private until you share.</div>' +
+      '<button class="btn-primary" onclick="gtFilmOpen(\'' + g.id + '\')">🎬 Start film session</button></div></div>';
+  }
+  var pid = gtParentTrackPid(g);
+  var selector = gtParentTrackSelect(g, pid);
+  var running = GT.film.running;
+  var clockUi = '<div class="gt-film-clockbar">' +
+    '<span class="gt-film-clock" id="gt-film-clock">' + gtFmtMMSS(Math.floor(gtFilmSeconds())) + '</span>' +
+    '<button class="gt-cbtn ' + (running ? 'gt-cbtn-warn' : 'gt-cbtn-go') + '" onclick="gtFilmToggle(\'' + g.id + '\')">' + (running ? '⏸ Pause' : '▶ Play') + '</button>' +
+    '<span class="gt-film-sync"><input id="gt-film-set" placeholder="MM:SS" value="' + gtFmtMMSS(Math.floor(gtFilmSeconds())) + '"/><button class="gt-minibtn" onclick="gtFilmSet(\'' + g.id + '\')">Sync to video</button></span>' +
+    '</div><div class="gt-film-hint">Type the time shown on your video and hit “Sync to video,” then Play in step with it. Every stat you log stamps to this clock.</div>';
+  if (!gtParentName()) {
+    return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + clockUi + selector +
+      '<label class="gt-parent-lbl">Your name (so stats are attributed):</label>' +
+      '<div class="gt-chat-bar"><input id="gt-chat-name" placeholder="Your name…" onkeydown="if(event.key===\'Enter\')gtSetChatName()"/><button class="btn-primary" onclick="gtSetChatName()">Start tracking</button></div></div></div>';
+  }
+  if (!pid) return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + clockUi + selector + '</div></div>';
+  return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + clockUi + selector + gtParentBodyHtml(g, pid) + '</div></div>';
 }

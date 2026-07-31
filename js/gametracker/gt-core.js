@@ -5,6 +5,7 @@
 var GT = {
   rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [], chat: [], rsvp: [], parentEvents: [], parentClaims: [],
   parentTrackPid: null, pnoteDraft: '',
+  film: { gameId: null, on: false, running: false, base: 0, startedAt: null }, filmTimer: null,
   loaded: {},
   listening: false,
   route: { page: 'home', arg: null },

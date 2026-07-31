@@ -939,3 +939,11 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .gt-note-tag{font-size:.66rem;color:#7c6bd6;background:#EDE9FE;border-radius:999px;padding:1px 7px;font-weight:700}
 .gt-parent-badge{font-size:.66rem;font-weight:700;color:#5A3FD6;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:999px;padding:1px 8px;margin-left:4px}
 @media (max-width:560px){.gt-pstat-grid{grid-template-columns:repeat(3,1fr)}}
+
+/* Film session clock */
+.gt-film-clockbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.gt-film-clock{font-variant-numeric:tabular-nums;font-weight:900;font-size:1.6rem;color:#4c33b8;min-width:78px}
+.gt-film-sync{display:flex;align-items:center;gap:6px}
+.gt-film-sync input{width:82px;padding:7px 10px;border:1px solid var(--border-strong);border-radius:9px;font-size:.9rem;text-align:center;font-variant-numeric:tabular-nums}
+.gt-film-hint{font-size:.74rem;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.gt-film-tag{font-size:.62rem;font-weight:800;color:#4c33b8;background:#EDE9FE;border-radius:999px;padding:1px 6px;text-transform:uppercase;letter-spacing:.03em}

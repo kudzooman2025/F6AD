@@ -20,6 +20,7 @@ function gtRenderReview(view, gameId) {
   var statEvents = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : events;
   var totals = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, save: 0, tackle: 0, yellow_card: 0, red_card: 0 };
   statEvents.forEach(function(e){ if (totals[e.event_type] !== undefined) totals[e.event_type]++; });
+  html += (typeof gtParentFilmPanelHtml === 'function' ? gtParentFilmPanelHtml(g) : '');
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + totals.goal + '</div><div class="sb-label">Goals</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + totals.assist + '</div><div class="sb-label">Assists</div></div>' +
