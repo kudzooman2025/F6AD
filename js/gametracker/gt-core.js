@@ -30,7 +30,8 @@ var GT_EVENT_TYPES = [
   { id: 'yellow_card',    label: 'Yellow Card',    emoji: '🟨' },
   { id: 'red_card',       label: 'Red Card',       emoji: '🟥' },
   { id: 'save',           label: 'Save',           emoji: '🧤' },
-  { id: 'tackle',         label: 'Tackle',         emoji: '🛡️' }
+  { id: 'tackle',         label: 'Tackle',         emoji: '🛡️' },
+  { id: 'own_goal',       label: 'Own Goal',       emoji: '🥅' }
 ];
 // Fixed position list (primary formation 5-3-2). Order is intentional.
 var GT_POSITIONS = ['GK', 'LST', 'RST', 'LWB', 'RWB', 'CDM', 'LCB', 'CB', 'RCB', 'CMID', 'LMID', 'RMID', 'CAM', 'FWD'];
@@ -41,6 +42,7 @@ function gtPositionOptions(sel) {
 }
 function gtEventType(id) {
   if (id === 'opponent_goal') return { id: 'opponent_goal', label: 'Opponent Goal', emoji: '😣' };
+  if (id === 'opponent_own_goal') return { id: id, label: 'Own Goal (their net)', emoji: '🥅' };
   if (id === 'opponent_yellow_card') return { id: id, label: 'Opponent Yellow', emoji: '🟨' };
   if (id === 'opponent_red_card') return { id: id, label: 'Opponent Red', emoji: '🟥' };
   return GT_EVENT_TYPES.find(function(t){ return t.id === id; }) || { id: id, label: id, emoji: '•' };
@@ -512,7 +514,7 @@ function gtStartingXiHtml(gid) {
     }).join('') + '</div>';
 }
 function gtStatLine(pid, events) {
-  var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0, tackle: 0 };
+  var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0, tackle: 0, own_goal: 0 };
   events.forEach(function(e){ if (e.player_id === pid && st[e.event_type] !== undefined) st[e.event_type]++; });
   return st;
 }

@@ -321,6 +321,7 @@ function gtRenderLive(view, gameId) {
       if (st.tackle) badges += '<span class="gt-pbadge">🛡️' + st.tackle + '</span>';
       if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
       if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
+      if (st.own_goal) badges += '<span class="gt-pbadge card-og">🥅' + st.own_goal + '</span>';
       var setup = g.status === 'setup';
       var ae = gtGameAvailEntry(g.id, p.id) || {};
       var off = setup ? !ae.started : (onField[p.id] === false);
@@ -351,6 +352,7 @@ function gtRenderLive(view, gameId) {
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenMassSub(\'' + g.id + '\')">🔄 Mass Sub</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentGoal(\'' + g.id + '\')">😣 Opponent Goal</button>' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOwnGoalForUs(\'' + g.id + '\')">🥅 Own Goal (our favor)</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentCard(\'' + g.id + '\')">🟨 Opponent Card</button></div>';
   }
   // event feed
@@ -653,6 +655,7 @@ function gtSaveLiveEvent() {
   };
   db.collection('gt_events').add(evData).then(function() {
     if (pe.type === 'goal' && g) gtBumpScore(g, 'us', 1);
+    else if (pe.type === 'own_goal' && g) gtBumpScore(g, 'them', 1);
     var ops = [];
     if (pe.type === 'goal' && assistPid) {
       ops.push(db.collection('gt_events').add({
@@ -682,6 +685,18 @@ function gtLogOpponentGoal(gid) {
   }).then(function(){ gtBumpScore(g, 'them', 1); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
+function gtLogOwnGoalForUs(gid) {
+  // Opponent put it in their own net — counts for us, credited to no player.
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  if (!confirm('Log an own goal by ' + gtTheirName(g) + ' (counts for us)?')) return;
+  db.collection('gt_events').add({
+    game_id: gid, player_id: null, event_type: 'opponent_own_goal',
+    game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
+    notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){ gtBumpScore(g, 'us', 1); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
 function gtDeleteEvent(eid) {
   if (!gtCanEdit()) return;
   var e = GT.events.find(function(x){ return x.id === eid; });
@@ -691,6 +706,8 @@ function gtDeleteEvent(eid) {
   db.collection('gt_events').doc(eid).delete().then(function() {
     if (g && e.event_type === 'goal') gtBumpScore(g, 'us', -1);
     if (g && e.event_type === 'opponent_goal') gtBumpScore(g, 'them', -1);
+    if (g && e.event_type === 'own_goal') gtBumpScore(g, 'them', -1);
+    if (g && e.event_type === 'opponent_own_goal') gtBumpScore(g, 'us', -1);
     showToast('Event deleted.');
   }).catch(function(err){ showToast('Error: ' + err.message); });
 }

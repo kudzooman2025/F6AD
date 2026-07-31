@@ -63,7 +63,7 @@ function gtRenderReview(view, gameId) {
   if (inferredCount) html += '<div style="font-size:.74rem;color:var(--muted);margin:-4px 0 10px">Includes ' + inferredCount + ' player' + (inferredCount === 1 ? '' : 's') + ' added from logged stats/subs (no lineup was set for this game).</div>';
   if (availIds.length) {
     var mins = gtMinutesMap(g.id);
-    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Player</th><th class="num">⚽ G</th><th class="num">🅰️ A</th><th class="num">🎯 SOT</th><th class="num">💨 SH</th><th class="num">🟨</th><th class="num">🟥</th><th class="num">🧤 SV</th><th class="num">🛡️ T</th><th class="num">Min</th></tr></thead><tbody>';
+    html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>Player</th><th class="num">⚽ G</th><th class="num">🅰️ A</th><th class="num">🎯 SOT</th><th class="num">💨 SH</th><th class="num">🟨</th><th class="num">🟥</th><th class="num">🥅 OG</th><th class="num">🧤 SV</th><th class="num">🛡️ T</th><th class="num">Min</th></tr></thead><tbody>';
     availIds.map(function(pid){ return gtP(pid); }).filter(Boolean)
       .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); })
       .forEach(function(p) {
@@ -271,7 +271,7 @@ function gtRenderSeason(view) {
   var stats = gtSeasonPlayerStats(games, rid);
   if (!stats.length) html += '<div class="gt-empty">No player stats yet.</div>';
   else {
-    var cols = [['name', 'Player'], ['gp', 'GP'], ['goals', '⚽ G'], ['assists', '🅰️ A'], ['sot', '🎯 SOT'], ['sh', '💨 SH'], ['yc', '🟨 YC'], ['rc', '🟥 RC'], ['saves', '🧤 SV'], ['tackles', '🛡️ T'], ['min', 'Min']];
+    var cols = [['name', 'Player'], ['gp', 'GP'], ['goals', '⚽ G'], ['assists', '🅰️ A'], ['sot', '🎯 SOT'], ['sh', '💨 SH'], ['yc', '🟨 YC'], ['rc', '🟥 RC'], ['og', '🥅 OG'], ['saves', '🧤 SV'], ['tackles', '🛡️ T'], ['min', 'Min']];
     var ss = GT.seasonSort;
     stats.sort(function(a, b) {
       var va = a[ss.col], vb = b[ss.col];
@@ -318,12 +318,12 @@ function gtSeasonPlayerStats(games, rid) {
       var p = gtP(pid);
       if (!p) return;
       if (!GT.seasonShowGuests && p.is_guest) return;
-      if (!map[pid]) map[pid] = { id: pid, name: gtPlayerName(pid), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, tackles: 0, min: 0 };
+      if (!map[pid]) map[pid] = { id: pid, name: gtPlayerName(pid), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, og: 0, saves: 0, tackles: 0, min: 0 };
       var row = map[pid];
       row.gp++;
       var st = gtStatLine(pid, events);
       row.goals += st.goal; row.assists += st.assist; row.sot += st.shot_on_target; row.sh += st.shot;
-      row.yc += st.yellow_card; row.rc += st.red_card; row.saves += st.save; row.tackles += st.tackle;
+      row.yc += st.yellow_card; row.rc += st.red_card; row.og += st.own_goal; row.saves += st.save; row.tackles += st.tackle;
       row.min += Math.round((mins[pid] || 0) / 60);
     });
   });
@@ -331,7 +331,7 @@ function gtSeasonPlayerStats(games, rid) {
   if (rid) gtRosterPlayers(rid).forEach(function(p) {
     if (map[p.id]) return;
     if (!GT.seasonShowGuests && p.is_guest) return;
-    map[p.id] = { id: p.id, name: gtPlayerName(p.id), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, tackles: 0, min: 0 };
+    map[p.id] = { id: p.id, name: gtPlayerName(p.id), guest: !!p.is_guest, gp: 0, goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, og: 0, saves: 0, tackles: 0, min: 0 };
   });
   return Object.keys(map).map(function(k){ return map[k]; });
 }
@@ -414,6 +414,7 @@ function gtRenderPlayerProfile(view, pid) {
         case 'sh': return st.shot || 0;
         case 'save': return st.save || 0;
         case 'tackle': return st.tackle || 0;
+        case 'og': return st.own_goal || 0;
         case 'min': return r.mins || 0;
       }
       return 0;
@@ -423,7 +424,7 @@ function gtRenderPlayerProfile(view, pid) {
       if (typeof va === 'string') return va.localeCompare(vb) * ps.dir;
       return ((va || 0) - (vb || 0)) * ps.dir;
     });
-    var pcols = [['date', 'Date'], ['opp', 'Opponent'], ['result', 'Result'], ['goal', '⚽'], ['assist', '🅰️'], ['sot', '🎯'], ['sh', '💨'], ['save', '🧤'], ['tackle', '🛡️'], ['min', 'Min']];
+    var pcols = [['date', 'Date'], ['opp', 'Opponent'], ['result', 'Result'], ['goal', '⚽'], ['assist', '🅰️'], ['sot', '🎯'], ['sh', '💨'], ['save', '🧤'], ['tackle', '🛡️'], ['og', '🥅'], ['min', 'Min']];
     var phead = pcols.map(function(c) {
       var isNum = c[0] !== 'date' && c[0] !== 'opp';
       return '<th class="' + (isNum ? 'num ' : '') + (ps.col === c[0] ? 'sorted' : '') + '" style="cursor:pointer" onclick="gtPlayerSortBy(\'' + c[0] + '\')">' + c[1] + (ps.col === c[0] ? (ps.dir > 0 ? ' \u25b2' : ' \u25bc') : '') + '</th>';
