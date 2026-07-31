@@ -3,7 +3,8 @@
 // gt_rosters, gt_players, gt_games, gt_availability, gt_events, gt_subs
 
 var GT = {
-  rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [], chat: [], rsvp: [],
+  rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [], chat: [], rsvp: [], parentEvents: [], parentClaims: [],
+  parentTrackPid: null, pnoteDraft: '',
   loaded: {},
   listening: false,
   route: { page: 'home', arg: null },
@@ -248,6 +249,7 @@ function gtWhoPlayedIds(gid) {
   gtAvailIds(gid).forEach(function(pid){ if (pid) set[pid] = true; });
   gtGameEvents(gid).forEach(function(e){ if (e.player_id) set[e.player_id] = true; });
   gtGameSubs(gid).forEach(function(sb){ if (sb.player_in_id) set[sb.player_in_id] = true; if (sb.player_out_id) set[sb.player_out_id] = true; });
+  if (typeof gtParentPublicPlayerIds === 'function') gtParentPublicPlayerIds(gid).forEach(function(pid){ set[pid] = true; });
   return Object.keys(set);
 }
 function gtOurScore(g) { return g.f6ad_side === 'away' ? (g.away_score || 0) : (g.home_score || 0); }

@@ -17,8 +17,9 @@ function gtRenderReview(view, gameId) {
     (res ? '<div style="margin-top:6px"><span class="gt-result-' + res.toLowerCase() + '" style="font-size:1rem">' + (res === 'W' ? '✅ Win' : res === 'L' ? '❌ Loss' : '➖ Draw') + '</span></div>' : '<div style="margin-top:6px">' + gtStatusPill(g) + (canEdit ? ' <a href="#/gametracker/live/' + g.id + '" style="font-size:.8rem;font-weight:700">Open live view →</a>' : '') + '</div>') +
     '</div>';
   // stat strip
+  var statEvents = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : events;
   var totals = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, save: 0, tackle: 0, yellow_card: 0, red_card: 0 };
-  events.forEach(function(e){ if (totals[e.event_type] !== undefined) totals[e.event_type]++; });
+  statEvents.forEach(function(e){ if (totals[e.event_type] !== undefined) totals[e.event_type]++; });
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + totals.goal + '</div><div class="sb-label">Goals</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + totals.assist + '</div><div class="sb-label">Assists</div></div>' +
@@ -28,6 +29,7 @@ function gtRenderReview(view, gameId) {
     '<div class="gt-stat-box"><div class="sb-num">' + totals.tackle + '</div><div class="sb-label">Tackles</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + (totals.yellow_card + totals.red_card) + '</div><div class="sb-label">Cards</div></div>' +
     '</div>';
+  html += (typeof gtParentSharePanelHtml === 'function' ? gtParentSharePanelHtml(g) : '');
   html += gtStartingXiHtml(g.id);
   // timeline with period markers
   html += '<div class="section-title" style="margin-bottom:12px">⏱ Event Timeline' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap an event to edit or delete</span>' : '') + '</div>';
@@ -64,7 +66,7 @@ function gtRenderReview(view, gameId) {
     availIds.map(function(pid){ return gtP(pid); }).filter(Boolean)
       .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); })
       .forEach(function(p) {
-        var st = gtStatLine(p.id, events);
+        var st = gtStatLine(p.id, statEvents);
         html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' + (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (canEdit ? ' <button class="gt-minibtn danger" style="padding:1px 6px;font-size:.65rem" title="Remove from this game" onclick="gtRemovePlayerFromGame(\'' + g.id + '\',\'' + p.id + '\')">✕</button>' : '') + '</td>' +
           '<td class="num">' + (st.goal || '') + '</td><td class="num">' + (st.assist || '') + '</td><td class="num">' + (st.shot_on_target || '') + '</td><td class="num">' + (st.shot || '') + '</td>' +
           '<td class="num">' + (st.yellow_card || '') + '</td><td class="num">' + (st.red_card || '') + '</td><td class="num">' + (st.save || '') + '</td><td class="num">' + (st.tackle || '') + '</td>' +
@@ -72,6 +74,7 @@ function gtRenderReview(view, gameId) {
       });
     html += '</tbody></table></div>';
   }
+  html += (typeof gtParentReviewSectionHtml === 'function' ? gtParentReviewSectionHtml(g) : '');
   html += gtChatPanelHtml(g.id);
   html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="btn-primary" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Share</button>' +
@@ -308,9 +311,9 @@ function gtPlayerSortBy(col) {
 function gtSeasonPlayerStats(games, rid) {
   var map = {};
   games.forEach(function(g) {
-    var events = gtGameEvents(g.id);
+    var events = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : gtGameEvents(g.id);
     var mins = gtMinutesMap(g.id);
-    gtAvailIds(g.id).forEach(function(pid) {
+    (typeof gtWhoPlayedIds === 'function' ? gtWhoPlayedIds(g.id) : gtAvailIds(g.id)).forEach(function(pid) {
       var p = gtP(pid);
       if (!p) return;
       if (!GT.seasonShowGuests && p.is_guest) return;
@@ -337,7 +340,7 @@ function gtPlayerFilteredGames(pid) {
   var f = GT.playerFilters;
   return GT.games.filter(function(g) {
     if (g.status !== 'complete') return false;
-    if (gtAvailIds(g.id).indexOf(pid) < 0) return false;
+    if ((typeof gtWhoPlayedIds === 'function' ? gtWhoPlayedIds(g.id) : gtAvailIds(g.id)).indexOf(pid) < 0) return false;
     if (f.type !== 'all' && g.game_type !== f.type) return false;
     if (f.round && (g.round || '') !== f.round) return false;
     if (f.team && gtOurName(g) !== f.team) return false;
@@ -355,7 +358,7 @@ function gtRenderPlayerProfile(view, pid) {
     return;
   }
   var allGames = GT.games.filter(function(g) {
-    return g.status === 'complete' && gtAvailIds(g.id).indexOf(pid) >= 0;
+    return g.status === 'complete' && (typeof gtWhoPlayedIds === 'function' ? gtWhoPlayedIds(g.id) : gtAvailIds(g.id)).indexOf(pid) >= 0;
   });
   var pteams = [];
   allGames.forEach(function(g){ var tn = gtOurName(g); if (tn && pteams.indexOf(tn) < 0) pteams.push(tn); });
@@ -363,7 +366,7 @@ function gtRenderPlayerProfile(view, pid) {
   var games = gtPlayerFilteredGames(pid);
   var tot = { goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, tackles: 0, min: 0 };
   var rows = games.map(function(g) {
-    var events = gtGameEvents(g.id);
+    var events = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : gtGameEvents(g.id);
     var st = gtStatLine(pid, events);
     var mins = Math.round((gtMinutesMap(g.id)[pid] || 0) / 60);
     tot.goals += st.goal; tot.assists += st.assist; tot.sot += st.shot_on_target; tot.sh += st.shot;

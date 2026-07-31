@@ -5,7 +5,8 @@ function gtListen() {
   var defs = [
     ['gt_rosters', 'rosters'], ['gt_players', 'players'], ['gt_games', 'games'],
     ['gt_events', 'events'], ['gt_subs', 'subs'], ['gt_availability', 'avail'],
-    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons'], ['gt_chat', 'chat'], ['gt_rsvp', 'rsvp']
+    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons'], ['gt_chat', 'chat'], ['gt_rsvp', 'rsvp'],
+    ['gt_parent_events', 'parentEvents'], ['gt_parent_claims', 'parentClaims']
   ];
   defs.forEach(function(def) {
     db.collection(def[0]).onSnapshot(function(snap) {

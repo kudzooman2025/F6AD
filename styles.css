@@ -902,3 +902,40 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .confirmed-card .cc-footer.cc-done{background:#4c33b8!important;}
 /* Also lift text contrast on the inline-colored FC Delco / possibility footers */
 .confirmed-card .cc-footer[style*="background"]{color:#fff!important;font-weight:700;border-top-color:rgba(255,255,255,.25)}
+
+/* ===== Parent stat tracking ===== */
+.gt-parent{border:1.5px solid #C4B5FD;border-radius:14px;margin:0 0 22px;overflow:hidden;background:#fff}
+.gt-parent-head{background:linear-gradient(135deg,#EDE9FE,#DDD6FE);color:#4c33b8;font-weight:800;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.gt-parent-sub{font-size:.72rem;font-weight:600;color:#7c6bd6;text-transform:none}
+.gt-parent-body{padding:14px 16px}
+.gt-parent-lbl{display:block;font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px}
+.gt-parent-who{font-size:.82rem;color:var(--text);margin-bottom:10px}
+.gt-parent-who a,.gt-parent-body a{color:#5A3FD6;cursor:pointer;font-weight:600}
+.gt-parent-empty{font-size:.82rem;color:var(--muted);padding:8px 0}
+.gt-parent-note{font-size:.74rem;color:var(--muted);margin-top:10px;line-height:1.5}
+.gt-claim-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:12px}
+.gt-claim-lbl{font-size:.74rem;font-weight:700;color:var(--muted);margin-right:2px}
+.gt-claim-chip{font-size:.74rem;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--border-strong);background:#fff;color:var(--ink-2);cursor:pointer}
+.gt-claim-chip.on{background:#5A3FD6;border-color:#5A3FD6;color:#fff}
+.gt-claim-chip.conflict{border-color:#f59e0b;color:#b45309}
+.gt-claim-chip.on.conflict{background:#b45309;border-color:#b45309;color:#fff}
+.gt-pstat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.gt-pstat-btn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 4px;border:1px solid var(--border-strong);border-radius:11px;background:#faf9ff;cursor:pointer;transition:background .12s,border-color .12s}
+.gt-pstat-btn:hover{background:#EDE9FE;border-color:#C4B5FD}
+.gt-pstat-btn:active{background:#DDD6FE}
+.gt-pstat-btn .ps-emoji{font-size:1.25rem}
+.gt-pstat-btn .ps-lbl{font-size:.72rem;font-weight:700;color:var(--text)}
+.gt-plog{margin-top:10px;display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto}
+.gt-plog-row{display:flex;align-items:center;gap:6px;font-size:.82rem;padding:4px 6px;border-radius:7px;background:#faf9ff}
+.gt-plog-t{font-variant-numeric:tabular-nums;color:#5A3FD6;font-weight:700;font-size:.76rem}
+.gt-plog-pub{font-size:.66rem;font-weight:700;color:#16a34a;background:#dcfce7;border-radius:999px;padding:1px 7px}
+.gt-plog-x{margin-left:auto;border:none;background:transparent;color:#b91c1c;cursor:pointer;font-size:.8rem;padding:2px 6px;border-radius:6px}
+.gt-plog-x:hover{background:#fee2e2}
+.gt-share-player{border-top:1px solid var(--border);padding:10px 0}
+.gt-share-player:first-child{border-top:none}
+.gt-share-name{font-weight:800;margin-bottom:6px}
+.gt-share-row{display:flex;align-items:center;gap:7px;font-size:.84rem;padding:3px 0;cursor:pointer}
+.gt-share-actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.gt-note-tag{font-size:.66rem;color:#7c6bd6;background:#EDE9FE;border-radius:999px;padding:1px 7px;font-weight:700}
+.gt-parent-badge{font-size:.66rem;font-weight:700;color:#5A3FD6;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:999px;padding:1px 8px;margin-left:4px}
+@media (max-width:560px){.gt-pstat-grid{grid-template-columns:repeat(3,1fr)}}

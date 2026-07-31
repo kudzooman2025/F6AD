@@ -56,6 +56,8 @@ service cloud.firestore {
     match /venues/{doc}          { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /gt_chat/{doc}         { allow read, create: if true; allow update, delete: if isStaff() || isAdmin(); }
     match /gt_rsvp/{doc}         { allow read, write: if true; }
+    match /gt_parent_events/{doc} { allow read, write: if true; }
+    match /gt_parent_claims/{doc} { allow read, write: if true; }
     match /cancellations/{doc}  { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /ann_comments/{doc}   { allow read, create: if true; allow update, delete: if isStaff() || isAdmin(); }
     // Discussions: anyone can read/post; anyone may change ONLY the vote count;

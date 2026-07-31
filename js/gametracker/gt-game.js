@@ -292,6 +292,7 @@ function gtRenderLive(view, gameId) {
   }
   html += '</div>';
   if (inPK) html += gtPkPanel(g, canEdit);
+  html += gtParentPanelHtml(g);
   html += gtChatPanelHtml(g.id);
   // player grid
   var availIds = gtAvailIds(g.id);
