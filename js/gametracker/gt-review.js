@@ -585,28 +585,34 @@ function gtDownloadCard(pid) {
 }
 
 // ===================== PUBLIC PROFILES DIRECTORY =====================
+function gtProfileCard(p) {
+  var pr = (typeof gtProfile === 'function') ? gtProfile(p.id) : {};
+  var avatar = pr.photo_url
+    ? '<img class="pfdir-photo" src="' + gtAttr(pr.photo_url) + '" alt="" onerror="this.style.display=\'none\'"/>'
+    : '<div class="pfdir-photo pfdir-ph">' + gtEsc(gtPlayerName(p.id).slice(0, 1)) + '</div>';
+  return '<a class="pfdir-card" href="#/gametracker/player/' + p.id + '">' + avatar +
+    '<div class="pfdir-name">' + (p.jersey_number != null ? '<span class="pfdir-num">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerShort(p.id)) + '</div>' +
+    '<div class="pfdir-sub">' + gtEsc(p.position || '') + (pr.visibility === 'unlisted' ? ' <span class="fam-badge pending">Unlisted</span>' : '') + '</div></a>';
+}
 function gtRenderProfiles(view) {
-  var players = (GT.players || []).filter(function(p) {
-    if (p.is_guest) return false;
-    var pr = (typeof gtProfile === 'function') ? gtProfile(p.id) : {};
-    return pr.visibility !== 'unlisted';
-  }).sort(function(a, b) {
+  var all = (GT.players || []).filter(function(p){ return !p.is_guest; }).sort(function(a, b) {
     var an = a.jersey_number == null ? 999 : a.jersey_number, bn = b.jersey_number == null ? 999 : b.jersey_number;
     if (an !== bn) return an - bn;
     return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id));
   });
+  var owns = function(pid){ return (typeof familyOwnsPlayer === 'function' && familyOwnsPlayer(pid)); };
+  var staff = (typeof gtCanEdit === 'function' && gtCanEdit());
+  var mine = all.filter(function(p){ return owns(p.id); });
+  var pub = all.filter(function(p){ var pr = gtProfile(p.id); return pr.visibility !== 'unlisted'; });
   var html = '<div class="gt-title">🪪 Player Profiles</div>' +
     '<div class="gt-sub">Public profiles for our players — tap one for stats, highlights &amp; a shareable card.</div>' +
     '<div style="margin:8px 0 22px"><button class="btn-primary" onclick="openFamily()">➕ Create Profile</button></div>';
-  if (!players.length) { html += '<div class="gt-empty">' + (GT.loaded.players ? 'No public profiles yet.' : 'Loading…') + '</div>'; view.innerHTML = html; return; }
-  html += '<div class="pfdir">' + players.map(function(p) {
-    var pr = gtProfile(p.id);
-    var avatar = pr.photo_url
-      ? '<img class="pfdir-photo" src="' + gtAttr(pr.photo_url) + '" alt="" onerror="this.style.display=\'none\'"/>'
-      : '<div class="pfdir-photo pfdir-ph">' + gtEsc(gtPlayerName(p.id).slice(0, 1)) + '</div>';
-    return '<a class="pfdir-card" href="#/gametracker/player/' + p.id + '">' + avatar +
-      '<div class="pfdir-name">' + (p.jersey_number != null ? '<span class="pfdir-num">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerShort(p.id)) + '</div>' +
-      '<div class="pfdir-sub">' + gtEsc(p.position || '') + '</div></a>';
-  }).join('') + '</div>';
+  if (mine.length) {
+    html += '<div class="section-title" style="margin:4px 0 10px">👨‍👩‍👧 My Players</div>' +
+      '<div class="pfdir" style="margin-bottom:24px">' + mine.map(gtProfileCard).join('') + '</div>';
+  }
+  if (mine.length) html += '<div class="section-title" style="margin:4px 0 10px">All Profiles</div>';
+  if (!pub.length) { html += '<div class="gt-empty">' + (GT.loaded.players ? 'No public profiles yet.' : 'Loading…') + '</div>'; view.innerHTML = html; return; }
+  html += '<div class="pfdir">' + pub.map(gtProfileCard).join('') + '</div>';
   view.innerHTML = html;
 }
