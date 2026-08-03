@@ -148,3 +148,36 @@ function familyDeny(id) {
   db.collection('family_links').doc(id).delete()
     .then(function(){ showToast('Removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
+
+// ===================== FAMILY PROFILES (Phase 2) =====================
+function gtProfile(pid) { return (typeof playerProfiles !== 'undefined' && playerProfiles[pid]) || {}; }
+function familyOwnsPlayerAny(pid) { return (typeof familyOwnsPlayer === 'function') && familyOwnsPlayer(pid); }
+function canEditProfile(pid) {
+  return (typeof gtCanEdit === 'function' && gtCanEdit()) || familyOwnsPlayerAny(pid);
+}
+function openProfileEdit(pid) {
+  if (!canEditProfile(pid)) { showToast('Only staff or the linked family can edit this profile.'); return; }
+  var pr = gtProfile(pid);
+  gtOpenModal(
+    '<h3>✏️ Edit Profile — ' + gtEsc(gtPlayerName(pid)) + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<label>Photo URL</label><input type="text" id="pf-photo" value="' + gtAttr(pr.photo_url || '') + '" placeholder="https://…/photo.jpg"/>' +
+    '<label>Class year</label><input type="text" id="pf-class" value="' + gtAttr(pr.class_year || '') + '" placeholder="2030"/>' +
+    '<label>Bio</label><textarea id="pf-bio" placeholder="A little about the player…">' + gtEsc(pr.bio || '') + '</textarea>' +
+    '<label>Featured highlight links (one per line)</label><textarea id="pf-highlights" placeholder="https://youtu.be/…">' + gtEsc((pr.featured_highlights || []).join('\n')) + '</textarea>' +
+    '<label>Visibility</label><select id="pf-vis"><option value="public"' + (pr.visibility !== 'unlisted' ? ' selected' : '') + '>Public (anyone with the link)</option><option value="unlisted"' + (pr.visibility === 'unlisted' ? ' selected' : '') + '>Unlisted (link only, not featured)</option></select>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="saveProfileEdit(\'' + pid + '\')">Save Profile</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function saveProfileEdit(pid) {
+  if (!canEditProfile(pid)) return;
+  var hl = ((document.getElementById('pf-highlights') || {}).value || '').split(/\n+/).map(function(x){ return x.trim(); }).filter(Boolean);
+  db.collection('player_profiles').doc(pid).set({
+    photo_url: (document.getElementById('pf-photo') || {}).value.trim(),
+    class_year: (document.getElementById('pf-class') || {}).value.trim(),
+    bio: (document.getElementById('pf-bio') || {}).value.trim(),
+    featured_highlights: hl,
+    visibility: (document.getElementById('pf-vis') || {}).value,
+    updated_at: famTs()
+  }, { merge: true }).then(function(){ showToast('Profile saved ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}

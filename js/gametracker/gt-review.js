@@ -365,19 +365,31 @@ function gtRenderPlayerProfile(view, pid) {
   allGames.forEach(function(g){ var tn = gtOurName(g); if (tn && pteams.indexOf(tn) < 0) pteams.push(tn); });
   pteams.sort();
   var games = gtPlayerFilteredGames(pid);
-  var tot = { goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, tackles: 0, min: 0 };
+  var tot = { goals: 0, assists: 0, sot: 0, sh: 0, yc: 0, rc: 0, saves: 0, tackles: 0, min: 0, gf: 0, ga: 0 };
   var rows = games.map(function(g) {
     var events = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : gtGameEvents(g.id);
     var st = gtStatLine(pid, events);
     var mins = Math.round((gtMinutesMap(g.id)[pid] || 0) / 60);
     tot.goals += st.goal; tot.assists += st.assist; tot.sot += st.shot_on_target; tot.sh += st.shot;
     tot.yc += st.yellow_card; tot.rc += st.red_card; tot.saves += st.save; tot.tackles += st.tackle; tot.min += mins;
+    if (typeof gtOnFieldGoals === 'function') { var _ofg = gtOnFieldGoals(g.id, pid); tot.gf += _ofg.gf; tot.ga += _ofg.ga; }
     var highlights = events.filter(function(e){ return e.player_id === pid && gtYtId(e.youtube_url); });
     return { g: g, st: st, mins: mins, highlights: highlights };
   });
   var html = '<div class="gt-title">' + (p.jersey_number != null ? '<span style="color:var(--purple)">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(pid)) +
     (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</div>' +
     '<div class="gt-sub">' + gtEsc(p.position || '') + (gtRoster(p.roster_id) ? (p.position ? ' · ' : '') + gtEsc(gtRoster(p.roster_id).name) : '') + '</div>';
+  var pr = (typeof gtProfile === 'function') ? gtProfile(pid) : {};
+  var canEdPf = (typeof canEditProfile === 'function') && canEditProfile(pid);
+  if (pr.photo_url || pr.bio || pr.class_year || canEdPf) {
+    html += '<div class="pf-card">' +
+      (pr.photo_url ? '<img class="pf-photo" src="' + gtAttr(pr.photo_url) + '" alt="" onerror="this.style.display=\'none\'"/>' : '<div class="pf-photo pf-ph">' + gtEsc(gtPlayerName(pid).slice(0,1)) + '</div>') +
+      '<div class="pf-meta">' +
+      (pr.class_year ? '<div class="pf-year">Class of ' + gtEsc(pr.class_year) + '</div>' : '') +
+      (pr.bio ? '<div class="pf-bio">' + gtEsc(pr.bio) + '</div>' : (canEdPf ? '<div class="pf-bio pf-muted">Add a photo, bio &amp; highlight reel for ' + gtEsc(gtPlayerShort(pid)) + '.</div>' : '')) +
+      (canEdPf ? '<div style="margin-top:8px"><button class="gt-minibtn" onclick="openProfileEdit(\'' + pid + '\')">✏️ Edit profile</button>' + (pr.visibility === 'unlisted' ? ' <span class="fam-badge pending">Unlisted</span>' : '') + '</div>' : '') +
+      '</div></div>';
+  }
   var pf = GT.playerFilters;
   html += '<div class="gt-filters">' +
     (pteams.length >= 1 ? '<select onchange="GT.playerFilters.team=this.value;gtRerender(true)"><option value="">All teams</option>' + pteams.map(function(tn){ return '<option value="' + gtAttr(tn) + '"' + (pf.team === tn ? ' selected' : '') + '>' + gtEsc(tn) + '</option>'; }).join('') + '</select>' : '') +
@@ -397,6 +409,8 @@ function gtRenderPlayerProfile(view, pid) {
     '<div class="gt-stat-box"><div class="sb-num">' + tot.saves + '</div><div class="sb-label">Saves</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + tot.tackles + '</div><div class="sb-label">Tackles</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + tot.min + '</div><div class="sb-label">Minutes</div></div>' +
+    '<div class="gt-stat-box"><div class="sb-num">' + ((tot.gf - tot.ga) >= 0 ? '+' : '') + (tot.gf - tot.ga) + '</div><div class="sb-label">Team +/- (on field)</div></div>' +
+    '<div class="gt-stat-box"><div class="sb-num">' + tot.gf + '–' + tot.ga + '</div><div class="sb-label">Goals for–against (on)</div></div>' +
     '</div>';
   html += '<div class="section-title" style="margin-bottom:12px">📜 Game by Game</div>';
   if (!rows.length) html += '<div class="gt-empty">' + ((pf.team || pf.opp || pf.from || pf.to || (pf.type && pf.type !== 'all') || pf.round) ? 'No games match these filters.' : 'No completed games yet.') + '</div>';
@@ -442,6 +456,11 @@ function gtRenderPlayerProfile(view, pid) {
         }).join('') + '</td></tr>';
     });
     html += '</tbody></table></div>';
+  }
+  var _feat = pr.featured_highlights || [];
+  if (_feat.length) {
+    html += '<div class="section-title" style="margin:24px 0 12px">🎬 Highlight Reel</div><div class="pf-reel">' +
+      _feat.map(function(u){ var yid = gtYtId(u); return yid ? '<a class="gt-yt-thumb" href="' + gtAttr(u) + '" target="_blank" rel="noopener"><img src="https://img.youtube.com/vi/' + yid + '/mqdefault.jpg" alt=""/>▶</a>' : '<a class="gt-minibtn" href="' + gtAttr(u) + '" target="_blank" rel="noopener">▶ Clip</a>'; }).join('') + '</div>';
   }
   html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="btn-primary" onclick="gtSharePlayer(\'' + pid + '\')">🔗 Copy Shareable Link</button>' +

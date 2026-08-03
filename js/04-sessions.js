@@ -601,6 +601,10 @@ function startListeners() {
     if (typeof renderFamilyPanel === 'function') renderFamilyPanel();
     if (typeof renderAdminFamilies === 'function' && document.getElementById('admin-families-list')) renderAdminFamilies();
   }, function(){});
+  db.collection('player_profiles').onSnapshot(function(snap){
+    playerProfiles = {}; snap.forEach(function(d){ playerProfiles[d.id] = d.data() || {}; });
+    if (typeof gtRerender === 'function') gtRerender();
+  }, function(){});
   db.collection('families').onSnapshot(function(snap){
     familyData = {}; snap.forEach(function(d){ familyData[d.id] = d.data() || {}; });
   }, function(){});

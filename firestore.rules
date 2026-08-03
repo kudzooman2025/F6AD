@@ -60,6 +60,13 @@ service cloud.firestore {
     match /gt_parent_claims/{doc} { allow read, write: if true; }
     match /site_flags/{doc}     { allow read: if true; allow write: if isAdmin(); }
     match /families/{uid}       { allow read: if true; allow write: if request.auth != null && request.auth.uid == uid; }
+    match /player_profiles/{pid} {
+      allow read: if true;
+      allow write: if isStaff() || isAdmin() ||
+        (request.auth != null &&
+         exists(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + pid)) &&
+         get(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + pid)).data.status == 'approved');
+    }
     match /family_links/{doc} {
       allow read: if true;
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'pending';

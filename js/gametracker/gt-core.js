@@ -448,6 +448,39 @@ function gtMinutesMap(gid) {
   });
   return secs;
 }
+function gtOnFieldIntervals(gid, pid) {
+  // [start,end] cumulative-second windows the player was on the pitch (from starters + subs).
+  var g = gtGame(gid);
+  if (gtAvailIds(gid).indexOf(pid) < 0) return [];
+  var total = gtTotalSeconds(g);
+  var kick = gtKickoffOn(gid);
+  var intervals = [], onAt = kick[pid] ? 0 : null, sentOff = false;
+  var stream = gtSubEvents(gid).slice();
+  var r = gtPlayerRedInfo(gid, pid); if (r) stream.push({ t: r.t, out: pid, inn: null, red: true });
+  stream.sort(function(a, b){ return a.t - b.t; });
+  stream.forEach(function(s) {
+    if (s.out === pid && onAt != null) { intervals.push([onAt, s.t]); onAt = null; }
+    if (s.red && s.out === pid) sentOff = true;
+    if (s.inn === pid && !sentOff && onAt == null) onAt = s.t;
+  });
+  if (onAt != null) intervals.push([onAt, total]);
+  return intervals;
+}
+function gtOnFieldGoals(gid, pid) {
+  // Team goals for/against that happened while this player was on the field.
+  var g = gtGame(gid);
+  var iv = gtOnFieldIntervals(gid, pid);
+  if (!iv.length) return { gf: 0, ga: 0 };
+  function on(t){ for (var i = 0; i < iv.length; i++) if (t >= iv[i][0] && t <= iv[i][1]) return true; return false; }
+  var gf = 0, ga = 0;
+  gtGameEvents(gid).forEach(function(e) {
+    var forUs = (e.event_type === 'goal' || e.event_type === 'opponent_own_goal');
+    var against = (e.event_type === 'opponent_goal' || e.event_type === 'own_goal');
+    if (!forUs && !against) return;
+    if (on(gtCumSec(g, e.period, e.game_clock_seconds))) { if (forUs) gf++; else ga++; }
+  });
+  return { gf: gf, ga: ga };
+}
 function gtMinutesOverridden(gid, pid) {
   var a = gtGameAvailEntry(gid, pid);
   return !!(a && a.minutes_override != null && a.minutes_override !== '');
