@@ -34,7 +34,7 @@ function renderFamilyPanel() {
     box.innerHTML =
       '<p style="font-size:.9rem;color:var(--muted);margin-bottom:14px">Create a family account to track your player, manage their profile, and share highlights &amp; stats.</p>' +
       '<div class="login-form">' +
-      '<label>Your name</label><input type="text" id="fam-name" placeholder="The Elwood Family"/>' +
+      '<label>Your name</label><input type="text" id="fam-name" placeholder="Smith Family"/>' +
       '<label style="margin-top:10px">Email</label><input type="text" id="fam-email" placeholder="you@example.com"/>' +
       '<label style="margin-top:10px">Password</label><input type="password" id="fam-pw" placeholder="At least 8 characters" onkeydown="if(event.key===\'Enter\')familySignIn()"/>' +
       '<div class="login-error" id="family-error" style="display:none"></div>' +
@@ -104,6 +104,8 @@ function familyClaimPlayer() {
   var pid = famVal('fam-claim-select');
   if (!pid) { showToast('Pick your player.'); return; }
   if (familyLinkFor(pid)) { showToast('You already requested this player.'); return; }
+  var uids = {}; (familyLinks || []).forEach(function(l){ if (l.player_id === pid) uids[l.uid] = 1; });
+  if (!uids[authUser.uid] && Object.keys(uids).length >= 5) { showToast('This player already has the maximum of 5 linked family members.'); return; }
   db.collection('family_links').doc(authUser.uid + '_' + pid).set({
     uid: authUser.uid, player_id: pid, family_name: familyName(), email: authUser.email,
     status: 'pending', created_at: famTs()

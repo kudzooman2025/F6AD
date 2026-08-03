@@ -1358,6 +1358,7 @@ var SITE_SECTIONS = [
   { key: 'tournaments',  label: 'Voting',       sel: 'nav a[data-page="tournaments"]' },
   { key: 'discussions',  label: 'Discussions',  sel: 'nav a[data-page="discussions"]' },
   { key: 'availability', label: 'Availability', sel: 'nav a[href="#/gametracker/availability"]' },
+  { key: 'profiles',     label: 'Profiles',     sel: 'nav a[data-page="profiles"]' },
   { key: 'gametracker',  label: 'GameTracker',  sel: 'nav a.nav-gt' }
 ];
 function applySiteFlags() {

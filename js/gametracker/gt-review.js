@@ -583,3 +583,30 @@ function gtDownloadCard(pid) {
     showToast('Card image saved ✓');
   }).catch(function(e){ showToast('Error: ' + e.message); });
 }
+
+// ===================== PUBLIC PROFILES DIRECTORY =====================
+function gtRenderProfiles(view) {
+  var players = (GT.players || []).filter(function(p) {
+    if (p.is_guest) return false;
+    var pr = (typeof gtProfile === 'function') ? gtProfile(p.id) : {};
+    return pr.visibility !== 'unlisted';
+  }).sort(function(a, b) {
+    var an = a.jersey_number == null ? 999 : a.jersey_number, bn = b.jersey_number == null ? 999 : b.jersey_number;
+    if (an !== bn) return an - bn;
+    return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id));
+  });
+  var html = '<div class="gt-title">🪪 Player Profiles</div>' +
+    '<div class="gt-sub">Public profiles for our players — tap one for stats, highlights &amp; a shareable card.</div>' +
+    '<div style="margin:8px 0 22px"><button class="btn-primary" onclick="openFamily()">➕ Create Profile</button></div>';
+  if (!players.length) { html += '<div class="gt-empty">' + (GT.loaded.players ? 'No public profiles yet.' : 'Loading…') + '</div>'; view.innerHTML = html; return; }
+  html += '<div class="pfdir">' + players.map(function(p) {
+    var pr = gtProfile(p.id);
+    var avatar = pr.photo_url
+      ? '<img class="pfdir-photo" src="' + gtAttr(pr.photo_url) + '" alt="" onerror="this.style.display=\'none\'"/>'
+      : '<div class="pfdir-photo pfdir-ph">' + gtEsc(gtPlayerName(p.id).slice(0, 1)) + '</div>';
+    return '<a class="pfdir-card" href="#/gametracker/player/' + p.id + '">' + avatar +
+      '<div class="pfdir-name">' + (p.jersey_number != null ? '<span class="pfdir-num">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerShort(p.id)) + '</div>' +
+      '<div class="pfdir-sub">' + gtEsc(p.position || '') + '</div></a>';
+  }).join('') + '</div>';
+  view.innerHTML = html;
+}

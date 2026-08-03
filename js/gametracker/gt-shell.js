@@ -49,14 +49,16 @@ function updateSiteNav() {
   if (typeof applySiteFlags === 'function') applySiteFlags();
   var h = window.location.hash || '#/home';
   var isAvail = h.indexOf('#/gametracker/availability') === 0 || h.indexOf('#/gametracker/rsvp') === 0;
-  var isGt = h.indexOf('#/gametracker') === 0 && !isAvail;
+  var isProfiles = h.indexOf('#/gametracker/profiles') === 0 || h.indexOf('#/gametracker/player') === 0 || h.indexOf('#/gametracker/card') === 0;
+  var isGt = h.indexOf('#/gametracker') === 0 && !isAvail && !isProfiles;
   var page = (typeof sitePage === 'function') ? sitePage() : 'home';
   document.querySelectorAll('nav a.site-link, nav a.nav-gt').forEach(function(a) {
     var href = a.getAttribute('href') || '';
     var active;
     if (a.classList.contains('nav-gt')) active = isGt;
     else if (href.indexOf('#/gametracker/availability') === 0) active = isAvail;
-    else active = !isGt && !isAvail && a.getAttribute('data-page') === page;
+    else if (href.indexOf('#/gametracker/profiles') === 0) active = isProfiles;
+    else active = !isGt && !isAvail && !isProfiles && a.getAttribute('data-page') === page;
     a.classList.toggle('nav-active', active);
   });
 }
@@ -120,6 +122,7 @@ function gtRerender(force) {
   else if (page === 'roster') gtRenderRoster(view);
   else if (page === 'player') gtRenderPlayerProfile(view, GT.route.arg);
   else if (page === 'card') gtRenderPlayerCard(view, GT.route.arg);
+  else if (page === 'profiles') gtRenderProfiles(view);
   else gtRenderHome(view);
 }
 function gtRenderNav() {
