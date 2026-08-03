@@ -1,13 +1,5 @@
 // ---------- listeners ----------
-function gtListen() {
-  if (GT.listening) return;
-  GT.listening = true;
-  var defs = [
-    ['gt_rosters', 'rosters'], ['gt_players', 'players'], ['gt_games', 'games'],
-    ['gt_events', 'events'], ['gt_subs', 'subs'], ['gt_availability', 'avail'],
-    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons'], ['gt_chat', 'chat'], ['gt_rsvp', 'rsvp'],
-    ['gt_parent_events', 'parentEvents'], ['gt_parent_claims', 'parentClaims']
-  ];
+function gtAttachListeners(defs) {
   defs.forEach(function(def) {
     db.collection(def[0]).onSnapshot(function(snap) {
       GT[def[1]] = snap.docs.map(function(d) {
@@ -25,6 +17,28 @@ function gtListen() {
       }
     }, function(err) { showToast('GameTracker sync error: ' + err.message); });
   });
+}
+// Light, site-wide collections — needed by the schedule, tournaments, and nav even for
+// casual visitors. These stay small (bounded by roster/#games), so they load globally.
+function gtListen() {
+  if (GT.listening) return;
+  GT.listening = true;
+  gtAttachListeners([
+    ['gt_rosters', 'rosters'], ['gt_players', 'players'], ['gt_games', 'games'],
+    ['gt_tournaments', 'tournaments'], ['gt_seasons', 'seasons']
+  ]);
+}
+// Heavy collections (per-game events, subs, availability, chat, RSVP, parent stats) —
+// only attached once someone actually opens the GameTracker area. Big read savings for
+// visitors who just check Home/Schedule.
+function gtListenHeavy() {
+  if (GT.listeningHeavy) return;
+  GT.listeningHeavy = true;
+  gtAttachListeners([
+    ['gt_events', 'events'], ['gt_subs', 'subs'], ['gt_availability', 'avail'],
+    ['gt_chat', 'chat'], ['gt_rsvp', 'rsvp'],
+    ['gt_parent_events', 'parentEvents'], ['gt_parent_claims', 'parentClaims']
+  ]);
 }
 
 // ---------- routing ----------
@@ -92,6 +106,7 @@ function gtRoute() {
   }
   if (hero) hero.style.display = 'none';
   gtListen();
+  gtListenHeavy();
   var parts = h.replace(/^#\//, '').split('/');
   var page = parts[1] || 'home';
   GT.route = { page: page, arg: parts[2] || null };
