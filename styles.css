@@ -950,3 +950,14 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 
 /* Own-goal badge */
 .gt-pbadge.card-og{background:#EDE9FE;color:#5A3FD6}
+
+/* Home spotlight: parent stat tracking */
+.home-spotlight{background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border:1.5px solid #C4B5FD;border-radius:16px;padding:22px 24px;margin-bottom:20px}
+.hs-badge{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#5A3FD6;background:#fff;border:1px solid #C4B5FD;border-radius:999px;padding:4px 12px;margin-bottom:12px}
+.hs-title{font-size:1.42rem;font-weight:900;color:#3c2e8f;margin:0 0 8px;line-height:1.2}
+.hs-desc{font-size:.92rem;color:#4a3f7a;line-height:1.6;margin:0 0 16px;max-width:740px}
+.hs-actions{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hs-btn{display:inline-flex;align-items:center;gap:7px;font-weight:800;font-size:.94rem;padding:11px 20px;border-radius:11px;background:#5A3FD6;color:#fff;border:1px solid #5A3FD6;text-decoration:none;box-shadow:0 8px 18px -10px #5A3FD6}
+.hs-btn:hover{background:#4930b0}
+.hs-hint{font-size:.82rem;color:#6b5fa8}
+.hs-hint strong{color:#4c33b8}
