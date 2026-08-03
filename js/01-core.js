@@ -171,6 +171,8 @@ const SUMMER27_TOURNAMENTS = [
 // ===================== LIVE DATA =====================
 let scheduleItems = [];
 let siteFlags = {};   // admin-controlled section visibility (e.g. hide_conditioning)
+let familyLinks = [];  // family_links docs (family -> player)
+let familyData = {};   // families/{uid} docs by uid
 let announcementItems = [];
 let venueItems = [];
 let scheduleFilter = 'all';

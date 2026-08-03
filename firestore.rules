@@ -59,6 +59,13 @@ service cloud.firestore {
     match /gt_parent_events/{doc} { allow read, write: if true; }
     match /gt_parent_claims/{doc} { allow read, write: if true; }
     match /site_flags/{doc}     { allow read: if true; allow write: if isAdmin(); }
+    match /families/{uid}       { allow read: if true; allow write: if request.auth != null && request.auth.uid == uid; }
+    match /family_links/{doc} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'pending';
+      allow update: if isStaff() || isAdmin();
+      allow delete: if isStaff() || isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+    }
     match /cancellations/{doc}  { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /ann_comments/{doc}   { allow read, create: if true; allow update, delete: if isStaff() || isAdmin(); }
     // Discussions: anyone can read/post; anyone may change ONLY the vote count;

@@ -29,6 +29,7 @@
       <a href="#/tournaments" class="site-link" data-page="tournaments">Voting</a>
       <a href="#/discussions" class="site-link" data-page="discussions">Discussions</a>
       <a href="#/gametracker/availability" class="site-link">Availability</a>
+      <a href="#" class="site-link" data-page="family" onclick="openFamily(event)">Family</a>
       <a href="#/gametracker" class="nav-gt">GameTracker</a>
       <a href="#" id="nav-auth" style="display:none" onclick="navAuthClick(event)">Sign In</a>
       <button class="btn-signout" id="btn-signout" onclick="signOut()">Sign Out</button>
@@ -312,6 +313,7 @@
           <button class="admin-tab" onclick="switchTab('players',this)">👥 Players</button>
           <button class="admin-tab" onclick="switchTab('sessions',this)">📋 Sessions</button>
           <button class="admin-tab" onclick="switchTab('coaches',this)">🔑 Coaches</button>
+          <button class="admin-tab" onclick="switchTab('families',this)">👪 Families</button>
           <button class="admin-tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
         </div>
 
@@ -459,6 +461,10 @@
         </div>
 
         <!-- SETTINGS TAB -->
+        <div id="tab-families" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Approve parents linking to their child. Approved families can manage that player's profile and highlights.</p>
+          <div id="admin-families-list"></div>
+        </div>
         <div id="tab-settings" class="tab-panel">
           <div style="max-width:400px">
             <p style="font-weight:800;font-size:.9rem;margin-bottom:8px">Account</p>
@@ -492,6 +498,17 @@
   </div>
 </div>
 
+<!-- ======= FAMILY MODAL ======= -->
+<div class="modal-overlay" id="family-overlay" onclick="familyOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>👪 Family Account</h2>
+      <button class="modal-close" onclick="closeFamily()">✕</button>
+    </div>
+    <div class="modal-body" id="family-body"></div>
+  </div>
+</div>
+
 <datalist id="venue-datalist"></datalist>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -514,6 +531,7 @@
 <script src="js/gametracker/gt-tournaments.js"></script>
 <script src="js/gametracker/gt-seasons.js"></script>
 <script src="js/07-discussions.js"></script>
+<script src="js/09-family.js"></script>
 <script src="js/08-init.js"></script>
 </body>
 </html>

@@ -33,6 +33,8 @@ function authRefreshUI() {
       document.getElementById('admin-login').style.display = '';
     }
   }
+  if (typeof renderFamilyPanel === 'function') renderFamilyPanel();
+  if (typeof renderAdminFamilies === 'function' && document.getElementById('admin-families-list')) renderAdminFamilies();
   if (typeof gtRerender === 'function') gtRerender(true);
 }
 function subscribeStaff() {

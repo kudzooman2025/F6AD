@@ -596,6 +596,14 @@ function startListeners() {
       if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVoteTally();
     });
   });
+  db.collection('family_links').onSnapshot(function(snap){
+    familyLinks = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
+    if (typeof renderFamilyPanel === 'function') renderFamilyPanel();
+    if (typeof renderAdminFamilies === 'function' && document.getElementById('admin-families-list')) renderAdminFamilies();
+  }, function(){});
+  db.collection('families').onSnapshot(function(snap){
+    familyData = {}; snap.forEach(function(d){ familyData[d.id] = d.data() || {}; });
+  }, function(){});
   db.collection('site_flags').doc('main').onSnapshot(function(doc){
     siteFlags = (doc && doc.exists) ? (doc.data() || {}) : {};
     if (typeof applySiteFlags === 'function') applySiteFlags();
