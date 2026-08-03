@@ -659,6 +659,7 @@ function switchTab(tab, btn) {
   if(tab==='sessions') renderAdminSessions();
   if(tab==='coaches') renderAdminCoaches();
   if(tab==='families') renderAdminFamilies();
+  if(tab==='feedback') renderAdminFeedback();
   document.querySelectorAll('.admin-tab').forEach(function(t){ t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   btn.classList.add('active');

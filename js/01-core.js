@@ -174,6 +174,7 @@ let siteFlags = {};   // admin-controlled section visibility (e.g. hide_conditio
 let familyLinks = [];  // family_links docs (family -> player)
 let familyData = {};   // families/{uid} docs by uid
 let playerProfiles = {};  // player_profiles/{playerId}
+let feedbackItems = []; // feedback/{id}
 let announcementItems = [];
 let venueItems = [];
 let scheduleFilter = 'all';

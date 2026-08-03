@@ -1010,3 +1010,11 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .pfdir-name{font-weight:800;font-size:.92rem;color:var(--text)}
 .pfdir-num{color:#5A3FD6}
 .pfdir-sub{font-size:.74rem;color:var(--muted)}
+
+/* Feedback */
+.feedback-fab{position:fixed;right:18px;bottom:18px;z-index:900;background:#5A3FD6;color:#fff;border:none;border-radius:999px;padding:11px 18px;font-size:.9rem;font-weight:800;cursor:pointer;box-shadow:0 8px 22px -8px rgba(90,63,214,.7)}
+.feedback-fab:hover{background:#4930b0}
+.fb-form label{display:block;font-weight:700;font-size:.82rem;margin-bottom:5px}
+.fb-form input,.fb-form select,.fb-form textarea{width:100%;padding:9px 12px;border:1px solid var(--border-strong);border-radius:9px;font-size:.92rem;font-family:inherit;box-sizing:border-box}
+.fb-form textarea{resize:vertical}
+@media (max-width:560px){.feedback-fab{right:12px;bottom:12px;padding:9px 14px;font-size:.82rem}}

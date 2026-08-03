@@ -314,6 +314,7 @@
           <button class="admin-tab" onclick="switchTab('sessions',this)">📋 Sessions</button>
           <button class="admin-tab" onclick="switchTab('coaches',this)">🔑 Coaches</button>
           <button class="admin-tab" onclick="switchTab('families',this)">👪 Families</button>
+          <button class="admin-tab" onclick="switchTab('feedback',this)">💬 Feedback</button>
           <button class="admin-tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
         </div>
 
@@ -465,6 +466,10 @@
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Approve parents linking to their child. Approved families can manage that player's profile and highlights.</p>
           <div id="admin-families-list"></div>
         </div>
+        <div id="tab-feedback" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Suggestions and bug reports from the team.</p>
+          <div id="admin-feedback-list"></div>
+        </div>
         <div id="tab-settings" class="tab-panel">
           <div style="max-width:400px">
             <p style="font-weight:800;font-size:.9rem;margin-bottom:8px">Account</p>
@@ -494,6 +499,24 @@
       <button class="modal-close" onclick="closeSessionModal()">✕</button>
     </div>
     <div class="modal-body" id="session-modal-body">
+    </div>
+  </div>
+</div>
+
+<!-- ======= FEEDBACK ======= -->
+<button class="feedback-fab" onclick="openFeedback()" title="Leave feedback">💬 Feedback</button>
+<div class="modal-overlay" id="feedback-overlay" onclick="feedbackOverlayClick(event)">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header"><h2>💬 Feedback</h2><button class="modal-close" onclick="closeFeedback()">✕</button></div>
+    <div class="modal-body fb-form">
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px">Spotted a bug or have a suggestion? Let us know — it goes straight to the team admin.</p>
+      <label>Type</label>
+      <select id="fb-type"><option value="suggestion">💡 Suggestion</option><option value="bug">🐞 Bug</option><option value="other">💬 Other</option></select>
+      <label style="margin-top:12px">Your feedback</label>
+      <textarea id="fb-text" rows="4" placeholder="What's on your mind?"></textarea>
+      <label style="margin-top:12px">Your name (optional)</label>
+      <input type="text" id="fb-name" placeholder="So we can follow up"/>
+      <div class="gm-actions" style="margin-top:16px"><button class="btn-primary" onclick="submitFeedback()">Send Feedback</button><button class="gt-minibtn" onclick="closeFeedback()">Cancel</button></div>
     </div>
   </div>
 </div>
@@ -532,6 +555,7 @@
 <script src="js/gametracker/gt-seasons.js"></script>
 <script src="js/07-discussions.js"></script>
 <script src="js/09-family.js"></script>
+<script src="js/10-feedback.js"></script>
 <script src="js/08-init.js"></script>
 </body>
 </html>
