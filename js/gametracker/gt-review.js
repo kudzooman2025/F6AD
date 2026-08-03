@@ -464,6 +464,7 @@ function gtRenderPlayerProfile(view, pid) {
   }
   html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="btn-primary" onclick="gtSharePlayer(\'' + pid + '\')">🔗 Copy Shareable Link</button>' +
+    '<a class="btn-primary" style="text-decoration:none" href="#/gametracker/card/' + pid + '">📇 Share Card</a>' +
     '<button class="gt-minibtn" style="padding:10px 16px" onclick="gtGo(\'/gametracker/season\')">← Season Stats</button></div>';
   view.innerHTML = html;
 }
@@ -511,4 +512,74 @@ function gtEnsureJsPdf(cb) {
     document.head.appendChild(sc);
   }
   loadSeq(0);
+}
+
+// ===================== SHAREABLE PLAYER CARD (Phase 3) =====================
+function gtPlayerCareerTotals(pid) {
+  var games = GT.games.filter(function(g){ return g.status === 'complete' && (typeof gtWhoPlayedIds === 'function' ? gtWhoPlayedIds(g.id) : gtAvailIds(g.id)).indexOf(pid) >= 0; });
+  var t = { games: games.length, goals: 0, assists: 0, sot: 0, sh: 0, saves: 0, tackles: 0, min: 0, gf: 0, ga: 0, highlights: [] };
+  games.forEach(function(g) {
+    var ev = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : gtGameEvents(g.id);
+    var st = gtStatLine(pid, ev);
+    t.goals += st.goal; t.assists += st.assist; t.sot += st.shot_on_target; t.sh += st.shot; t.saves += st.save; t.tackles += st.tackle;
+    t.min += Math.round((gtMinutesMap(g.id)[pid] || 0) / 60);
+    if (typeof gtOnFieldGoals === 'function') { var o = gtOnFieldGoals(g.id, pid); t.gf += o.gf; t.ga += o.ga; }
+    ev.forEach(function(e){ if (e.player_id === pid && gtYtId(e.youtube_url)) t.highlights.push(e.youtube_url); });
+  });
+  return t;
+}
+function gtRenderPlayerCard(view, pid) {
+  var p = gtP(pid);
+  if (!p) { view.innerHTML = GT.loaded.players ? '<div class="gt-empty">Player not found. <a href="#/gametracker/roster">Back</a></div>' : '<div class="gt-empty">Loading…</div>'; return; }
+  var pr = (typeof gtProfile === 'function') ? gtProfile(pid) : {};
+  var t = gtPlayerCareerTotals(pid);
+  var team = gtRoster(p.roster_id) ? gtRoster(p.roster_id).name : 'F6AD';
+  var subline = [p.position || '', pr.class_year ? 'Class of ' + pr.class_year : '', team].filter(Boolean).join(' · ');
+  var reel = (pr.featured_highlights || []).concat(t.highlights);
+  var seen = {}, thumbs = [];
+  reel.forEach(function(u){ var id = gtYtId(u); if (id && !seen[id] && thumbs.length < 3) { seen[id] = 1; thumbs.push({ u: u, id: id }); } });
+  function tile(n, l){ return '<div class="pfc-tile"><div class="pfc-num2">' + n + '</div><div class="pfc-lbl">' + l + '</div></div>'; }
+  var pm = (t.gf - t.ga);
+  var html =
+    '<div class="pfc-wrap"><div class="pfc-card" id="pf-share-card">' +
+    '<div class="pfc-head">' +
+    (pr.photo_url ? '<img class="pfc-photo" src="' + gtAttr(pr.photo_url) + '" alt="" crossorigin="anonymous" onerror="this.style.display=\'none\'"/>' : '<div class="pfc-photo pfc-ph">' + gtEsc(gtPlayerName(pid).slice(0,1)) + '</div>') +
+    '<div class="pfc-id"><div class="pfc-name">' + (p.jersey_number != null ? '<span class="pfc-num">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(pid)) + '</div>' +
+    '<div class="pfc-sub">' + gtEsc(subline) + '</div></div></div>' +
+    (pr.bio ? '<div class="pfc-bio">' + gtEsc(pr.bio) + '</div>' : '') +
+    '<div class="pfc-stats">' +
+    tile(t.games, 'Games') + tile(t.goals, 'Goals') + tile(t.assists, 'Assists') + tile(t.sot, 'On Target') +
+    tile(t.saves, 'Saves') + tile(t.tackles, 'Tackles') + tile(t.min, 'Minutes') + tile((pm >= 0 ? '+' : '') + pm, 'Team +/-') +
+    '</div>' +
+    (thumbs.length ? '<div class="pfc-reel">' + thumbs.map(function(x){ return '<a class="gt-yt-thumb" href="' + gtAttr(x.u) + '" target="_blank" rel="noopener"><img src="https://img.youtube.com/vi/' + x.id + '/mqdefault.jpg" alt=""/>▶</a>'; }).join('') + '</div>' : '') +
+    '<div class="pfc-foot">⚽ f6ad.space · GameTracker</div>' +
+    '</div>' +
+    '<div class="pfc-actions">' +
+    '<button class="btn-primary" onclick="gtShareCard(\'' + pid + '\')">🔗 Copy card link</button>' +
+    '<button class="btn-primary" onclick="gtDownloadCard(\'' + pid + '\')">⬇ Download image</button>' +
+    '<a class="gt-minibtn" style="padding:10px 16px" href="#/gametracker/player/' + pid + '">← Full profile</a>' +
+    '</div></div>';
+  view.innerHTML = html;
+}
+function gtShareCard(pid) {
+  var url = window.location.origin + window.location.pathname + '#/gametracker/card/' + pid;
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function(){ showToast('Card link copied!'); }).catch(function(){ window.prompt('Copy this card link:', url); });
+  else window.prompt('Copy this card link:', url);
+}
+var GT_h2cLoading = false;
+function gtEnsureHtml2Canvas(cb) {
+  if (window.html2canvas) { cb(true); return; }
+  var s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  s.onload = function(){ cb(!!window.html2canvas); };
+  s.onerror = function(){ cb(false); };
+  document.head.appendChild(s);
+}
+function gtDownloadCard(pid) {
+  var el = document.getElementById('pf-share-card'); if (!el) return;
+  if (!window.html2canvas) { showToast('Loading image tool…'); gtEnsureHtml2Canvas(function(ok){ if (ok) gtDownloadCard(pid); else showToast('Could not load the image tool — check your connection.'); }); return; }
+  window.html2canvas(el, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(function(canvas) {
+    var a = document.createElement('a'); a.download = gtPlayerName(pid).replace(/\s+/g, '_') + '_card.png'; a.href = canvas.toDataURL('image/png'); a.click();
+    showToast('Card image saved ✓');
+  }).catch(function(e){ showToast('Error: ' + e.message); });
 }

@@ -119,6 +119,7 @@ function gtRerender(force) {
   else if (page === 'rsvp') gtRenderRsvp(view, GT.route.arg);
   else if (page === 'roster') gtRenderRoster(view);
   else if (page === 'player') gtRenderPlayerProfile(view, GT.route.arg);
+  else if (page === 'card') gtRenderPlayerCard(view, GT.route.arg);
   else gtRenderHome(view);
 }
 function gtRenderNav() {

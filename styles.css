@@ -980,3 +980,23 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .pf-bio{font-size:.92rem;color:var(--text);line-height:1.55;white-space:pre-wrap}
 .pf-bio.pf-muted{color:var(--muted)}
 .pf-reel{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Shareable player card (Phase 3) */
+.pfc-wrap{max-width:520px;margin:0 auto}
+.pfc-card{background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.pfc-head{display:flex;gap:16px;align-items:center;padding:22px;background:linear-gradient(135deg,#5A3FD6,#4c33b8);color:#fff}
+.pfc-photo{width:92px;height:92px;border-radius:16px;object-fit:cover;flex-shrink:0;background:rgba(255,255,255,.2)}
+.pfc-photo.pfc-ph{display:flex;align-items:center;justify-content:center;font-size:2.4rem;font-weight:900;color:#fff}
+.pfc-id{min-width:0}
+.pfc-name{font-size:1.5rem;font-weight:900;line-height:1.1}
+.pfc-num{opacity:.85}
+.pfc-sub{font-size:.86rem;opacity:.9;margin-top:4px}
+.pfc-bio{padding:14px 22px 0;font-size:.9rem;color:var(--text);line-height:1.55;white-space:pre-wrap}
+.pfc-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:18px 22px}
+.pfc-tile{background:#faf9ff;border:1px solid var(--border);border-radius:11px;padding:10px 4px;text-align:center}
+.pfc-num2{font-size:1.35rem;font-weight:900;color:#4c33b8}
+.pfc-lbl{font-size:.66rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-top:2px}
+.pfc-reel{display:flex;gap:8px;flex-wrap:wrap;padding:0 22px 18px}
+.pfc-foot{padding:12px 22px;border-top:1px solid var(--border);font-size:.78rem;font-weight:800;color:#5A3FD6;text-align:center}
+.pfc-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+@media (max-width:520px){.pfc-stats{grid-template-columns:repeat(2,1fr)}}
