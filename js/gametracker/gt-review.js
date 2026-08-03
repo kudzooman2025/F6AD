@@ -188,6 +188,7 @@ function gtSeasonGames() {
     if (g.status !== 'complete') return false;
     if (f.type !== 'all' && g.game_type !== f.type) return false;
     if (f.round && (g.round || '') !== f.round) return false;
+    if (f.season && (g.season_id || '') !== f.season) return false;
     if (f.team && gtOurName(g) !== f.team) return false;
     if (f.opp) {
       var opp = gtTheirName(g) || '';
@@ -204,6 +205,11 @@ function gtRenderSeason(view) {
   if (!GT.seasonRoster && gtActiveRoster()) GT.seasonRoster = gtActiveRoster().id;
   var rid = GT.seasonRoster || (rosters[0] ? rosters[0].id : null);
   var f = GT.seasonFilters;
+  if (f.season === undefined && GT.loaded.seasons && GT.seasons.length) {
+    var _cur = GT.seasons.find(function(se){ return /mls next/i.test(se.name || ''); }) ||
+      GT.seasons.slice().sort(function(a, b){ return gtTsMillis(b.created_at) - gtTsMillis(a.created_at); })[0];
+    f.season = _cur ? _cur.id : '';
+  }
   var games = gtSeasonGames();
   var w = 0, l = 0, d = 0, gf = 0, ga = 0;
   games.forEach(function(g) {
@@ -214,9 +220,11 @@ function gtRenderSeason(view) {
   var seasonTeams = [];
   GT.games.forEach(function(g){ if (g.status === 'complete' && (!rid || g.roster_id === rid)) { var tn = gtOurName(g); if (tn && seasonTeams.indexOf(tn) < 0) seasonTeams.push(tn); } });
   seasonTeams.sort();
+  var _selSeasonName = f.season ? ((GT.seasons.find(function(se){ return se.id === f.season; }) || {}).name || '') : '';
   var html = '<div class="gt-title">📊 Season Overview</div>' +
-    '<div class="gt-sub">All completed games' + (rid && gtRoster(rid) ? ' for ' + gtEsc(gtRoster(rid).name) : '') + '.</div>';
+    '<div class="gt-sub">' + (_selSeasonName ? 'Completed games in ' + gtEsc(_selSeasonName) : ('All completed games' + (rid && gtRoster(rid) ? ' for ' + gtEsc(gtRoster(rid).name) : ''))) + '.</div>';
   html += '<div class="gt-filters">' +
+    (GT.seasons.length ? '<select onchange="GT.seasonFilters.season=this.value;gtRerender(true)"><option value="">All seasons</option>' + GT.seasons.slice().sort(function(a, b){ return gtTsMillis(b.created_at) - gtTsMillis(a.created_at); }).map(function(se){ return '<option value="' + se.id + '"' + (f.season === se.id ? ' selected' : '') + '>' + gtEsc(se.name) + '</option>'; }).join('') + '</select>' : '') +
     (rosters.length > 1 ? '<select onchange="GT.seasonRoster=this.value;gtRerender(true)">' + rosters.map(function(r){ return '<option value="' + r.id + '"' + (rid === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') + '</select>' : '') +
     (seasonTeams.length >= 1 ? '<select onchange="GT.seasonFilters.team=this.value;gtRerender(true)"><option value="">All teams</option>' + seasonTeams.map(function(tn){ return '<option value="' + gtAttr(tn) + '"' + (f.team === tn ? ' selected' : '') + '>' + gtEsc(tn) + '</option>'; }).join('') + '</select>' : '') +
     '<select onchange="GT.seasonFilters.type=this.value;gtRerender(true)">' +
@@ -344,6 +352,7 @@ function gtPlayerFilteredGames(pid) {
     if ((typeof gtWhoPlayedIds === 'function' ? gtWhoPlayedIds(g.id) : gtAvailIds(g.id)).indexOf(pid) < 0) return false;
     if (f.type !== 'all' && g.game_type !== f.type) return false;
     if (f.round && (g.round || '') !== f.round) return false;
+    if (f.season && (g.season_id || '') !== f.season) return false;
     if (f.team && gtOurName(g) !== f.team) return false;
     if (f.opp) { var opp = gtTheirName(g) || ''; if (opp.toLowerCase().indexOf(f.opp.toLowerCase()) < 0) return false; }
     var when = gtTsMillis(g.played_at || g.created_at);
