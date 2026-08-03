@@ -44,6 +44,16 @@ function renderFamilyPanel() {
       '</div>';
     return;
   }
+  // signed in as staff -> show a staff view (not the family claim UI)
+  if ((typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn())) {
+    var role = (isAdminUnlocked && isAdminUnlocked()) ? 'Admin' : 'Coach';
+    box.innerHTML =
+      '<div style="font-size:.9rem;margin-bottom:12px">Signed in as <strong>' + gtEsc(authStaffName || authUser.email.split('@')[0]) + '</strong> <span class="fam-badge ok">' + role + '</span></div>' +
+      '<p style="font-size:.86rem;color:var(--muted);margin-bottom:14px">You\'re signed in as team staff.</p>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn-primary" onclick="closeFamily();openAdmin()">Open Admin Panel</button>' +
+      '<button class="btn-edit" onclick="familySignOut()">Sign Out</button></div>';
+    return;
+  }
   // signed in — show claim + my players
   var mine = myFamilyLinks();
   var claimed = {}; mine.forEach(function(l){ claimed[l.player_id] = true; });

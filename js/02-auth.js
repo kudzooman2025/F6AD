@@ -8,14 +8,16 @@ function renderNavAuth() {
   var el = document.getElementById('nav-auth');
   if (!el) return;
   el.style.display = '';
-  el.textContent = authUser
-    ? 'Sign Out (' + (authStaffName || authUser.email.split('@')[0]) + ')'
-    : 'Staff Sign In';
+  if (!authUser) { el.textContent = 'Sign In'; return; }
+  var role = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) ? 'Admin'
+    : (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn()) ? 'Coach' : 'Family';
+  var nm = authStaffName || (typeof familyName === 'function' ? familyName() : '') || authUser.email.split('@')[0];
+  el.textContent = 'Sign Out (' + nm + ' · ' + role + ')';
 }
 function navAuthClick(e) {
   e.preventDefault();
-  if (authUser) authSignOut();
-  else openAdmin();
+  if (authUser) { authSignOut(); return; }
+  if (typeof openFamily === 'function') openFamily(e); else openAdmin();
 }
 function isAdminUnlocked() { return authRole === 'admin'; }
 function isCoachLoggedIn() { return authRole === 'admin' || authRole === 'coach'; }
