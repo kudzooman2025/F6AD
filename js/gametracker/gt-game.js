@@ -319,6 +319,8 @@ function gtRenderLive(view, gameId) {
       if (st.shot) badges += '<span class="gt-pbadge">💨' + st.shot + '</span>';
       if (st.save) badges += '<span class="gt-pbadge">🧤' + st.save + '</span>';
       if (st.tackle) badges += '<span class="gt-pbadge">🛡️' + st.tackle + '</span>';
+      if (st.pass) badges += '<span class="gt-pbadge">➡️' + st.pass + '</span>';
+      if (st.pass_comp) badges += '<span class="gt-pbadge">✅' + st.pass_comp + '</span>';
       if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
       if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
       if (st.own_goal) badges += '<span class="gt-pbadge card-og">🥅' + st.own_goal + '</span>';

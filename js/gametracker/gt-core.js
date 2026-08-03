@@ -31,6 +31,8 @@ var GT_EVENT_TYPES = [
   { id: 'red_card',       label: 'Red Card',       emoji: '🟥' },
   { id: 'save',           label: 'Save',           emoji: '🧤' },
   { id: 'tackle',         label: 'Tackle',         emoji: '🛡️' },
+  { id: 'pass',           label: 'Pass',           emoji: '➡️' },
+  { id: 'pass_comp',      label: 'Pass Comp',      emoji: '✅' },
   { id: 'own_goal',       label: 'Own Goal',       emoji: '🥅' }
 ];
 // Fixed position list (primary formation 5-3-2). Order is intentional.
@@ -547,7 +549,7 @@ function gtStartingXiHtml(gid) {
     }).join('') + '</div>';
 }
 function gtStatLine(pid, events) {
-  var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0, tackle: 0, own_goal: 0 };
+  var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0, tackle: 0, pass: 0, pass_comp: 0, own_goal: 0 };
   events.forEach(function(e){ if (e.player_id === pid && st[e.event_type] !== undefined) st[e.event_type]++; });
   return st;
 }

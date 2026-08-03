@@ -12,9 +12,11 @@ var GT_PARENT_TYPES = [
   { id: 'shot',    label: 'Shot',      emoji: '💨', stat: 'shot' },
   { id: 'sot',     label: 'On Target', emoji: '🎯', stat: 'shot_on_target' },
   { id: 'save',    label: 'Save',      emoji: '🧤', stat: 'save' },
-  { id: 'tackle',  label: 'Tackle',    emoji: '🛡️', stat: 'tackle' }
+  { id: 'tackle',  label: 'Tackle',    emoji: '🛡️', stat: 'tackle' },
+  { id: 'pass',    label: 'Pass',      emoji: '➡️', stat: 'pass' },
+  { id: 'pass_comp', label: 'Pass Comp', emoji: '✅', stat: 'pass_comp' }
 ];
-var GT_PARENT_CLAIMABLE = ['sub_on', 'sub_off', 'assist', 'shot', 'sot', 'save', 'tackle'];
+var GT_PARENT_CLAIMABLE = ['sub_on', 'sub_off', 'assist', 'shot', 'sot', 'save', 'tackle', 'pass', 'pass_comp'];
 function gtParentType(id) { return GT_PARENT_TYPES.find(function(t){ return t.id === id; }) || { id: id, label: id, emoji: '•', stat: false }; }
 
 function gtParentToken() {
