@@ -1058,3 +1058,8 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .pd-legend-item b{color:var(--text)}
 .pd-score.pd-developing{background:#E0F2FE;color:#075985}
 td .pd-tierlbl{display:inline-block;margin-left:5px;margin-top:0;font-size:.62rem}
+
+/* Dev card attribute info button + description */
+.pd-info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #C4B5FD;background:#EDE9FE;color:#5A3FD6;font-size:.66rem;font-weight:900;font-style:italic;cursor:pointer;line-height:1;padding:0;vertical-align:middle}
+.pd-info:hover{background:#DDD6FE}
+.pd-desc{font-size:.74rem;color:var(--muted);line-height:1.4;margin:2px 0 6px;background:#faf9ff;border-left:2px solid #C4B5FD;padding:6px 8px;border-radius:0 6px 6px 0}

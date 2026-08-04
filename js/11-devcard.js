@@ -4,21 +4,23 @@
 // 26/27 roster (active roster, no guests). Peer login + peer evals come in 1b.
 
 var PD_ATTRS = [
-  { id: 'speed',           label: 'Speed',          group: 'Athletic' },
-  { id: 'endurance',       label: 'Endurance',      group: 'Athletic' },
-  { id: 'work_rate',       label: 'Work-rate',      group: 'Athletic' },
-  { id: 'strength',        label: 'Strength',       group: 'Athletic' },
-  { id: 'first_touch',     label: 'First Touch',    group: 'Technical' },
-  { id: 'passing',         label: 'Passing',        group: 'Technical' },
-  { id: 'dribbling',       label: 'Dribbling',      group: 'Technical' },
-  { id: 'shot_accuracy',   label: 'Shot Accuracy',  group: 'Technical' },
-  { id: 'defending',       label: 'Defending',      group: 'Technical' },
-  { id: 'decision_making', label: 'Decision-Making',group: 'Understanding' },
-  { id: 'communication',   label: 'Communication',  group: 'Team & Growth' },
-  { id: 'commitment',      label: 'Commitment',     group: 'Team & Growth' },
-  { id: 'coachability',    label: 'Coachability',   group: 'Team & Growth' },
-  { id: 'leadership',      label: 'Leadership',      group: 'Team & Growth' }
+  { id: 'speed',           label: 'Speed',          group: 'Athletic', desc: 'How quickly the player runs and moves around the field.' },
+  { id: 'endurance',       label: 'Endurance',      group: 'Athletic', desc: 'How well the player maintains their energy and performance throughout a game.' },
+  { id: 'work_rate',       label: 'Work-rate',      group: 'Athletic', desc: 'How consistently the player moves, pressures opponents, tracks back, and stays involved during play.' },
+  { id: 'strength',        label: 'Strength',       group: 'Athletic', desc: 'How well the player competes physically, protects the ball, and holds their position.' },
+  { id: 'first_touch',     label: 'First Touch',    group: 'Technical', desc: 'How well the player controls the ball when receiving it.' },
+  { id: 'passing',         label: 'Passing',        group: 'Technical', desc: 'How accurately and effectively the player passes to teammates.' },
+  { id: 'dribbling',       label: 'Dribbling',      group: 'Technical', desc: 'How well the player moves with the ball and gets past opponents.' },
+  { id: 'shot_accuracy',   label: 'Shot Accuracy',  group: 'Technical', desc: 'How consistently the player directs shots toward the intended target.' },
+  { id: 'defending',       label: 'Defending',      group: 'Technical', desc: 'How well the player marks opponents, wins the ball, blocks attacks, and helps protect the goal.' },
+  { id: 'decision_making', label: 'Decision-Making',group: 'Understanding', desc: 'How well the player chooses what to do with and without the ball during play.' },
+  { id: 'communication',   label: 'Communication',  group: 'Team & Growth', desc: 'How well the player talks, listens, gives useful information, and helps teammates stay organized.' },
+  { id: 'commitment',      label: 'Commitment',     group: 'Team & Growth', desc: 'How consistently the player focuses, practices, gives their best effort, and works to improve.' },
+  { id: 'coachability',    label: 'Coachability',   group: 'Team & Growth', desc: 'How well the player listens to coaching, accepts feedback, and tries to apply what they have learned.' },
+  { id: 'leadership',      label: 'Leadership',      group: 'Team & Growth', desc: 'How well the player encourages teammates, sets a positive example, and helps the team succeed.' }
 ];
+function pdAttrDesc(id) { var a = PD_ATTRS.find(function(x){ return x.id === id; }); return a ? a.desc : ''; }
+function pdToggleDesc(id) { var el = document.getElementById(id); if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
 var PD_PERIODS = [['begin', 'Beginning of Season'], ['mid', 'Midseason'], ['end', 'End of Season']];
 // Score is entered directly on the 0-99 scale. These tiers are the range explainers
 // shown on cards (and live in the coach form).
@@ -126,7 +128,7 @@ function pdCardHtml(period, pid, opts) {
       ? pdScoreChip(at.peer) + '<span class="pd-tierlbl">' + gtEsc(pdTierShort(at.peer)) + '</span>' + (at.agreement ? '<span class="pd-agree pd-a-' + at.agreement.toLowerCase() + '">' + at.agreement + '</span>' : '')
       : '<span class="pd-note">' + (at.peerCount ? at.peerCount + '/' + PD_MIN_PEERS + ' responses' : 'No peer data') + '</span>';
     var coachTier = at.coach != null ? '<span class="pd-tierlbl">' + gtEsc(pdTierShort(at.coach)) + '</span>' : '';
-    return '<tr><td class="pd-attr">' + gtEsc(at.label) + '</td>' +
+    return '<tr><td class="pd-attr">' + gtEsc(at.label) + ' <button type="button" class="pd-info" title="' + gtAttr(pdAttrDesc(at.id)) + '" onclick="showToast(pdAttrDesc(\'' + at.id + '\'))" aria-label="What is ' + gtAttr(at.label) + '?">i</button></td>' +
       '<td class="num">' + pdScoreChip(at.coach) + coachTier + ' ' + deltaHtml + '</td>' +
       '<td class="num">' + peerCell + '</td></tr>';
   }).join('');
@@ -166,7 +168,8 @@ function renderAdminDevCards() {
     legend +
     '<div class="pd-grid">' + PD_ATTRS.map(function(a) {
       var cur = (coach && coach.ratings && coach.ratings[a.id] != null) ? coach.ratings[a.id] : '';
-      return '<div class="pd-field"><label>' + gtEsc(a.label) + '</label>' +
+      return '<div class="pd-field"><label>' + gtEsc(a.label) + ' <button type="button" class="pd-info" title="' + gtAttr(a.desc) + '" onclick="pdToggleDesc(\'pd-desc-' + a.id + '\')" aria-label="What is ' + gtAttr(a.label) + '?">i</button></label>' +
+        '<div class="pd-desc" id="pd-desc-' + a.id + '" style="display:none">' + gtEsc(a.desc) + '</div>' +
         '<input type="number" min="0" max="99" id="pd-ce-' + a.id + '" value="' + cur + '" placeholder="0\u201399" oninput="pdShowTier(this,\'pd-tier-' + a.id + '\')"/>' +
         '<span class="pd-tierlbl" id="pd-tier-' + a.id + '">' + (cur !== '' ? gtEsc(pdTierLabel(cur)) : '') + '</span></div>';
     }).join('') + '</div>' +
