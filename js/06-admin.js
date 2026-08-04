@@ -645,6 +645,7 @@ function showAdminPanel() {
   if (typeof attachVotesListeners === 'function') attachVotesListeners();
   if (typeof attachConditioningListeners === 'function') attachConditioningListeners();
   if (typeof attachFeedbackListener === 'function') attachFeedbackListener();
+  if (typeof attachDevCardsListener === 'function') attachDevCardsListener();
   var pwEl = document.getElementById('admin-pw-input');
   if (pwEl) pwEl.value = '';
   var acct = document.getElementById('settings-account-line');
@@ -663,6 +664,7 @@ function switchTab(tab, btn) {
   if(tab==='coaches') renderAdminCoaches();
   if(tab==='families') renderAdminFamilies();
   if(tab==='feedback') renderAdminFeedback();
+  if(tab==='devcards') renderAdminDevCards();
   document.querySelectorAll('.admin-tab').forEach(function(t){ t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   btn.classList.add('active');

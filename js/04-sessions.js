@@ -595,6 +595,10 @@ function startListeners() {
   db.collection('families').onSnapshot(function(snap){
     familyData = {}; snap.forEach(function(d){ familyData[d.id] = d.data() || {}; });
   }, function(){});
+  db.collection('pd_config').doc('main').onSnapshot(function(doc){
+    pdConfigData = (doc && doc.exists) ? (doc.data() || {}) : {};
+    if (typeof renderAdminDevCards === 'function' && document.getElementById('admin-devcards-list')) renderAdminDevCards();
+  }, function(){});
   db.collection('site_flags').doc('main').onSnapshot(function(doc){
     siteFlags = (doc && doc.exists) ? (doc.data() || {}) : {};
     if (typeof applySiteFlags === 'function') applySiteFlags();

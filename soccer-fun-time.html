@@ -315,6 +315,7 @@
           <button class="admin-tab" onclick="switchTab('coaches',this)">🔑 Coaches</button>
           <button class="admin-tab" onclick="switchTab('families',this)">👪 Families</button>
           <button class="admin-tab" onclick="switchTab('feedback',this)">💬 Feedback</button>
+          <button class="admin-tab" onclick="switchTab('devcards',this)">🃏 Player Cards</button>
           <button class="admin-tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
         </div>
 
@@ -466,6 +467,10 @@
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Approve parents linking to their child. Approved families can manage that player's profile and highlights.</p>
           <div id="admin-families-list"></div>
         </div>
+        <div id="tab-devcards" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Development cards for the MLS Next AD 26/27 roster. Set the period, record your coach evaluation per player, and view their card. Growth over time is the goal — not rankings.</p>
+          <div id="admin-devcards-list"></div>
+        </div>
         <div id="tab-feedback" class="tab-panel">
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Suggestions and bug reports from the team.</p>
           <div id="admin-feedback-list"></div>
@@ -556,6 +561,7 @@
 <script src="js/07-discussions.js"></script>
 <script src="js/09-family.js"></script>
 <script src="js/10-feedback.js"></script>
+<script src="js/11-devcard.js"></script>
 <script src="js/08-init.js"></script>
 </body>
 </html>
