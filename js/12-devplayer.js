@@ -98,8 +98,17 @@ function renderPlayerDevPanel() {
     return;
   }
   if (!authUser.isAnonymous) {
-    box.innerHTML = '<p style="font-size:.9rem;line-height:1.5">You\'re signed in as a <strong>family/staff account</strong>, not a player.</p>' +
-      '<p style="font-size:.84rem;color:var(--muted);margin-top:8px">Players sign in on their own device. Families can submit a <strong>family evaluation</strong> from the Account panel (Profiles → your account).</p>';
+    var famPids = (typeof familyLinks !== 'undefined' ? familyLinks : []).filter(function(l){ return l.uid === authUser.uid && l.status === 'approved'; }).map(function(l){ return l.player_id; });
+    var isStaffUser = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
+    if (isStaffUser && !famPids.length) famPids = pdRosterPlayers().map(function(p){ return p.id; });
+    if (famPids.length) {
+      var name = (typeof familyName === 'function' ? familyName() : '') || (authUser.email ? authUser.email.split('@')[0] : '');
+      box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:4px"><span style="font-size:.88rem">Signed in as <strong>' + gtEsc(name) + '</strong></span></div>' +
+        pdFamilyEvalUI(famPids);
+      return;
+    }
+    box.innerHTML = '<p style="font-size:.9rem;line-height:1.5">You\'re signed in, but this account has no linked player.</p>' +
+      '<p style="font-size:.84rem;color:var(--muted);margin-top:8px">Claim your player first (Profiles → Create Profile / your account), then a coach approves you.</p>';
     return;
   }
   var link = pdMyLink();
@@ -140,14 +149,18 @@ function renderPlayerDevPanel() {
 var pdFamEvalPid = null;
 function pdSetFamEval(pid) { pdFamEvalPid = pid || null; if (typeof renderFamilyPanel === 'function') renderFamilyPanel(); }
 function pdFamilyEvalSection(mineLinks) {
-  var approved = (mineLinks || []).filter(function(l){ return l.status === 'approved'; });
-  if (!approved.length) return '';
+  var pids = (mineLinks || []).filter(function(l){ return l.status === 'approved'; }).map(function(l){ return l.player_id; });
+  return pdFamilyEvalUI(pids);
+}
+function pdFamilyEvalUI(pids) {
+  pids = (pids || []).filter(function(x){ return !!x; });
+  if (!pids.length) return '';
   var period = pdActivePeriod();
   var head = '<hr style="margin:18px 0;border:none;border-top:1px solid var(--border)"><p style="font-weight:800;font-size:.9rem;margin:0 0 6px">🃏 Player development — family evaluation</p>';
   if (!period || !pdIsOpen()) return head + '<p style="font-size:.8rem;color:var(--muted)">Family evaluations are closed right now. Your coach opens them at the start, middle, and end of the season.</p>';
-  var pid = (pdFamEvalPid && approved.some(function(l){ return l.player_id === pdFamEvalPid; })) ? pdFamEvalPid : null;
+  var pid = (pdFamEvalPid && pids.indexOf(pdFamEvalPid) >= 0) ? pdFamEvalPid : null;
   var picker = '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><label style="font-size:.82rem;font-weight:700">Evaluate</label><select class="rsvp-idselect" style="max-width:220px" onchange="pdSetFamEval(this.value)"><option value="">Choose your player…</option>' +
-    approved.map(function(l){ return '<option value="' + l.player_id + '"' + (pid === l.player_id ? ' selected' : '') + '>' + gtEsc(gtPlayerName(l.player_id)) + '</option>'; }).join('') + '</select></div>';
+    pids.map(function(id){ return '<option value="' + id + '"' + (pid === id ? ' selected' : '') + '>' + gtEsc(gtPlayerName(id)) + '</option>'; }).join('') + '</select></div>';
   if (!pid) return head + picker;
   var relSel = '<div class="pd-field" style="max-width:220px"><label>Your relationship</label><select id="pd-fe-rel">' +
     PD_RELATIONSHIPS.map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join('') + '</select></div>';
