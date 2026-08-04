@@ -84,7 +84,8 @@ function renderFamilyPanel() {
     '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">' +
     '<select id="fam-claim-select" class="rsvp-idselect" style="max-width:300px">' + opts + '</select>' +
     '<button class="btn-primary" onclick="familyClaimPlayer()">Request link</button></div>' +
-    '<p style="font-size:.75rem;color:var(--muted);margin-top:8px">A coach approves each link so only your family can manage your child\'s profile.</p>';
+    '<p style="font-size:.75rem;color:var(--muted);margin-top:8px">A coach approves each link so only your family can manage your child\'s profile.</p>' +
+    (typeof pdFamilyEvalSection === 'function' ? pdFamilyEvalSection(mine) : '');
 }
 
 // ---------- family auth ----------

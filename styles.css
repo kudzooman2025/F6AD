@@ -1063,3 +1063,11 @@ td .pd-tierlbl{display:inline-block;margin-left:5px;margin-top:0;font-size:.62re
 .pd-info{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #C4B5FD;background:#EDE9FE;color:#5A3FD6;font-size:.66rem;font-weight:900;font-style:italic;cursor:pointer;line-height:1;padding:0;vertical-align:middle}
 .pd-info:hover{background:#DDD6FE}
 .pd-desc{font-size:.74rem;color:var(--muted);line-height:1.4;margin:2px 0 6px;background:#faf9ff;border-left:2px solid #C4B5FD;padding:6px 8px;border-radius:0 6px 6px 0}
+
+/* Player development — player/family panels */
+.pd-instr{font-size:.8rem;color:#4a3f7a;background:#EDE9FE;border-radius:9px;padding:10px 12px;line-height:1.5;margin-bottom:12px}
+.pd-teammate-picker{margin-bottom:10px}
+.pd-teammate-picker label{font-weight:700;font-size:.82rem;margin-right:8px}
+.pd-teammate-picker select{padding:8px 12px;border:1px solid var(--border-strong);border-radius:9px;font-size:.92rem;min-width:200px}
+.pd-peer-block{background:#faf9ff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.pd-signins{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px}

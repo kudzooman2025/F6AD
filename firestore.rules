@@ -61,7 +61,34 @@ service cloud.firestore {
     match /site_flags/{doc}     { allow read: if true; allow write: if isAdmin(); }
     match /feedback/{doc}       { allow create: if true; allow read, update, delete: if isStaff() || isAdmin(); }
     match /pd_config/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }
-    match /pd_evals/{doc}       { allow read, write: if isStaff() || isAdmin(); }
+    match /pd_evals/{doc} {
+      allow read: if isStaff() || isAdmin();
+      allow create, update: if isStaff() || isAdmin()
+        || (request.auth != null && request.resource.data.rater_type == 'peer'
+            && request.resource.data.rater_id != request.resource.data.target_player_id
+            && exists(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + request.resource.data.rater_id))
+            && get(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + request.resource.data.rater_id)).data.status == 'approved')
+        || (request.auth != null && request.resource.data.rater_type == 'family'
+            && exists(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + request.resource.data.target_player_id))
+            && get(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + request.resource.data.target_player_id)).data.status == 'approved');
+      allow delete: if isStaff() || isAdmin();
+    }
+    match /pd_player_links/{doc} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'pending';
+      allow update: if isStaff() || isAdmin();
+      allow delete: if isStaff() || isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+    }
+    match /pd_cards/{doc} {
+      allow read: if isStaff() || isAdmin()
+        || (request.auth != null
+            && exists(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + resource.data.player_id))
+            && get(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + resource.data.player_id)).data.status == 'approved')
+        || (request.auth != null
+            && exists(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + resource.data.player_id))
+            && get(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + resource.data.player_id)).data.status == 'approved');
+      allow write: if isStaff() || isAdmin();
+    }
     match /families/{uid}       { allow read: if true; allow write: if request.auth != null && request.auth.uid == uid; }
     match /player_profiles/{pid} {
       allow read: if true;

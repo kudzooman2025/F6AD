@@ -40,6 +40,8 @@ function pdShowTier(input, spanId) { var el = document.getElementById(spanId); i
 function pdPeriodLabel(p) { var m = { begin: 'Beginning of Season', mid: 'Midseason', end: 'End of Season' }; return m[p] || p; }
 function pdPriorPeriod(p) { return p === 'end' ? 'mid' : p === 'mid' ? 'begin' : null; }
 var pdSelectedPid = null;
+var PD_RELATIONSHIPS = [['mom','Mom'],['dad','Dad'],['sibling','Sibling'],['uncle','Uncle'],['aunt','Aunt'],['other','Other']];
+function pdRelLabel(r){ var m={mom:'Mom',dad:'Dad',sibling:'Sibling',uncle:'Uncle',aunt:'Aunt',other:'Other'}; return m[r]||r; }
 
 // Roster: MLS Next AD 26/27 = active roster, NO guests.
 function pdRosterPlayers() {
@@ -63,24 +65,29 @@ function pdIsOpen() { var c = pdConfig(); return !!c.open && !!c.active_period; 
 function pdEvalsFor(period, target) { return (typeof pdEvals !== 'undefined' ? pdEvals : []).filter(function(e){ return e.period === period && e.target_player_id === target; }); }
 function pdCoachEval(period, target) { return pdEvalsFor(period, target).find(function(e){ return e.rater_type === 'coach'; }); }
 function pdPeerEvals(period, target) { return pdEvalsFor(period, target).filter(function(e){ return e.rater_type === 'peer'; }); }
+function pdFamilyEvals(period, target) { return pdEvalsFor(period, target).filter(function(e){ return e.rater_type === 'family'; }); }
 
 // Card for one player+period: per-attribute coach FIFA + peer median FIFA (gated at 5), agreement.
 function pdCard(period, target) {
   var coach = pdCoachEval(period, target);
   var peers = pdPeerEvals(period, target);
+  var fam = pdFamilyEvals(period, target);
   var attrs = PD_ATTRS.map(function(a) {
     var coachV = coach && coach.ratings ? coach.ratings[a.id] : null;
     var peerVals = peers.map(function(e){ return e.ratings ? e.ratings[a.id] : null; }).filter(function(x){ return x != null; });
+    var famVals = fam.map(function(e){ return e.ratings ? e.ratings[a.id] : null; }).filter(function(x){ return x != null; });
     var enough = peerVals.length >= PD_MIN_PEERS;
     return {
       id: a.id, label: a.label, group: a.group,
       coach: (coachV != null && coachV !== '') ? pdClamp(coachV) : null,
       peer: enough ? pdClamp(pdMedian(peerVals)) : null,
       peerCount: peerVals.length,
-      agreement: enough ? pdAgreement(peerVals) : null
+      agreement: enough ? pdAgreement(peerVals) : null,
+      family: famVals.length >= 1 ? pdClamp(pdMedian(famVals)) : null,
+      familyCount: famVals.length
     };
   });
-  return { attrs: attrs, coachDone: !!coach, peerResponders: peers.length };
+  return { attrs: attrs, coachDone: !!coach, peerResponders: peers.length, familyResponders: fam.length };
 }
 
 // ---------- coach controls + evaluation (admin) ----------
@@ -115,32 +122,37 @@ function pdScoreChip(fifa) {
   var cls = fifa >= 90 ? 'pd-elite' : fifa >= 75 ? 'pd-strong' : fifa >= 65 ? 'pd-solid' : fifa >= 50 ? 'pd-developing' : 'pd-dev';
   return '<span class="pd-score ' + cls + '">' + fifa + '</span>';
 }
-function pdCardHtml(period, pid, opts) {
-  opts = opts || {};
-  var card = pdCard(period, pid);
-  var prior = pdPriorPeriod(period);
-  var priorCard = prior ? pdCard(prior, pid) : null;
-  var rows = card.attrs.map(function(at, i) {
-    var pf = priorCard ? priorCard.attrs[i].coach : null;
+function pdAttrLabel(id) { var a = PD_ATTRS.find(function(x){ return x.id === id; }); return a ? a.label : id; }
+function pdCardRender(attrs, priorAttrs) {
+  var rows = attrs.map(function(at, i) {
+    var lbl = pdAttrLabel(at.id);
+    var pf = (priorAttrs && priorAttrs[i]) ? priorAttrs[i].coach : null;
     var delta = (at.coach != null && pf != null) ? (at.coach - pf) : null;
     var deltaHtml = delta != null && delta !== 0 ? '<span class="pd-delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta > 0 ? '▲+' : '▼') + delta + '</span>' : '';
     var peerCell = at.peer != null
       ? pdScoreChip(at.peer) + '<span class="pd-tierlbl">' + gtEsc(pdTierShort(at.peer)) + '</span>' + (at.agreement ? '<span class="pd-agree pd-a-' + at.agreement.toLowerCase() + '">' + at.agreement + '</span>' : '')
       : '<span class="pd-note">' + (at.peerCount ? at.peerCount + '/' + PD_MIN_PEERS + ' responses' : 'No peer data') + '</span>';
     var coachTier = at.coach != null ? '<span class="pd-tierlbl">' + gtEsc(pdTierShort(at.coach)) + '</span>' : '';
-    return '<tr><td class="pd-attr">' + gtEsc(at.label) + ' <button type="button" class="pd-info" title="' + gtAttr(pdAttrDesc(at.id)) + '" onclick="showToast(pdAttrDesc(\'' + at.id + '\'))" aria-label="What is ' + gtAttr(at.label) + '?">i</button></td>' +
+    return '<tr><td class="pd-attr">' + gtEsc(lbl) + ' <button type="button" class="pd-info" title="' + gtAttr(pdAttrDesc(at.id)) + '" onclick="showToast(pdAttrDesc(\'' + at.id + '\'))" aria-label="What is ' + gtAttr(lbl) + '?">i</button></td>' +
       '<td class="num">' + pdScoreChip(at.coach) + coachTier + ' ' + deltaHtml + '</td>' +
-      '<td class="num">' + peerCell + '</td></tr>';
+      '<td class="num">' + peerCell + '</td>' +
+      '<td class="num">' + (at.family != null ? pdScoreChip(at.family) + '<span class="pd-tierlbl">' + gtEsc(pdTierShort(at.family)) + '</span>' : '<span class="pd-note">' + (at.familyCount ? at.familyCount + ' family' : 'No family data') + '</span>') + '</td></tr>';
   }).join('');
   // strengths / priorities (from coach ratings)
-  var scored = card.attrs.filter(function(a){ return a.coach != null; }).slice().sort(function(a, b){ return b.coach - a.coach; });
-  var strengths = scored.slice(0, 3).map(function(a){ return a.label; });
-  var priorities = scored.slice(-3).reverse().map(function(a){ return a.label; });
+  var scored = attrs.filter(function(a){ return a.coach != null; }).slice().sort(function(a, b){ return b.coach - a.coach; });
+  var strengths = scored.slice(0, 3).map(function(a){ return pdAttrLabel(a.id); });
+  var priorities = scored.slice(-3).reverse().map(function(a){ return pdAttrLabel(a.id); });
   return '<div class="pd-card">' +
-    '<div class="pd-card-body"><table class="pd-table"><thead><tr><th>Attribute</th><th class="num">Coach</th><th class="num">Peers</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="pd-card-body"><table class="pd-table"><thead><tr><th>Attribute</th><th class="num">Coach</th><th class="num">Peers</th><th class="num">Family</th></tr></thead><tbody>' + rows + '</tbody></table>' +
     (scored.length ? '<div class="pd-summary"><div><strong>Strengths:</strong> ' + gtEsc(strengths.join(', ')) + '</div><div><strong>Work on next:</strong> ' + gtEsc(priorities.join(', ')) + '</div></div>' : '') +
     '<p class="pd-disclaimer">This card is a snapshot of where the player is today — not a ranking or a label. It can change with effort, practice, and coaching.</p>' +
     '</div></div>';
+}
+function pdCardHtml(period, pid) {
+  var card = pdCard(period, pid);
+  var prior = pdPriorPeriod(period);
+  var priorCard = prior ? pdCard(prior, pid) : null;
+  return pdCardRender(card.attrs, priorCard ? priorCard.attrs : null);
 }
 
 function renderAdminDevCards() {
@@ -153,8 +165,13 @@ function renderAdminDevCards() {
     '<label>Evaluation period</label>' +
     '<select onchange="pdSetPeriod(this.value)"><option value="">— None —</option>' +
     PD_PERIODS.map(function(pp){ return '<option value="' + pp[0] + '"' + (period === pp[0] ? ' selected' : '') + '>' + pp[1] + '</option>'; }).join('') + '</select>' +
-    '<label style="display:inline-flex;align-items:center;gap:8px;margin-left:14px"><input type="checkbox"' + (c.open ? ' checked' : '') + ' onchange="pdSetOpen(this.checked)"/> Open for player submissions</label>' +
+    '<label style="display:inline-flex;align-items:center;gap:8px;margin-left:14px"><input type="checkbox"' + (c.open ? ' checked' : '') + ' onchange="pdSetOpen(this.checked)"/> Open for player &amp; family submissions</label>' +
+    (period ? '<button class="gt-minibtn" style="margin-left:14px" onclick="pdPublishCards(\'' + period + '\')">\ud83d\udce4 Publish cards</button>' : '') +
     '</div>';
+  var _pending = (typeof pdPlayerLinks !== 'undefined' ? pdPlayerLinks : []).filter(function(l){ return l.status !== 'approved'; });
+  var _approvedPl = (typeof pdPlayerLinks !== 'undefined' ? pdPlayerLinks : []).filter(function(l){ return l.status === 'approved'; });
+  ctrl += '<div class="pd-signins"><div class="pd-form-title">Player sign-ins</div>' +
+    (_pending.length ? _pending.map(function(l){ return '<div class="admin-item"><div class="admin-item-info"><strong>' + gtEsc(gtPlayerName(l.player_id) || l.player_name || '?') + '</strong> <span style="color:var(--muted);font-size:.8rem">wants to sign in as a player</span></div><div class="admin-item-actions"><button class="btn-primary" onclick="pdApprovePlayerLink(\'' + l.id + '\')">\u2713 Approve</button><button class="btn-edit" onclick="pdDenyPlayerLink(\'' + l.id + '\')">Deny</button></div></div>'; }).join('') : '<p style="font-size:.82rem;color:var(--muted)">No pending sign-ins. ' + _approvedPl.length + ' approved.</p>') + '</div>';
   if (!players.length) { box.innerHTML = ctrl + '<p style="color:var(--muted);font-size:.85rem">No MLS Next AD roster players found (need an active roster).</p>'; return; }
   if (!period) { box.innerHTML = ctrl + '<p style="color:var(--muted);font-size:.85rem">Pick an evaluation period above to start recording coach evaluations.</p>'; return; }
   var sel = (pdSelectedPid && players.some(function(p){ return p.id === pdSelectedPid; })) ? pdSelectedPid : players[0].id;
@@ -188,4 +205,37 @@ function attachDevCardsListener() {
     pdEvals = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     if (typeof renderAdminDevCards === 'function' && document.getElementById('admin-devcards-list')) renderAdminDevCards();
   }, function(){});
+  db.collection('pd_player_links').onSnapshot(function(snap) {
+    pdPlayerLinks = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
+    if (typeof renderAdminDevCards === 'function' && document.getElementById('admin-devcards-list')) renderAdminDevCards();
+    if (typeof renderPlayerDevPanel === 'function') renderPlayerDevPanel();
+  }, function(){});
+}
+// ---------- coach: publish cards + approve player sign-ins ----------
+function pdPublishCards(period) {
+  if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Coach only.'); return; }
+  if (!period) { showToast('Pick a period first.'); return; }
+  var players = pdRosterPlayers();
+  if (!players.length) { showToast('No roster players.'); return; }
+  var batch = db.batch();
+  players.forEach(function(p) {
+    var card = pdCard(period, p.id);
+    batch.set(db.collection('pd_cards').doc(p.id + '_' + period), {
+      player_id: p.id, period: period,
+      attrs: card.attrs.map(function(a){ return { id: a.id, coach: a.coach, peer: a.peer, peerCount: a.peerCount, agreement: a.agreement || null, family: (a.family != null ? a.family : null), familyCount: a.familyCount || 0 }; }),
+      published_at: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+  batch.commit().then(function(){ showToast('Published ' + players.length + ' cards — players & families can view them ✓'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function pdApprovePlayerLink(id) {
+  if (!(isAdminUnlocked() || isCoachLoggedIn())) return;
+  db.collection('pd_player_links').doc(id).set({ status: 'approved' }, { merge: true })
+    .then(function(){ showToast('Player approved ✓'); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function pdDenyPlayerLink(id) {
+  if (!(isAdminUnlocked() || isCoachLoggedIn())) return;
+  if (!confirm('Remove this player sign-in?')) return;
+  db.collection('pd_player_links').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
 }

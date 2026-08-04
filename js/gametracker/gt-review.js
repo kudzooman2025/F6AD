@@ -617,7 +617,7 @@ function gtRenderProfiles(view) {
   var pub = all.filter(function(p){ var pr = gtProfile(p.id); return pr.visibility !== 'unlisted'; });
   var html = '<div class="gt-title">🪪 Player Profiles</div>' +
     '<div class="gt-sub">Public profiles for our players — tap one for stats, highlights &amp; a shareable card.</div>' +
-    '<div style="margin:8px 0 22px"><button class="btn-primary" onclick="openFamily()">➕ Create Profile</button></div>';
+    '<div style="margin:8px 0 22px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn-primary" onclick="openFamily()">➕ Create Profile</button><button class="btn-primary" onclick="openPlayerDev()">🃏 Player evaluations &amp; card</button></div>';
   if (mine.length) {
     html += '<div class="section-title" style="margin:4px 0 10px">👨‍👩‍👧 My Players</div>' +
       '<div class="pfdir" style="margin-bottom:24px">' + mine.map(gtProfileCard).join('') + '</div>';

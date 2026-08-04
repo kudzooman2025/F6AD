@@ -598,6 +598,7 @@ function startListeners() {
   db.collection('pd_config').doc('main').onSnapshot(function(doc){
     pdConfigData = (doc && doc.exists) ? (doc.data() || {}) : {};
     if (typeof renderAdminDevCards === 'function' && document.getElementById('admin-devcards-list')) renderAdminDevCards();
+    if (typeof renderPlayerDevPanel === 'function') renderPlayerDevPanel();
   }, function(){});
   db.collection('site_flags').doc('main').onSnapshot(function(doc){
     siteFlags = (doc && doc.exists) ? (doc.data() || {}) : {};

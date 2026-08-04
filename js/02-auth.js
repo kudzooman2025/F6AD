@@ -37,6 +37,7 @@ function authRefreshUI() {
   }
   if (typeof renderFamilyPanel === 'function') renderFamilyPanel();
   if (typeof renderAdminFamilies === 'function' && document.getElementById('admin-families-list')) renderAdminFamilies();
+  if (typeof renderPlayerDevPanel === 'function') renderPlayerDevPanel();
   if (typeof gtRerender === 'function') gtRerender(true);
 }
 function subscribeStaff() {
