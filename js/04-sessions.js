@@ -583,27 +583,10 @@ function renderSummerOverview() {
 
 // ===================== LISTENERS =====================
 function startListeners() {
-  ['fall','winter','spring','summer27'].forEach(season => {
-    db.collection(getSeasonCollection(season)).onSnapshot(snap => {
-      const v={}, n={};
-      snap.forEach(doc=>{ v[doc.id]=doc.data().votes||{}; n[doc.id]=doc.data().notes||{}; });
-      if(season==='fall'){allVotesFall=v;allNotesFall=n;}
-      else if(season==='winter'){allVotesWinter=v;allNotesWinter=n;}
-      else if(season==='spring'){allVotesSpring=v;allNotesSpring=n;}
-      else{allVotesSummer27=v;allNotesSummer27=n;}
-      initSeasonCredits(season);
-      if(activeSeason===season){ renderSeasonGrid(season); updateCreditDisplay(); }
-      if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVoteTally();
-    });
-  });
   db.collection('family_links').onSnapshot(function(snap){
     familyLinks = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     if (typeof renderFamilyPanel === 'function') renderFamilyPanel();
     if (typeof renderAdminFamilies === 'function' && document.getElementById('admin-families-list')) renderAdminFamilies();
-  }, function(){});
-  db.collection('feedback').onSnapshot(function(snap){
-    feedbackItems = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
-    if (typeof renderAdminFeedback === 'function' && document.getElementById('admin-feedback-list')) renderAdminFeedback();
   }, function(){});
   db.collection('player_profiles').onSnapshot(function(snap){
     playerProfiles = {}; snap.forEach(function(d){ playerProfiles[d.id] = d.data() || {}; });
@@ -636,14 +619,6 @@ function startListeners() {
     if(typeof renderVenueDatalist==='function') renderVenueDatalist();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVenuesAdmin();
   });
-  db.collection('discussions').onSnapshot(snap => {
-    discussionItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (typeof renderDiscussions === 'function') renderDiscussions();
-  });
-  db.collection('discussion_comments').onSnapshot(snap => {
-    discussionComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (typeof renderDiscussions === 'function') renderDiscussions();
-  });
   db.collection('ann_comments').onSnapshot(snap => {
     annComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (typeof renderAnnouncements === 'function') renderAnnouncements();
@@ -653,6 +628,39 @@ function startListeners() {
     renderAnnouncements();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminAnnouncements();
   });
+}
+
+// ===== Lazy listeners: attach page-specific collections only when needed =====
+var _lazyOn = {};
+function attachVotesListeners() {
+  if (_lazyOn.votes) return; _lazyOn.votes = true;
+  ['fall','winter','spring','summer27'].forEach(season => {
+    db.collection(getSeasonCollection(season)).onSnapshot(snap => {
+      const v={}, n={};
+      snap.forEach(doc=>{ v[doc.id]=doc.data().votes||{}; n[doc.id]=doc.data().notes||{}; });
+      if(season==='fall'){allVotesFall=v;allNotesFall=n;}
+      else if(season==='winter'){allVotesWinter=v;allNotesWinter=n;}
+      else if(season==='spring'){allVotesSpring=v;allNotesSpring=n;}
+      else{allVotesSummer27=v;allNotesSummer27=n;}
+      initSeasonCredits(season);
+      if(activeSeason===season){ renderSeasonGrid(season); updateCreditDisplay(); }
+      if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVoteTally();
+    });
+  });
+}
+function attachDiscussionsListeners() {
+  if (_lazyOn.disc) return; _lazyOn.disc = true;
+  db.collection('discussions').onSnapshot(snap => {
+    discussionItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (typeof renderDiscussions === 'function') renderDiscussions();
+  });
+  db.collection('discussion_comments').onSnapshot(snap => {
+    discussionComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (typeof renderDiscussions === 'function') renderDiscussions();
+  });
+}
+function attachConditioningListeners() {
+  if (_lazyOn.cond) return; _lazyOn.cond = true;
   db.collection('session_log').onSnapshot(function(snap) {
     sessionLogData = {};
     snap.forEach(function(doc) { sessionLogData[doc.id] = doc.data(); });
@@ -678,4 +686,10 @@ function startListeners() {
     }
   });
 }
-
+function attachFeedbackListener() {
+  if (_lazyOn.fb) return; _lazyOn.fb = true;
+  db.collection('feedback').onSnapshot(function(snap){
+    feedbackItems = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
+    if (typeof renderAdminFeedback === 'function' && document.getElementById('admin-feedback-list')) renderAdminFeedback();
+  }, function(){});
+}

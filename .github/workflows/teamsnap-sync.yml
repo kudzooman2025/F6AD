@@ -1,7 +1,7 @@
 name: Sync TeamSnap Schedule
 on:
   schedule:
-    - cron: '0 */6 * * *'   # every 6 hours
+    - cron: '0 11 * * *'    # once daily (~7am ET)
   workflow_dispatch:         # and on-demand from the Actions tab
 jobs:
   sync:

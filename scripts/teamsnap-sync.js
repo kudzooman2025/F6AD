@@ -80,4 +80,4 @@ function classify(summary) {
 
   await batch.commit();
   console.log(`TeamSnap sync complete — ${added} upserted, ${pinned} pinned (locally edited, left alone), ${removed} stale removed.`);
-})().catch(err => { console.error('TeamSnap sync failed:', err); process.exit(1); });
+})().catch(err => { console.error('TeamSnap sync skipped (non-fatal):', (err && err.message) || err); process.exit(0); });

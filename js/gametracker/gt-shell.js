@@ -87,7 +87,12 @@ function siteRender() {
     });
   });
   updateSiteNav();
-  if (page === 'discussions' && typeof renderDiscussions === 'function') renderDiscussions();
+  if (page === 'conditioning' && typeof attachConditioningListeners === 'function') attachConditioningListeners();
+  if (page === 'tournaments' && typeof attachVotesListeners === 'function') attachVotesListeners();
+  if (page === 'discussions') {
+    if (typeof attachDiscussionsListeners === 'function') attachDiscussionsListeners();
+    if (typeof renderDiscussions === 'function') renderDiscussions();
+  }
 }
 function gtRoute() {
   var h = window.location.hash || '';

@@ -642,6 +642,9 @@ function adminCreateAccount() {
 function showAdminPanel() {
   document.getElementById('admin-login').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
+  if (typeof attachVotesListeners === 'function') attachVotesListeners();
+  if (typeof attachConditioningListeners === 'function') attachConditioningListeners();
+  if (typeof attachFeedbackListener === 'function') attachFeedbackListener();
   var pwEl = document.getElementById('admin-pw-input');
   if (pwEl) pwEl.value = '';
   var acct = document.getElementById('settings-account-line');
