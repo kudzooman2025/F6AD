@@ -1050,3 +1050,11 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .pd-delta{font-size:.72rem;font-weight:800;margin-left:4px}.pd-delta.up{color:#16a34a}.pd-delta.down{color:#b91c1c}
 .pd-summary{margin-top:12px;font-size:.84rem;line-height:1.7}
 .pd-disclaimer{margin-top:12px;font-size:.74rem;color:var(--muted);line-height:1.5;font-style:italic}
+
+/* Dev card: numeric entry + tier explainers */
+.pd-field input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;font-size:.95rem;font-weight:700;text-align:center}
+.pd-tierlbl{display:block;font-size:.68rem;color:#5A3FD6;font-weight:700;margin-top:3px;min-height:.9em}
+.pd-legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-bottom:14px;font-size:.72rem;color:var(--muted)}
+.pd-legend-item b{color:var(--text)}
+.pd-score.pd-developing{background:#E0F2FE;color:#075985}
+td .pd-tierlbl{display:inline-block;margin-left:5px;margin-top:0;font-size:.62rem}

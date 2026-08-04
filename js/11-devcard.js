@@ -20,14 +20,21 @@ var PD_ATTRS = [
   { id: 'leadership',      label: 'Leadership',      group: 'Team & Growth' }
 ];
 var PD_PERIODS = [['begin', 'Beginning of Season'], ['mid', 'Midseason'], ['end', 'End of Season']];
-var PD_SCALE = [
-  ['', '—'],
-  ['1', '1 · Needs development'],
-  ['2', '2 · Developing'],
-  ['3', '3 · Solid for the level'],
-  ['4', '4 · Strong'],
-  ['5', '5 · Exceptional for the age/team']
+// Score is entered directly on the 0-99 scale. These tiers are the range explainers
+// shown on cards (and live in the coach form).
+var PD_TIERS = [
+  { min: 90, short: 'Exceptional', label: 'Exceptional for the current team or age group' },
+  { min: 75, short: 'Strong',      label: 'Strong' },
+  { min: 65, short: 'Solid',       label: 'Solid for the current level' },
+  { min: 50, short: 'Developing',  label: 'Developing' },
+  { min: 0,  short: 'Needs development', label: 'Needs significant development' }
 ];
+function pdClamp(v) { return Math.max(0, Math.min(99, Math.round(Number(v)))); }
+function pdTier(v) { v = Number(v); for (var i = 0; i < PD_TIERS.length; i++) if (v >= PD_TIERS[i].min) return PD_TIERS[i]; return PD_TIERS[PD_TIERS.length - 1]; }
+function pdTierLabel(v) { return (v == null || v === '') ? '' : pdTier(v).label; }
+function pdTierShort(v) { return (v == null || v === '') ? '' : pdTier(v).short; }
+function pdTierRanges() { return PD_TIERS.map(function(t, i){ var max = i > 0 ? PD_TIERS[i - 1].min - 1 : 99; return { min: t.min, max: max, label: t.label }; }); }
+function pdShowTier(input, spanId) { var el = document.getElementById(spanId); if (el) el.textContent = input.value !== '' ? pdTierLabel(input.value) : ''; }
 function pdPeriodLabel(p) { var m = { begin: 'Beginning of Season', mid: 'Midseason', end: 'End of Season' }; return m[p] || p; }
 function pdPriorPeriod(p) { return p === 'end' ? 'mid' : p === 'mid' ? 'begin' : null; }
 var pdSelectedPid = null;
@@ -65,8 +72,8 @@ function pdCard(period, target) {
     var enough = peerVals.length >= PD_MIN_PEERS;
     return {
       id: a.id, label: a.label, group: a.group,
-      coach: (coachV != null && coachV !== '') ? pdFifa(Number(coachV)) : null,
-      peer: enough ? pdFifa(pdMedian(peerVals)) : null,
+      coach: (coachV != null && coachV !== '') ? pdClamp(coachV) : null,
+      peer: enough ? pdClamp(pdMedian(peerVals)) : null,
       peerCount: peerVals.length,
       agreement: enough ? pdAgreement(peerVals) : null
     };
@@ -91,7 +98,7 @@ function pdSaveCoachEval(pid) {
   PD_ATTRS.forEach(function(a) {
     var el = document.getElementById('pd-ce-' + a.id);
     var v = el ? el.value : '';
-    if (v !== '') { ratings[a.id] = Number(v); any = true; }
+    if (v !== '') { var n = pdClamp(v); if (!isNaN(n)) { ratings[a.id] = n; any = true; } }
   });
   if (!any) { showToast('Rate at least one attribute.'); return; }
   db.collection('pd_evals').doc(period + '_coach_' + pid).set({
@@ -103,7 +110,7 @@ function pdSaveCoachEval(pid) {
 
 function pdScoreChip(fifa) {
   if (fifa == null) return '<span class="pd-score pd-none">—</span>';
-  var cls = fifa >= 85 ? 'pd-elite' : fifa >= 75 ? 'pd-strong' : fifa >= 65 ? 'pd-solid' : 'pd-dev';
+  var cls = fifa >= 90 ? 'pd-elite' : fifa >= 75 ? 'pd-strong' : fifa >= 65 ? 'pd-solid' : fifa >= 50 ? 'pd-developing' : 'pd-dev';
   return '<span class="pd-score ' + cls + '">' + fifa + '</span>';
 }
 function pdCardHtml(period, pid, opts) {
@@ -116,10 +123,11 @@ function pdCardHtml(period, pid, opts) {
     var delta = (at.coach != null && pf != null) ? (at.coach - pf) : null;
     var deltaHtml = delta != null && delta !== 0 ? '<span class="pd-delta ' + (delta > 0 ? 'up' : 'down') + '">' + (delta > 0 ? '▲+' : '▼') + delta + '</span>' : '';
     var peerCell = at.peer != null
-      ? pdScoreChip(at.peer) + (at.agreement ? '<span class="pd-agree pd-a-' + at.agreement.toLowerCase() + '">' + at.agreement + '</span>' : '')
+      ? pdScoreChip(at.peer) + '<span class="pd-tierlbl">' + gtEsc(pdTierShort(at.peer)) + '</span>' + (at.agreement ? '<span class="pd-agree pd-a-' + at.agreement.toLowerCase() + '">' + at.agreement + '</span>' : '')
       : '<span class="pd-note">' + (at.peerCount ? at.peerCount + '/' + PD_MIN_PEERS + ' responses' : 'No peer data') + '</span>';
+    var coachTier = at.coach != null ? '<span class="pd-tierlbl">' + gtEsc(pdTierShort(at.coach)) + '</span>' : '';
     return '<tr><td class="pd-attr">' + gtEsc(at.label) + '</td>' +
-      '<td class="num">' + pdScoreChip(at.coach) + ' ' + deltaHtml + '</td>' +
+      '<td class="num">' + pdScoreChip(at.coach) + coachTier + ' ' + deltaHtml + '</td>' +
       '<td class="num">' + peerCell + '</td></tr>';
   }).join('');
   // strengths / priorities (from coach ratings)
@@ -153,11 +161,14 @@ function renderAdminDevCards() {
     return '<option value="' + p.id + '"' + (sel === p.id ? ' selected' : '') + '>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(p.id)) + (done ? ' ✓' : '') + '</option>';
   }).join('');
   var coach = pdCoachEval(period, sel);
+  var legend = '<div class="pd-legend">' + pdTierRanges().map(function(t){ return '<span class="pd-legend-item"><b>' + t.min + '–' + t.max + '</b> ' + gtEsc(t.label) + '</span>'; }).join('') + '</div>';
   var form = '<div class="pd-form"><div class="pd-form-title">Coach evaluation — ' + gtEsc(gtPlayerName(sel)) + ' · ' + pdPeriodLabel(period) + '</div>' +
+    legend +
     '<div class="pd-grid">' + PD_ATTRS.map(function(a) {
-      var cur = coach && coach.ratings ? coach.ratings[a.id] : '';
-      return '<div class="pd-field"><label>' + gtEsc(a.label) + '</label><select id="pd-ce-' + a.id + '">' +
-        PD_SCALE.map(function(sc){ return '<option value="' + sc[0] + '"' + (String(cur) === sc[0] ? ' selected' : '') + '>' + sc[1] + '</option>'; }).join('') + '</select></div>';
+      var cur = (coach && coach.ratings && coach.ratings[a.id] != null) ? coach.ratings[a.id] : '';
+      return '<div class="pd-field"><label>' + gtEsc(a.label) + '</label>' +
+        '<input type="number" min="0" max="99" id="pd-ce-' + a.id + '" value="' + cur + '" placeholder="0\u201399" oninput="pdShowTier(this,\'pd-tier-' + a.id + '\')"/>' +
+        '<span class="pd-tierlbl" id="pd-tier-' + a.id + '">' + (cur !== '' ? gtEsc(pdTierLabel(cur)) : '') + '</span></div>';
     }).join('') + '</div>' +
     '<button class="btn-primary" style="margin-top:12px" onclick="pdSaveCoachEval(\'' + sel + '\')">Save Coach Evaluation</button></div>';
   box.innerHTML = ctrl +
