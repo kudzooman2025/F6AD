@@ -19,17 +19,36 @@ function navAuthClick(e) {
   if (authUser) { authSignOut(); return; }
   if (typeof openFamily === 'function') openFamily(e); else openAdmin();
 }
-function isAdminUnlocked() { return authRole === 'admin'; }
-function isCoachLoggedIn() { return authRole === 'admin' || authRole === 'coach'; }
+function isAdminUnlocked() { return authRole === 'admin' && !viewAsParent; }
+function isCoachLoggedIn() { return (authRole === 'admin' || authRole === 'coach') && !viewAsParent; }
+function isRealAdmin() { return authRole === 'admin'; }
+function renderViewToggle() {
+  var el = document.getElementById('view-toggle');
+  if (el) {
+    if (isRealAdmin()) { el.style.display = ''; el.textContent = viewAsParent ? '🛠 View as Admin' : '👤 View as Parent'; }
+    else { el.style.display = 'none'; }
+  }
+  var adminBtn = document.querySelector('.btn-admin');
+  if (adminBtn) adminBtn.style.display = (isRealAdmin() && viewAsParent) ? 'none' : '';
+}
+function toggleViewAs() {
+  viewAsParent = !viewAsParent;
+  try { localStorage.setItem('f6ad_view_as', viewAsParent ? 'parent' : 'admin'); } catch (e) {}
+  if (viewAsParent && typeof closeAdmin === 'function') closeAdmin();
+  showToast(viewAsParent ? 'Now viewing the site as a parent.' : 'Back to admin view.');
+  authRefreshUI();
+  if (typeof siteRender === 'function') siteRender();
+}
 function authIsOwner(u) { return !!u && OWNER_EMAILS.indexOf(u.email) >= 0 && u.emailVerified; }
 
 function authRefreshUI() {
   renderNavAuth();
   renderCoachBar();
+  if (typeof renderViewToggle === 'function') renderViewToggle();
   var overlay = document.getElementById('admin-overlay');
   if (overlay && overlay.classList.contains('open')) {
-    if (authRole === 'admin') showAdminPanel();
-    else if (authRole === 'coach') closeAdmin();
+    if (isAdminUnlocked()) showAdminPanel();
+    else if (isCoachLoggedIn()) closeAdmin();
     else {
       document.getElementById('admin-panel').style.display = 'none';
       document.getElementById('admin-login').style.display = '';

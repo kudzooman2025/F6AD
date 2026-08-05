@@ -1071,3 +1071,8 @@ td .pd-tierlbl{display:inline-block;margin-left:5px;margin-top:0;font-size:.62re
 .pd-teammate-picker select{padding:8px 12px;border:1px solid var(--border-strong);border-radius:9px;font-size:.92rem;min-width:200px}
 .pd-peer-block{background:#faf9ff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
 .pd-signins{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px}
+
+/* View-as (admin/parent) toggle */
+.btn-viewas{background:#EDE9FE;color:#4c33b8;border:1px solid #C4B5FD;border-radius:9px;padding:8px 13px;font-size:.84rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-viewas:hover{background:#DDD6FE}
+@media (max-width:760px){.btn-viewas{font-size:.72rem;padding:5px 8px}}

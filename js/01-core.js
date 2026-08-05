@@ -171,6 +171,7 @@ const SUMMER27_TOURNAMENTS = [
 // ===================== LIVE DATA =====================
 let scheduleItems = [];
 let siteFlags = {};   // admin-controlled section visibility (e.g. hide_conditioning)
+let viewAsParent = (function(){ try { return localStorage.getItem('f6ad_view_as') === 'parent'; } catch(e){ return false; } })();
 let familyLinks = [];  // family_links docs (family -> player)
 let familyData = {};   // families/{uid} docs by uid
 let playerProfiles = {};  // player_profiles/{playerId}
