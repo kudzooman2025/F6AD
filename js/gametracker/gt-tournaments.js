@@ -2,6 +2,7 @@
 // A tournament snapshots the master squad into its own lineup (available/out +
 // fee paid), can include guests, and groups the games played that weekend.
 function gtTournament(id) { return GT.tournaments.find(function(t){ return t.id === id; }); }
+function gtTournUrlFor(g) { if (!g || !g.tournament_id) return ''; var t = gtTournament(g.tournament_id); return t ? (t.official_url || '') : ''; }
 function gtTournamentGames(tid) {
   return GT.games.filter(function(g){ return g.tournament_id === tid; })
     .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
@@ -52,6 +53,25 @@ function gtTournStatusPill(t) {
   return '';
 }
 
+function gtTournItemHtml(t) {
+  var lu = gtTournLineup(t), ids = Object.keys(lu);
+  var avail = ids.filter(function(id){ return lu[id].available; }).length;
+  var paid = ids.filter(function(id){ return lu[id].available && lu[id].paid; }).length;
+  var gms = gtTournamentGames(t.id);
+  var games = gms.length;
+  var gd = gms.map(function(g){ return gtGameDateStr(g); }).filter(Boolean);
+  var ud = gd.filter(function(d, i){ return gd.indexOf(d) === i; }).sort();
+  var dateLabel = ud.length ? ud.map(gtFmtDate).join(', ')
+    : (t.start_date ? gtFmtDate(t.start_date) + (t.end_date && t.end_date !== t.start_date ? ' \u2013 ' + gtFmtDate(t.end_date) : '') : '');
+  var complete = gtTournComplete(t);
+  return '<div class="gt-gitem' + (complete ? ' done' : '') + '" onclick="gtGo(\'/gametracker/tournament/' + t.id + '\')">' +
+    gtTournStatusPill(t) +
+    '<span class="gi-teams">' + gtEsc(t.name) + '</span>' +
+    '<span class="gi-meta">' + dateLabel + (t.venue ? ' \u00b7 ' + gtEsc(t.venue) : '') +
+      ' \u00b7 ' + avail + ' available \u00b7 ' + paid + '/' + avail + ' paid \u00b7 ' + games + ' game' + (games === 1 ? '' : 's') + (complete ? ' \u00b7 ' + gtTournRecordStr(t.id) : '') + '</span>' +
+    '</div>';
+}
+function gtTournTogglePast() { GT.tournPastOpen = !GT.tournPastOpen; gtRerender(true); }
 function gtRenderTournaments(view) {
   var canEdit = gtCanEdit();
   var list = GT.tournaments.slice().sort(function(a, b){ return gtTsMillis(b.start_date || b.created_at) - gtTsMillis(a.start_date || a.created_at); });
@@ -59,26 +79,60 @@ function gtRenderTournaments(view) {
     '<div class="gt-title">🏆 Tournaments</div>' +
     '<div class="gt-sub">Each tournament keeps its own roster, availability and fee tracking.</div>';
   if (canEdit) html += '<button class="btn-primary" style="margin-bottom:16px" onclick="gtOpenTournamentForm(null)">➕ Create Tournament</button>';
-  if (!list.length) { html += '<div class="gt-empty">No tournaments yet.' + (canEdit ? ' Create one to get started.' : '') + '</div>'; view.innerHTML = html; return; }
-  html += '<div class="gt-glist">' + list.map(function(t) {
-    var lu = gtTournLineup(t), ids = Object.keys(lu);
-    var avail = ids.filter(function(id){ return lu[id].available; }).length;
-    var paid = ids.filter(function(id){ return lu[id].available && lu[id].paid; }).length;
-    var gms = gtTournamentGames(t.id);
-    var games = gms.length;
-    var gd = gms.map(function(g){ return gtGameDateStr(g); }).filter(Boolean);
-    var ud = gd.filter(function(d, i){ return gd.indexOf(d) === i; }).sort();
-    var dateLabel = ud.length ? ud.map(gtFmtDate).join(', ')
-      : (t.start_date ? gtFmtDate(t.start_date) + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') : '');
-    var complete = gtTournComplete(t);
-    return '<div class="gt-gitem' + (complete ? ' done' : '') + '" onclick="gtGo(\'/gametracker/tournament/' + t.id + '\')">' +
-      gtTournStatusPill(t) +
-      '<span class="gi-teams">' + gtEsc(t.name) + '</span>' +
-      '<span class="gi-meta">' + dateLabel + (t.venue ? ' · ' + gtEsc(t.venue) : '') +
-        ' · ' + avail + ' available · ' + paid + '/' + avail + ' paid · ' + games + ' game' + (games === 1 ? '' : 's') + (complete ? ' · ' + gtTournRecordStr(t.id) : '') + '</span>' +
-      '</div>';
-  }).join('') + '</div>';
+  var active = list.filter(function(t){ return !gtTournComplete(t); });
+  var past = list.filter(function(t){ return gtTournComplete(t); });
+  if (!list.length) {
+    html += '<div class="gt-empty">No tournaments yet.' + (canEdit ? ' Create one, or set one up from TeamSnap below.' : '') + '</div>';
+  } else {
+    html += '<div class="section-title" style="margin-bottom:12px">⚔️ Active (' + active.length + ')</div>';
+    html += active.length ? '<div class="gt-glist">' + active.map(gtTournItemHtml).join('') + '</div>'
+      : '<div class="gt-empty">No active tournaments.</div>';
+    if (past.length) {
+      var pastOpen = !!GT.tournPastOpen;
+      html += '<div class="section-title" style="margin:22px 0 12px;cursor:pointer;user-select:none" onclick="gtTournTogglePast()">' + (pastOpen ? '▾' : '▸') + ' 📜 Past Tournaments <span style="font-size:.78rem;color:var(--muted);font-weight:600">(' + past.length + ')</span></div>';
+      if (pastOpen) html += '<div class="gt-glist">' + past.map(gtTournItemHtml).join('') + '</div>';
+    }
+  }
+  // TeamSnap-synced tournaments not yet set up in GameTracker
+  var tsT = (typeof scheduleItems !== 'undefined' ? scheduleItems : []).filter(function(ev) {
+    return ev.type === 'tournament' && ev.source === 'teamsnap' && !ev.gt_tournament_id;
+  }).sort(function(a, b){ return (a.date || '').localeCompare(b.date || ''); });
+  if (tsT.length) {
+    html += '<div class="section-title" style="margin:24px 0 12px">\uD83D\uDCC5 From TeamSnap</div>' +
+      '<div class="gt-sub" style="margin-top:-6px">Tournaments pulled from your TeamSnap schedule. ' + (canEdit ? 'Tap to set one up in GameTracker (rosters, availability, games) — it becomes fully editable.' : 'A coach can set these up in GameTracker.') + '</div>' +
+      '<div class="gt-glist">' + tsT.map(function(ev) {
+        return '<div class="gt-gitem"' + (canEdit ? ' onclick="gtImportTeamSnapTournament(\'' + ev.id + '\')"' : '') + '>' +
+          '<span class="gt-status-pill ts-badge">TeamSnap</span>' +
+          '<span class="gi-teams">' + gtEsc(ev.name) + '</span>' +
+          '<span class="gi-meta">' + (ev.date ? gtFmtDate(ev.date) : '') + (ev.location ? ' · ' + gtEsc(ev.location) : '') + (canEdit ? ' · \u2795 Set up in GameTracker' : '') + '</span>' +
+          '</div>';
+      }).join('') + '</div>';
+  }
   view.innerHTML = html;
+}
+function gtImportTeamSnapTournament(schedId) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var ev = (typeof scheduleItems !== 'undefined' ? scheduleItems : []).find(function(e){ return e.id === schedId; });
+  if (!ev) { showToast('Event not found.'); return; }
+  if (ev.gt_tournament_id && gtTournament(ev.gt_tournament_id)) { gtGo('/gametracker/tournament/' + ev.gt_tournament_id); return; }
+  var roster = (typeof gtActiveRoster === 'function' && gtActiveRoster()) || (GT.rosters && GT.rosters[0]);
+  if (!roster) { showToast('Create a roster in the Roster Manager first.'); return; }
+  var ts = firebase.firestore.FieldValue.serverTimestamp();
+  var ref = db.collection('gt_tournaments').doc();
+  var lineup = {};
+  gtRosterPlayers(roster.id).filter(function(p){ return !p.is_guest; }).forEach(function(p){ lineup[p.id] = { available: true, paid: false, note: '' }; });
+  var data = {
+    name: ev.name, team_name: (gtRoster(roster.id) ? gtRoster(roster.id).name : 'F6AD'),
+    base_roster_id: roster.id, start_date: ev.date || '', end_date: ev.date || '',
+    venue: ev.location || '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '',
+    players_per_side: 11, official_url: '', lineup: lineup,
+    source: 'teamsnap', from_schedule_id: schedId, created_at: ts, updated_at: ts
+  };
+  var batch = db.batch();
+  batch.set(ref, data);
+  batch.set(db.collection('schedule').doc(schedId), { gt_tournament_id: ref.id, manual_override: true, updated_at: ts }, { merge: true });
+  batch.commit().then(function(){ showToast('Tournament set up in GameTracker \u2713'); gtGo('/gametracker/tournament/' + ref.id); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 
 function gtOpenTournamentForm(tid) {
@@ -91,6 +145,7 @@ function gtOpenTournamentForm(tid) {
     '<h3>' + (t ? '✏️ Edit Tournament' : '➕ Create Tournament') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<label>Tournament Name</label><input type="text" id="gt-tf-name" value="' + gtAttr(t ? t.name : '') + '" placeholder="Memorial Day Classic 2026"/>' +
     '<label>Team Name (how your team is shown in games)</label><input type="text" id="gt-tf-team" value="' + gtAttr(defName) + '" placeholder="F6AD"/>' +
+    '<label>Official tournament link</label><input type="url" id="gt-tf-url" value="' + gtAttr(t ? (t.official_url || '') : '') + '" placeholder="https://tournament-website.com"/>' +
     (t ? '' :
       '<label>Base Roster (squad to pull players from)</label><select id="gt-tf-roster">' +
       (rosters.length ? '' : '<option value="">No rosters yet</option>') +
@@ -118,6 +173,8 @@ function gtSaveTournament(tid) {
   if (!gtCanEdit()) return;
   var name = document.getElementById('gt-tf-name').value.trim();
   if (!name) { showToast('Tournament name is required.'); return; }
+  var _url = document.getElementById('gt-tf-url').value.trim();
+  if (_url && !/^https?:\/\//i.test(_url)) _url = 'https://' + _url;
   var data = {
     name: name,
     team_name: document.getElementById('gt-tf-team').value.trim(),
@@ -129,6 +186,7 @@ function gtSaveTournament(tid) {
     venue_state: document.getElementById('gt-tf-vstate').value.trim(),
     venue_zip: document.getElementById('gt-tf-vzip').value.trim(),
     players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-tf-side').value, 10) || 11)),
+    official_url: _url,
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (tid) {
@@ -172,6 +230,7 @@ function gtRenderTournament(view, tid) {
     '<div class="gt-title">🏆 ' + gtEsc(t.name) + '</div>' +
     '<div class="gt-sub">' + (t.start_date ? gtFmtDate(t.start_date) : '') + (t.end_date && t.end_date !== t.start_date ? ' – ' + gtFmtDate(t.end_date) : '') + (t.venue ? ' · ' + gtEsc(t.venue) : '') + '</div>' +
     ([t.venue_address, t.venue_city, t.venue_state, t.venue_zip].filter(Boolean).length ? '<div class="gt-sub" style="margin-top:-4px">📍 ' + gtEsc([t.venue_address, t.venue_city, t.venue_state, t.venue_zip].filter(Boolean).join(', ')) + '</div>' : '');
+  if (t.official_url) html += '<a class="gt-tourn-link" href="' + gtAttr(t.official_url) + '" target="_blank" rel="noopener">🔗 Official tournament site →</a>';
   var _pl = gtTournPlacement(tid), _complete = gtTournComplete(t);
   if (_pl) {
     var _titles = { champion: '🏆 Tournament Champions', finalist: '🥈 Tournament Finalists', semifinalist: '🥉 Semifinalists' };

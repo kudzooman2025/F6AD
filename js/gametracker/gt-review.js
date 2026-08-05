@@ -16,6 +16,8 @@ function gtRenderReview(view, gameId) {
     (g.pk_winner ? '<div style="font-size:.85rem;color:var(--muted);margin-top:2px">🥅 Penalties: ' + gtEsc(gtOurName(g)) + ' ' + gtPkScore(g).us + '–' + gtPkScore(g).them + ' ' + gtEsc(gtTheirName(g)) + '</div>' : '') +
     (res ? '<div style="margin-top:6px"><span class="gt-result-' + res.toLowerCase() + '" style="font-size:1rem">' + (res === 'W' ? '✅ Win' : res === 'L' ? '❌ Loss' : '➖ Draw') + '</span></div>' : '<div style="margin-top:6px">' + gtStatusPill(g) + (canEdit ? ' <a href="#/gametracker/live/' + g.id + '" style="font-size:.8rem;font-weight:700">Open live view →</a>' : '') + '</div>') +
     '</div>';
+  var _tUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
+  if (_tUrl) html += '<a class="gt-tourn-link" href="' + gtAttr(_tUrl) + '" target="_blank" rel="noopener">🔗 Official tournament site →</a>';
   // stat strip
   var statEvents = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : events;
   var totals = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, save: 0, tackle: 0, yellow_card: 0, red_card: 0 };

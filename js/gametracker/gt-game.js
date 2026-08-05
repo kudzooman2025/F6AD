@@ -270,6 +270,8 @@ function gtRenderLive(view, gameId) {
     '<span class="sc-num">' + (g.away_score || 0) + '</span><span class="sc-team">' + gtEsc(gtAwayName(g)) + '</span>' +
     '</div>';
   html += gtManDownHtml(g);
+  var _tUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
+  if (_tUrl) html += '<a class="gt-tourn-link" href="' + gtAttr(_tUrl) + '" target="_blank" rel="noopener">🔗 Official tournament site →</a>';
   if (canEdit && !inPK) {
     html += '<div class="gt-clock-controls">';
     var lastPeriod = inOT ? (gtOtIndex(g) >= (g.ot_num_periods || 1)) : ((g.current_period || 1) >= (g.num_periods || 1));
