@@ -536,6 +536,20 @@ function gtSaveGameEdit(gid) {
     .then(function(){ showToast('Game updated ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
+function gtDeleteGameDocs(gid) {
+  // Delete a game + all its events/subs/availability via direct queries, so it works
+  // even from pages where the heavy collections aren't loaded locally.
+  return Promise.all([
+    db.collection('gt_events').where('game_id', '==', gid).get(),
+    db.collection('gt_subs').where('game_id', '==', gid).get(),
+    db.collection('gt_availability').where('game_id', '==', gid).get()
+  ]).then(function(snaps) {
+    var batch = db.batch();
+    batch.delete(db.collection('gt_games').doc(gid));
+    snaps.forEach(function(snap){ snap.forEach(function(d){ batch.delete(d.ref); }); });
+    return batch.commit();
+  });
+}
 function gtDeleteGame(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;

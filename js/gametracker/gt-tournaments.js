@@ -337,8 +337,15 @@ function gtTournAddGuest(tid, pid) {
 }
 function gtDeleteTournament(tid) {
   if (!gtCanEdit()) return;
-  if (!confirm('Delete this tournament? Its games are kept but unlinked from the tournament.')) return;
-  db.collection('gt_tournaments').doc(tid).delete().then(function(){ showToast('Tournament deleted.'); gtGo('/gametracker/tournaments'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  var gms = gtTournamentGames(tid);
+  var msg = gms.length
+    ? 'Delete this tournament AND its ' + gms.length + ' game' + (gms.length === 1 ? '' : 's') + ' (with all their stats)? This cannot be undone.'
+    : 'Delete this tournament? This cannot be undone.';
+  if (!confirm(msg)) return;
+  var ops = gms.map(function(g){ return (typeof gtDeleteGameDocs === 'function') ? gtDeleteGameDocs(g.id) : db.collection('gt_games').doc(g.id).delete(); });
+  Promise.all(ops).then(function(){ return db.collection('gt_tournaments').doc(tid).delete(); })
+    .then(function(){ showToast('Tournament and its games deleted.'); gtGo('/gametracker/tournaments'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtStartTournamentGame(tid) {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }

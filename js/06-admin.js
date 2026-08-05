@@ -137,6 +137,7 @@ function renderSchedule() {
         ${(staff && ev._cancelId && ev._cancelId.indexOf('sched_')===0 && (ev.type==='game'||ev.type==='tournament'||ev.type==='friendly')) ? `<button class="sched-fulledit" onclick="event.stopPropagation();schedPromoteToGame('${ev._cancelId.slice(6)}')">🎮 Full game details</button>` : ''}
         ${(staff && ev._cancelId) ? `<button class="sched-edit" onclick="event.stopPropagation();schedEditEvent('${ev._cancelId}')">✏️ Edit</button>` : ''}
         ${(staff && ev._cancelId) ? `<button class="sched-cancel" onclick="event.stopPropagation();cancelEvent('${ev._cancelId}', ${canceled?'false':'true'})">${canceled?'↩ Un-cancel':'🚫 Mark canceled'}</button>` : ''}
+        ${(staff && ev._cancelId && (ev._cancelId.indexOf('game_')===0 || ev._cancelId.indexOf('sched_')===0)) ? `<button class="sched-del" onclick="event.stopPropagation();schedDeleteEvent('${ev._cancelId}')">🗑 Delete</button>` : ''}
       </div>
     </div>`;
   }
@@ -1260,6 +1261,24 @@ function cancelEvent(cancelId, on) {
 
 
 // ===== Click-to-edit any event from the public Schedule page (staff only) =====
+function schedDeleteEvent(cancelId) {
+  var staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
+  if (!staff || !cancelId) return;
+  var us = cancelId.indexOf('_'); if (us < 0) return;
+  var kind = cancelId.slice(0, us), rest = cancelId.slice(us + 1);
+  if (kind === 'game') {
+    if (!confirm('Delete this game and all its stats? This cannot be undone.')) return;
+    var op = (typeof gtDeleteGameDocs === 'function') ? gtDeleteGameDocs(rest) : db.collection('gt_games').doc(rest).delete();
+    op.then(function(){ showToast('Game deleted.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+    return;
+  }
+  if (kind === 'sched') {
+    if (!confirm('Delete this schedule event? This cannot be undone.')) return;
+    db.collection('schedule').doc(rest).delete().then(function(){ showToast('Event deleted.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+    return;
+  }
+  showToast('Conditioning and camp entries are auto-generated \u2014 use Mark canceled instead.');
+}
 function schedActivateAdminTab(tab) {
   var btn = document.querySelector('.admin-tab[onclick*="\'' + tab + '\'"]');
   if (btn && typeof switchTab === 'function') switchTab(tab, btn);

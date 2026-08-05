@@ -1080,3 +1080,7 @@ td .pd-tierlbl{display:inline-block;margin-left:5px;margin-top:0;font-size:.62re
 /* Official tournament link */
 .gt-tourn-link{display:inline-flex;align-items:center;gap:6px;margin:10px 0 6px;padding:9px 16px;border-radius:10px;background:#EDE9FE;color:#4c33b8;border:1px solid #C4B5FD;font-weight:800;font-size:.9rem;text-decoration:none}
 .gt-tourn-link:hover{background:#DDD6FE}
+
+/* Schedule delete button */
+.sched-del{display:inline-block;margin-top:8px;margin-right:8px;padding:4px 10px;font-size:.78rem;font-weight:700;color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;border-radius:8px;cursor:pointer}
+.sched-del:hover{background:#fecaca}
