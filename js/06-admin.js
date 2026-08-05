@@ -110,7 +110,7 @@ function renderSchedule() {
     });
   }
   const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
-  const sorted = [...scheduleItems.filter(it => !it.promoted).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
+  const sorted = [...scheduleItems.filter(it => !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
   const vis = (typeof scheduleFilter !== 'undefined' && scheduleFilter !== 'all') ? sorted.filter(ev => ev.type === scheduleFilter) : sorted;
   const upcoming = vis.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
   const past     = vis.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
@@ -192,7 +192,7 @@ function renderAdminSchedule() {
       }
     });
   }
-  const items = [...scheduleItems.filter(it => !it.promoted).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const items = [...scheduleItems.filter(it => !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
   const el = document.getElementById('admin-schedule-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
   el.innerHTML = items.map(ev => `
