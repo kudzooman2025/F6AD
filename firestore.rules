@@ -59,6 +59,7 @@ service cloud.firestore {
     match /gt_parent_events/{doc} { allow read, write: if true; }
     match /gt_parent_claims/{doc} { allow read, write: if true; }
     match /site_flags/{doc}     { allow read: if true; allow write: if isAdmin(); }
+    match /site_secrets/{doc}   { allow read, write: if isAdmin(); }
     match /feedback/{doc}       { allow create: if true; allow read, update, delete: if isStaff() || isAdmin(); }
     match /pd_config/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /pd_evals/{doc} {

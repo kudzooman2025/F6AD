@@ -176,6 +176,7 @@ function toggleArchive() {
 }
 
 function renderAdminSchedule() {
+  if (typeof renderTeamsnapSync === 'function') renderTeamsnapSync();
   const gtRows = (typeof GT !== 'undefined' && GT.games)
     ? GT.games.map(gtScheduleRow).filter(e => e.date) : [];
   const condRows = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(cs){
@@ -1412,4 +1413,41 @@ function renderSiteFlags() {
   box.innerHTML = '<p style="font-weight:800;font-size:.9rem;margin:0 0 6px">Site Sections</p>' +
     '<p style="font-size:.75rem;color:var(--muted);margin:0 0 6px">Hide any menu item. The page and its data stay — it\'s just removed from the top menu and can be shown again anytime.</p>' +
     rows;
+}
+
+
+// ===== Manual TeamSnap sync (admin) =====
+var GH_REPO = 'kudzooman2025/F6AD';
+function renderTeamsnapSync() {
+  var box = document.getElementById('teamsnap-sync-box');
+  if (!box) return;
+  box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#faf9ff;border:1px solid var(--border);border-radius:10px;padding:12px 14px">' +
+    '<div><strong>TeamSnap sync</strong> <span style="color:var(--muted);font-size:.8rem">pull the latest events from TeamSnap now (also runs daily)</span></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-primary" onclick="teamsnapSyncNow()">🔄 Sync now</button>' +
+    '<button class="btn-edit" onclick="setSyncToken()">🔑 Set token</button></div></div>';
+}
+function setSyncToken() {
+  if (!isAdminUnlocked()) { showToast('Admin only.'); return; }
+  var tok = window.prompt('Paste a GitHub fine-grained token with "Actions: Read and write" on ' + GH_REPO + ' (stored privately, admin-only). Leave blank to clear.');
+  if (tok === null) return;
+  db.collection('site_secrets').doc('main').set({ gh_token: tok.trim() }, { merge: true })
+    .then(function(){ showToast(tok.trim() ? 'Sync token saved ✓' : 'Sync token cleared.'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function teamsnapSyncNow() {
+  if (!isAdminUnlocked()) { showToast('Admin only.'); return; }
+  db.collection('site_secrets').doc('main').get().then(function(doc) {
+    var tok = (doc.exists && doc.data().gh_token) ? doc.data().gh_token : '';
+    if (!tok) { showToast('Add a GitHub sync token first (🔑 Set token).'); return; }
+    showToast('Starting TeamSnap sync…');
+    return fetch('https://api.github.com/repos/' + GH_REPO + '/actions/workflows/teamsnap-sync.yml/dispatches', {
+      method: 'POST',
+      headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + tok, 'X-GitHub-Api-Version': '2022-11-28' },
+      body: JSON.stringify({ ref: 'main' })
+    }).then(function(r) {
+      if (r.status === 204) showToast('Sync started — your schedule updates in about a minute ✓');
+      else if (r.status === 401 || r.status === 403) showToast('Sync token was rejected — check it has Actions: write and try 🔑 Set token again.');
+      else r.text().then(function(t){ showToast('Sync request failed (' + r.status + ').'); });
+    });
+  }).catch(function(e){ showToast('Error: ' + e.message); });
 }
