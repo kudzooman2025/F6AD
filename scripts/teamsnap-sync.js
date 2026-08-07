@@ -22,11 +22,15 @@ const timeStr = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 function classify(summary) {
   const s = String(summary || '').toLowerCase();
-  // Order matters: tournaments/friendlies are checked before the generic game test.
   if (/practice|training|session/.test(s)) return 'practice';
-  if (/tournament|classic|cup\b|showcase|invitational|festival|jamboree|kickoff/.test(s)) return 'tournament';
+  // A head-to-head matchup ("... vs Opponent") is always a game, even when the
+  // opponent's name contains tournament-ish words like "Classics" or "Cup".
+  if (/\bvs\.?\b/.test(s)) return 'game';
   if (/friendly|scrimmage/.test(s)) return 'friendly';
-  if (/\bvs\.?\b|\bat\b|\bgame\b|\bmatch\b/.test(s)) return 'game';
+  // Genuine tournament formats (checked before the looser "at"/"game" test).
+  if (/tournament|showcase|invitational|festival|jamboree|kickoff/.test(s)) return 'tournament';
+  if (/\bat\b|\bgame\b|\bmatch\b/.test(s)) return 'game';
+  if (/classic|\bcup\b/.test(s)) return 'tournament';
   return 'event';
 }
 
