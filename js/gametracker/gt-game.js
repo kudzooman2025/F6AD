@@ -340,15 +340,18 @@ function gtRenderLive(view, gameId) {
       '<span class="pc-pos">' + (posShow ? gtEsc(posShow) + ' · ' : '') + statusLabel + '</span>' +
       '<span class="pc-badges">' + badges + '</span></button>';
   }
-  var _isOff = function(p) { var ae = gtGameAvailEntry(g.id, p.id) || {}; return _setup ? !ae.started : (onField[p.id] === false); };
-  var _onFieldPlayers = players.filter(function(p){ return !_isOff(p); });
-  var _benchPlayers = players.filter(function(p){ return _isOff(p); });
+  // Pool membership is fixed by the STARTING designation (starter vs bench at kickoff)
+  // and does not change when a player is subbed on/off — the card just dims/highlights
+  // in place. During setup, tapping toggles who's a starter, so cards move then.
+  var _startedStarter = function(p) { var ae = gtGameAvailEntry(g.id, p.id) || {}; return !!ae.started; };
+  var _startersPool = players.filter(_startedStarter);
+  var _benchPool = players.filter(function(p){ return !_startedStarter(p); });
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {
-    html += '<div class="gt-pool-label gt-pool-on">🟢 ' + (_setup ? 'Starters' : 'On field') + ' <span class="gt-pool-count">' + _onFieldPlayers.length + '</span></div>';
-    html += _onFieldPlayers.length ? '<div class="gt-pgrid">' + _onFieldPlayers.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">' + (_setup ? 'No starters set yet — tap a bench player to start them.' : 'No one on the field yet.') + '</div>';
-    html += '<div class="gt-pool-label gt-pool-bench">🪑 Bench <span class="gt-pool-count">' + _benchPlayers.length + '</span></div>';
-    html += _benchPlayers.length ? '<div class="gt-pgrid">' + _benchPlayers.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">Bench is empty.</div>';
+    html += '<div class="gt-pool-label gt-pool-on">🟢 Starters <span class="gt-pool-count">' + _startersPool.length + '</span></div>';
+    html += _startersPool.length ? '<div class="gt-pgrid">' + _startersPool.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">' + (_setup ? 'No starters set yet — tap a bench player to start them.' : 'No starters recorded.') + '</div>';
+    html += '<div class="gt-pool-label gt-pool-bench">🪑 Bench <span class="gt-pool-count">' + _benchPool.length + '</span></div>';
+    html += _benchPool.length ? '<div class="gt-pgrid">' + _benchPool.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">Bench is empty.</div>';
   }
   if (canEdit && g.status === 'setup') {
     var rsvpT = gtRsvpTally(g.id);
