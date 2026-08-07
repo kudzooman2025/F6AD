@@ -310,38 +310,45 @@ function gtRenderLive(view, gameId) {
   var gtTallyCls = gtOnCount === gtPps ? 'ok' : (gtOnCount > gtPps ? 'over' : 'under');
   var gtOnFieldTally = '<span class="gt-onfield ' + gtTallyCls + '">' + gtOnCount + '/' + gtPps + ' ' + (g.status === 'setup' ? 'starters' : 'on field') + '</span>';
   html += '<div class="section-title" style="margin-bottom:12px">👕 Players ' + gtOnFieldTally + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters · hold for options (scratch, position)' : 'tap to sub on/off · hold for stats') + '</span>' : '') + '</div>';
+  var _setup = g.status === 'setup';
+  function gtPCardHtml(p) {
+    var st = gtStatLine(p.id, events);
+    var badges = '';
+    if (st.goal) badges += '<span class="gt-pbadge">⚽' + st.goal + '</span>';
+    if (st.assist) badges += '<span class="gt-pbadge">🅰️' + st.assist + '</span>';
+    if (st.shot_on_target) badges += '<span class="gt-pbadge">🎯' + st.shot_on_target + '</span>';
+    if (st.shot) badges += '<span class="gt-pbadge">💨' + st.shot + '</span>';
+    if (st.save) badges += '<span class="gt-pbadge">🧤' + st.save + '</span>';
+    if (st.tackle) badges += '<span class="gt-pbadge">🛡️' + st.tackle + '</span>';
+    if (st.pass) badges += '<span class="gt-pbadge">➡️' + st.pass + '</span>';
+    if (st.pass_comp) badges += '<span class="gt-pbadge">✅' + st.pass_comp + '</span>';
+    if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
+    if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
+    if (st.own_goal) badges += '<span class="gt-pbadge card-og">🥅' + st.own_goal + '</span>';
+    var ae = gtGameAvailEntry(g.id, p.id) || {};
+    var off = _setup ? !ae.started : (onField[p.id] === false);
+    var starterCls = (_setup && ae.started) ? ' starter' : '';
+    var posShow = _setup ? (ae.start_position || p.default_position || '') : gtLastPosition(g.id, p.id);
+    var statusLabel = _setup ? (ae.started ? 'START' : 'BENCH') : gtStatusShort(gtPlayerGameStatus(g.id, p.id));
+    var pcHandlers = '';
+    if (canEdit) {
+      pcHandlers = ' onpointerdown="gtCardPressStart(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerup="gtCardPressEnd(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerleave="gtCardPressCancel()" onpointercancel="gtCardPressCancel()" oncontextmenu="return false"';
+    }
+    return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + '"' + pcHandlers + '>' +
+      '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
+      '<span class="pc-name">' + gtEsc(gtPlayerShort(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</span>' +
+      '<span class="pc-pos">' + (posShow ? gtEsc(posShow) + ' · ' : '') + statusLabel + '</span>' +
+      '<span class="pc-badges">' + badges + '</span></button>';
+  }
+  var _isOff = function(p) { var ae = gtGameAvailEntry(g.id, p.id) || {}; return _setup ? !ae.started : (onField[p.id] === false); };
+  var _onFieldPlayers = players.filter(function(p){ return !_isOff(p); });
+  var _benchPlayers = players.filter(function(p){ return _isOff(p); });
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {
-    html += '<div class="gt-pgrid">' + players.map(function(p) {
-      var st = gtStatLine(p.id, events);
-      var badges = '';
-      if (st.goal) badges += '<span class="gt-pbadge">⚽' + st.goal + '</span>';
-      if (st.assist) badges += '<span class="gt-pbadge">🅰️' + st.assist + '</span>';
-      if (st.shot_on_target) badges += '<span class="gt-pbadge">🎯' + st.shot_on_target + '</span>';
-      if (st.shot) badges += '<span class="gt-pbadge">💨' + st.shot + '</span>';
-      if (st.save) badges += '<span class="gt-pbadge">🧤' + st.save + '</span>';
-      if (st.tackle) badges += '<span class="gt-pbadge">🛡️' + st.tackle + '</span>';
-      if (st.pass) badges += '<span class="gt-pbadge">➡️' + st.pass + '</span>';
-      if (st.pass_comp) badges += '<span class="gt-pbadge">✅' + st.pass_comp + '</span>';
-      if (st.yellow_card) badges += '<span class="gt-pbadge card-y">🟨</span>';
-      if (st.red_card) badges += '<span class="gt-pbadge card-r">🟥</span>';
-      if (st.own_goal) badges += '<span class="gt-pbadge card-og">🥅' + st.own_goal + '</span>';
-      var setup = g.status === 'setup';
-      var ae = gtGameAvailEntry(g.id, p.id) || {};
-      var off = setup ? !ae.started : (onField[p.id] === false);
-      var starterCls = (setup && ae.started) ? ' starter' : '';
-      var posShow = setup ? (ae.start_position || p.default_position || '') : gtLastPosition(g.id, p.id);
-      var statusLabel = setup ? (ae.started ? 'START' : 'BENCH') : gtStatusShort(gtPlayerGameStatus(g.id, p.id));
-      var pcHandlers = '';
-      if (canEdit) {
-        pcHandlers = ' onpointerdown="gtCardPressStart(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerup="gtCardPressEnd(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerleave="gtCardPressCancel()" onpointercancel="gtCardPressCancel()" oncontextmenu="return false"';
-      }
-      return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + '"' + pcHandlers + '>' +
-        '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
-        '<span class="pc-name">' + gtEsc(gtPlayerShort(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</span>' +
-        '<span class="pc-pos">' + (posShow ? gtEsc(posShow) + ' · ' : '') + statusLabel + '</span>' +
-        '<span class="pc-badges">' + badges + '</span></button>';
-    }).join('') + '</div>';
+    html += '<div class="gt-pool-label gt-pool-on">🟢 ' + (_setup ? 'Starters' : 'On field') + ' <span class="gt-pool-count">' + _onFieldPlayers.length + '</span></div>';
+    html += _onFieldPlayers.length ? '<div class="gt-pgrid">' + _onFieldPlayers.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">' + (_setup ? 'No starters set yet — tap a bench player to start them.' : 'No one on the field yet.') + '</div>';
+    html += '<div class="gt-pool-label gt-pool-bench">🪑 Bench <span class="gt-pool-count">' + _benchPlayers.length + '</span></div>';
+    html += _benchPlayers.length ? '<div class="gt-pgrid">' + _benchPlayers.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">Bench is empty.</div>';
   }
   if (canEdit && g.status === 'setup') {
     var rsvpT = gtRsvpTally(g.id);
