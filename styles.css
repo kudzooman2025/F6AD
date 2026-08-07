@@ -1123,3 +1123,73 @@ nav#main-nav a,nav#main-nav button{width:100%;text-align:left;justify-content:fl
 nav#main-nav a{padding:10px 14px;border-radius:9px;font-size:.95rem}
 nav#main-nav .btn-admin{margin-top:4px}
 @media (max-width:760px){nav#main-nav a{font-size:.95rem;padding:10px 14px;letter-spacing:0}}
+
+/* ============ THEMES (light / dark / sunlight high-contrast) ============ */
+/* Theme switcher (in the hamburger menu) */
+.theme-switch{display:flex;gap:4px;padding:6px;margin-bottom:6px;background:var(--gray);border:1px solid var(--border);border-radius:10px}
+.theme-switch button{flex:1;padding:7px 4px;font-size:.72rem;font-weight:800;border:1px solid transparent;border-radius:7px;background:none;color:var(--text);cursor:pointer;font-family:inherit;white-space:nowrap}
+.theme-switch button.active{background:var(--purple);color:#fff}
+
+/* ---------- DARK ---------- */
+html[data-theme="dark"]{
+  --purple-light:#241d3f;--accent-soft:#241d3f;
+  --black:#0d0c12;--ink-2:#c9c8d2;--gray:#15141b;--border:#2a2833;--border-strong:#3a3846;--text:#edecf2;--muted:#a6a5b2;
+  --shadow-card:0 18px 34px -22px rgba(0,0,0,.7);
+}
+html[data-theme="dark"] body{background:#15141b}
+html[data-theme="dark"] header{background:rgba(21,20,27,.9);border-bottom-color:#2a2833}
+html[data-theme="dark"] .hero{border-bottom-color:#2a2833}
+html[data-theme="dark"] .t-card,
+html[data-theme="dark"] .gt-card,
+html[data-theme="dark"] .event-item,
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .session-modal,
+html[data-theme="dark"] .gt-modal,
+html[data-theme="dark"] nav#main-nav,
+html[data-theme="dark"] .gt-parent,
+html[data-theme="dark"] .confirmed-card,
+html[data-theme="dark"] .rsvp-card,
+html[data-theme="dark"] .disc-card,
+html[data-theme="dark"] .disc-post,
+html[data-theme="dark"] .pd-card,
+html[data-theme="dark"] .gt-pcard,
+html[data-theme="dark"] .gt-topnav a,
+html[data-theme="dark"] .nav-hamburger,
+html[data-theme="dark"] select.filter-select,
+html[data-theme="dark"] .sched-team,
+html[data-theme="dark"] .sched-chip,
+html[data-theme="dark"] .gt-minibtn,
+html[data-theme="dark"] .btn-signout{background:#1e1c26;color:var(--text);border-color:#2a2833}
+html[data-theme="dark"] input:not([type=checkbox]):not([type=radio]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select{background:#1e1c26;color:var(--text);border-color:#3a3846}
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder{color:#8a8996}
+html[data-theme="dark"] .admin-item,
+html[data-theme="dark"] .t-footer,
+html[data-theme="dark"] .t-card.no-vote .t-footer{background:#1a1922;border-color:#2a2833}
+html[data-theme="dark"] nav a:hover{background:#26242f;color:var(--text)}
+html[data-theme="dark"] .home-spotlight{background:linear-gradient(135deg,#241d3f,#2c2350);border-color:#3f3470}
+html[data-theme="dark"] .hs-title{color:#e9e4ff}
+html[data-theme="dark"] .hs-desc,html[data-theme="dark"] .hs-tease{color:#c9c2ea}
+html[data-theme="dark"] .hs-badge{background:#1e1c26;color:#c4b5fd;border-color:#4a3f7a}
+
+/* ---------- SUNLIGHT (high-contrast light) ---------- */
+html[data-theme="contrast"]{
+  --ink-2:#000;--gray:#fff;--border:#9a9aa5;--border-strong:#77777f;--text:#000;--muted:#2a2a31;
+  --purple:#4326b8;--purple-dark:#2f1a86;
+}
+html[data-theme="contrast"] body{background:#fff;font-weight:500}
+html[data-theme="contrast"] .t-card,
+html[data-theme="contrast"] .event-item,
+html[data-theme="contrast"] .gt-card,
+html[data-theme="contrast"] .rsvp-card,
+html[data-theme="contrast"] .disc-card,
+html[data-theme="contrast"] .disc-post,
+html[data-theme="contrast"] input:not([type=checkbox]):not([type=radio]),
+html[data-theme="contrast"] textarea,
+html[data-theme="contrast"] select{border-width:2px}
+html[data-theme="contrast"] .event-detail,
+html[data-theme="contrast"] .gt-sub,
+html[data-theme="contrast"] .ann-body{color:#2a2a31}

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css"/>
+<script>try{var _t=localStorage.getItem('f6ad_theme');if(_t)document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#5A3FD6"/>
 <link rel="apple-touch-icon" href="/apple-touch-icon-180.png"/>
@@ -24,6 +25,7 @@
     <a class="logo" href="#/home" aria-label="Go to home"><span class="logo-mark"></span><h1>F6AD</h1></a>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu" aria-expanded="false" onclick="toggleNavMenu(event)"><span></span><span></span><span></span></button>
     <nav id="main-nav" onclick="if(event.target.closest('a,button'))closeNavMenu()">
+      <div class="theme-switch" onclick="event.stopPropagation()"><button data-theme-val="light" onclick="setTheme('light')">☀️ Light</button><button data-theme-val="dark" onclick="setTheme('dark')">🌙 Dark</button><button data-theme-val="contrast" onclick="setTheme('contrast')">🔆 Sunlight</button></div>
       <a href="#/home" class="site-link" data-page="home">Home</a>
       <a href="#/schedule" class="site-link" data-page="schedule">Schedule</a>
       <a href="#/conditioning" class="site-link" data-page="conditioning">Conditioning</a>

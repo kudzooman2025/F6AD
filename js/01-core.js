@@ -186,6 +186,24 @@ let scheduleFilter = 'all';
 let scheduleTeamFilter = 'all';
 
 // Expand/collapse a home-page section (GameTracker card, Announcements).
+function setTheme(t) {
+  if (['light','dark','contrast'].indexOf(t) < 0) t = 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('f6ad_theme', t); } catch (e) {}
+  var btns = document.querySelectorAll('.theme-switch button');
+  btns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-theme-val') === t); });
+  var mc = document.querySelector('meta[name="theme-color"]');
+  if (mc) mc.setAttribute('content', t === 'dark' ? '#15141b' : '#5A3FD6');
+}
+function initTheme() {
+  var t = 'light';
+  try { t = localStorage.getItem('f6ad_theme') || 'light'; } catch (e) {}
+  setTheme(t);
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', initTheme);
+}
+
 function toggleNavMenu(e) {
   if (e) e.stopPropagation();
   var nav = document.getElementById('main-nav');
