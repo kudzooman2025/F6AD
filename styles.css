@@ -954,6 +954,12 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .gt-pbadge.card-og{background:#EDE9FE;color:#5A3FD6}
 
 /* Home spotlight: parent stat tracking */
+.home-expand-btn{display:inline-block;margin-top:14px;border:1px solid #C4B5FD;background:#fff;color:#5A3FD6;border-radius:999px;padding:5px 16px;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;cursor:pointer}
+.section-header .home-expand-btn{margin-top:0}
+.home-expand-btn .he-collapse{display:none}
+.home-spotlight:not(.collapsed) .home-expand-btn .he-expand,.ann-section:not(.collapsed) .home-expand-btn .he-expand{display:none}
+.home-spotlight:not(.collapsed) .home-expand-btn .he-collapse,.ann-section:not(.collapsed) .home-expand-btn .he-collapse{display:inline}
+.hs-tease{font-size:.95rem;color:#4b3f8f;margin:0;line-height:1.5}
 .home-collapse-head{display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px;background:none;border:none;padding:0;margin:0;cursor:pointer;text-align:left;color:inherit;font:inherit}
 .home-collapse-head .hs-title{margin:0}
 .home-collapse-body{margin-top:12px}

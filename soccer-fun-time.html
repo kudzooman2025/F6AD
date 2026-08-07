@@ -50,18 +50,17 @@
   <!-- HOME QUICK LINKS -->
   <section id="home-cards" style="margin-bottom:20px">
     <div class="home-spotlight collapsed" id="gt-spotlight">
-      <button class="home-collapse-head" type="button" onclick="toggleHomeSection('gt-spotlight')" aria-label="Toggle GameTracker details">
-        <h3 class="hs-title">Track your player's stats — live from the sideline</h3>
-        <span class="home-chevron">▼</span>
-      </button>
+      <span class="hs-badge">👨‍👩‍👧 New for parents</span>
+      <h3 class="hs-title">Track your player's stats — live from the sideline</h3>
+      <p class="hs-tease">During any game, open GameTracker, pick your child, and tap to log their shots, saves, assists, tackles and more…</p>
       <div class="home-collapse-body">
-        <span class="hs-badge">👨‍👩‍👧 New for parents</span>
-        <p class="hs-desc">During any game, open GameTracker, pick your child, and tap to log their shots, saves, assists, tackles and more — every stat timestamped and private to you. Share what you want afterward and it counts toward the team stats. Watching the film later? Log it post-game with a clock you sync to your video.</p>
+        <p class="hs-desc">…every stat is timestamped and private to you. Share what you want afterward and it counts toward the team stats. Watching the film later? Log it post-game with a clock you sync to your video.</p>
         <div class="hs-actions">
           <a class="hs-btn" href="#/gametracker">⚽ Open GameTracker</a>
           <span class="hs-hint">Inside a game, tap <strong>“Track My Player.”</strong></span>
         </div>
       </div>
+      <button class="home-expand-btn" type="button" onclick="toggleHomeSection('gt-spotlight')"><span class="he-expand">Expand</span><span class="he-collapse">Collapse</span></button>
     </div>
   </section>
 
@@ -76,9 +75,9 @@
 
   <!-- ANNOUNCEMENTS -->
   <section id="announcements" class="ann-section collapsed">
-    <div class="section-header home-collapse-head" onclick="toggleHomeSection('announcements')" style="cursor:pointer">
+    <div class="section-header">
       <div class="section-title">📢 Announcements</div>
-      <span class="home-chevron">▼</span>
+      <button class="home-expand-btn" type="button" onclick="toggleHomeSection('announcements')"><span class="he-expand">Expand</span><span class="he-collapse">Collapse</span></button>
     </div>
     <div class="home-collapse-body">
       <div class="ann-list" id="announcements-list"></div>
