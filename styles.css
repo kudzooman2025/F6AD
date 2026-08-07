@@ -1239,3 +1239,11 @@ html[data-theme="dark"] .season-tab.active{background:var(--purple);color:#fff;b
 html[data-theme="dark"] .gt-table th{background:#1a1922}
 html[data-theme="dark"] .gt-table td,html[data-theme="dark"] .gt-table th{border-color:#2a2833}
 html[data-theme="dark"] table,html[data-theme="dark"] .att-overview-table td{color:var(--text)}
+
+/* ---------- DARK: minor bright pills/cards for polish ---------- */
+html[data-theme="dark"] .home-expand-btn{background:#1e1c26;border-color:#4a3f7a;color:#c4b5fd}
+html[data-theme="dark"] .pfdir-card{background:#1e1c26;border-color:#2a2833;color:var(--text)}
+html[data-theme="dark"] .sched-edit,
+html[data-theme="dark"] .sched-cancel,
+html[data-theme="dark"] .sched-del,
+html[data-theme="dark"] .sched-fulledit{filter:brightness(.82)}
