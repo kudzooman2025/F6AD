@@ -20,7 +20,7 @@ a{color:var(--purple);text-decoration:none}
 button{cursor:pointer;font-family:inherit}
 
 /* HEADER */
-header{background:rgba(250,250,251,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);position:sticky;top:0;z-index:200;border-bottom:1px solid var(--border)}
+header{background:rgba(250,250,251,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--text);position:sticky;top:0;z-index:260;border-bottom:1px solid var(--border)}
 .header-inner{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:11px 22px;gap:14px}
 .logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .logo .logo-mark{width:30px;height:30px;border-radius:9px;background:var(--purple);display:grid;place-items:center;box-shadow:0 6px 14px -6px var(--purple)}
