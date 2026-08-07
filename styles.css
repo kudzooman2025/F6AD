@@ -1253,3 +1253,8 @@ html[data-theme="dark"] .sched-fulledit{filter:brightness(.82)}
 .gt-pool-count{background:var(--purple);color:#fff;border-radius:999px;padding:1px 9px;font-size:.72rem;font-weight:800}
 .gt-pool-bench .gt-pool-count{background:var(--muted)}
 .gt-pool-empty{font-size:.82rem;color:var(--muted);padding:2px 0 16px}
+
+/* Live game: restart + between-period hint */
+.gt-restart-btn{display:block;margin:12px auto 0;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:6px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;opacity:.85}
+.gt-restart-btn:hover{opacity:1;background:rgba(255,255,255,.12)}
+.gt-clock-hint{color:rgba(255,255,255,.7);font-size:.72rem;margin-top:10px;line-height:1.4}

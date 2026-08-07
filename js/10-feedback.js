@@ -9,13 +9,15 @@ function submitFeedback() {
   if (!text) { showToast('Please enter your feedback first.'); return; }
   var type = (document.getElementById('fb-type') || {}).value || 'other';
   var name = (document.getElementById('fb-name') || {}).value.trim();
+  var email = (document.getElementById('fb-email') || {}).value.trim();
   db.collection('feedback').add({
-    type: type, text: text, name: name || 'Anonymous', page: window.location.hash || '',
+    type: type, text: text, name: name || 'Anonymous', email: email || '', page: window.location.hash || '',
     status: 'open', created_at: fbTs()
   }).then(function(){
     showToast('Thanks — your feedback was sent 🙏');
     var t = document.getElementById('fb-text'); if (t) t.value = '';
     var n = document.getElementById('fb-name'); if (n) n.value = '';
+    var em = document.getElementById('fb-email'); if (em) em.value = '';
     closeFeedback();
   }).catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -34,7 +36,7 @@ function renderAdminFeedback() {
   function row(f) {
     var resolved = f.status === 'resolved';
     return '<div class="admin-item" style="' + (resolved ? 'opacity:.6' : '') + '"><div class="admin-item-info">' +
-      '<strong>' + fbTypeLabel(f.type) + '</strong> <span style="color:var(--muted);font-size:.8rem">· ' + gtEsc(f.name || 'Anonymous') + ' · ' + fbTime(f.created_at) + (f.page ? ' · <code>' + gtEsc(f.page) + '</code>' : '') + '</span>' +
+      '<strong>' + fbTypeLabel(f.type) + '</strong> <span style="color:var(--muted);font-size:.8rem">· ' + gtEsc(f.name || 'Anonymous') + (f.email ? ' · <a href="mailto:' + gtAttr(f.email) + '">' + gtEsc(f.email) + '</a>' : '') + ' · ' + fbTime(f.created_at) + (f.page ? ' · <code>' + gtEsc(f.page) + '</code>' : '') + '</span>' +
       '<span style="white-space:pre-wrap;margin-top:4px;display:block">' + gtEsc(f.text || '') + '</span></div>' +
       '<div class="admin-item-actions">' +
       (resolved ? '<button class="btn-edit" onclick="fbSetStatus(\'' + f.id + '\',\'open\')">Reopen</button>' : '<button class="btn-primary" onclick="fbSetStatus(\'' + f.id + '\',\'resolved\')">✓ Resolve</button>') +

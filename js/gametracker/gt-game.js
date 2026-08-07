@@ -288,11 +288,15 @@ function gtRenderLive(view, gameId) {
         (lastPeriod ? '' : '<button class="gt-cbtn gt-cbtn-dark" onpointerdown="gtHoldStart(event,\'endPeriod\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">End Period (hold)</button>') +
         '<button class="gt-cbtn gt-cbtn-danger" onpointerdown="gtHoldStart(event,\'endGame\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">🏁 End Game (hold)</button>';
     } else if (g.status === 'between_periods') {
-      html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtStartNextPeriod(\'' + g.id + '\')">▶ Start ' + gtEsc(gtPeriodLabel(g, g.current_period, 'in_progress')) + '</button>' +
+      var _nlbl = gtEsc(gtPeriodLabel(g, g.current_period, 'in_progress'));
+      html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtStartNextPeriod(\'' + g.id + '\')">▶ Start ' + _nlbl + ' (as-is)</button>' +
+        '<button class="gt-cbtn gt-cbtn-dark" onclick="gtStartPeriodWithStarters(\'' + g.id + '\')">↺ Start with starting XI</button>' +
         '<button class="gt-cbtn gt-cbtn-danger" onpointerdown="gtHoldStart(event,\'endGame\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">🏁 End Game (hold)</button>';
+      html += '<div class="gt-clock-hint">“As-is” keeps whoever is on now. “Starting XI” puts your original starters back on — or make changes below first.</div>';
     }
     html += '</div>';
   }
+  if (canEdit && g.status !== 'setup') html += '<button class="gt-restart-btn" onclick="gtRestartGame(\'' + g.id + '\')">↺ Restart game (undo start)</button>';
   html += '</div>';
   if (inPK) html += gtPkPanel(g, canEdit);
   html += gtParentPanelHtml(g);
@@ -478,6 +482,47 @@ function gtEndPeriod(gid) {
     current_period: (g.current_period || 1) + 1,
     clock_elapsed_seconds: 0, clock_started_at: null
   });
+}
+function gtRestartGame(gid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var g = gtGame(gid); if (!g) return;
+  if (!window.confirm('Restart this game?\n\nThis returns it to setup and clears the clock, score, substitutions, and any stats logged so far. Your roster and starters are kept.')) return;
+  Promise.all([
+    db.collection('gt_events').where('game_id', '==', gid).get(),
+    db.collection('gt_subs').where('game_id', '==', gid).get(),
+    db.collection('gt_parent_events').where('game_id', '==', gid).get()
+  ]).then(function(snaps) {
+    var batch = db.batch();
+    snaps.forEach(function(snap){ snap.forEach(function(d){ batch.delete(d.ref); }); });
+    batch.set(db.collection('gt_games').doc(gid), {
+      status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
+      period_elapsed: {}, home_score: 0, away_score: 0,
+      phase: firebase.firestore.FieldValue.delete(),
+      updated_at: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    return batch.commit();
+  }).then(function(){ showToast('Game reset to setup \u2713'); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Start the next period with the original starting XI back on the field.
+function gtStartPeriodWithStarters(gid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var g = gtGame(gid); if (!g) return;
+  var period = g.current_period || 1;
+  var kickoff = gtKickoffOn(gid);      // pid -> was a starter at kickoff
+  var on = gtOnField(gid);             // pid -> currently on the field
+  var bringOn = [], takeOff = [];
+  Object.keys(kickoff).forEach(function(pid){ if (kickoff[pid] && on[pid] === false && !gtPlayerRedInfo(gid, pid)) bringOn.push(pid); });
+  Object.keys(on).forEach(function(pid){ if (on[pid] && !kickoff[pid]) takeOff.push(pid); });
+  var ts = firebase.firestore.FieldValue.serverTimestamp();
+  var batch = db.batch();
+  var n = Math.min(bringOn.length, takeOff.length);
+  for (var i = 0; i < n; i++) {
+    var inPid = bringOn[i], outPid = takeOff[i];
+    var pos = (gtGameAvailEntry(gid, inPid) || {}).start_position || (gtP(inPid) || {}).default_position || '';
+    batch.set(db.collection('gt_subs').doc(), { game_id: gid, player_out_id: outPid, player_in_id: inPid, position: pos, game_clock_seconds: 0, period: period, created_at: ts });
+  }
+  batch.set(db.collection('gt_games').doc(gid), { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: ts, updated_at: ts }, { merge: true });
+  batch.commit().then(function(){ showToast(n ? ('Starting XI restored \u00b7 ' + n + ' change' + (n === 1 ? '' : 's') + ' \ud83d\udd04') : 'Starting XI already on \u00b7 started'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtStartNextPeriod(gid) {
   gtGameUpdate(gid, { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: firebase.firestore.FieldValue.serverTimestamp() });
