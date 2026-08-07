@@ -1336,7 +1336,7 @@ function schedShowDetails(cancelId) {
   if (!cancelId || typeof gtOpenModal !== 'function') return;
   var us = cancelId.indexOf('_'); if (us < 0) return;
   var kind = cancelId.slice(0, us), id = cancelId.slice(us + 1);
-  var name = '', date = '', time = '', venue = '', addr = '', field = '', type = '', round = '', season = '', officialUrl = '', rsvpId = '', gtId = '', gtComplete = false;
+  var name = '', date = '', time = '', venue = '', addr = '', field = '', type = '', round = '', season = '', officialUrl = '', rsvpId = '', gtId = '', gtComplete = false, tournId = '';
 
   if (kind === 'game') {
     var g = gtGame(id); if (!g) { if (typeof showToast === 'function') showToast('Game not found.'); return; }
@@ -1347,7 +1347,7 @@ function schedShowDetails(cancelId) {
     round = (typeof gtRoundLabel === 'function') ? gtRoundLabel(g.round) : '';
     officialUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
     if (g.season_id && typeof gtSeason === 'function') { var se = gtSeason(g.season_id); if (se) season = se.name; }
-    rsvpId = g.id; gtId = g.id; gtComplete = (g.status === 'complete');
+    rsvpId = g.id; gtId = g.id; gtComplete = (g.status === 'complete'); tournId = g.tournament_id || '';
   } else if (kind === 'sched') {
     var ev = (typeof scheduleItems !== 'undefined') ? scheduleItems.find(function(e){ return e.id === id; }) : null;
     if (!ev) { if (typeof showToast === 'function') showToast('Event not found.'); return; }
@@ -1384,6 +1384,8 @@ function schedShowDetails(cancelId) {
   if (field) h += '<div class="sd-row"><span class="sd-k">\ud83e\udd45 Field</span><span class="sd-v">' + gtEsc(field) + '</span></div>';
   h += '</div>';
   if (officialUrl) h += '<a class="gt-tourn-link" href="' + gtAttr(officialUrl) + '" target="_blank" rel="noopener">\ud83d\udd17 Official tournament site \u2192</a>';
+  var _staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
+  if (!officialUrl && tournId && _staff && typeof gtOpenTournamentForm === 'function') h += '<button class="gt-tourn-link" style="background:#fff;cursor:pointer" onclick="gtCloseModal();gtOpenTournamentForm(\'' + tournId + '\')">\u2795 Add official tournament link</button>';
   h += '<div class="gm-actions">';
   if (rsvpId) h += '<a class="btn-primary" href="#/gametracker/rsvp/' + gtEsc(rsvpId) + '" onclick="gtCloseModal()">\ud83d\udccb RSVP / availability</a>';
   if (gtId) h += '<a class="gt-minibtn" href="#/gametracker/' + (gtComplete ? 'review' : 'live') + '/' + gtEsc(gtId) + '" onclick="gtCloseModal()">' + (gtComplete ? '\ud83d\udcca Stats' : '\u26bd Open game') + '</a>';

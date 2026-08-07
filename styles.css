@@ -625,7 +625,7 @@ footer strong{color:#fff}
 .gt-roster-card .rc-name{font-weight:800;font-size:.95rem;flex:1;min-width:150px}
 .gt-active-badge{font-size:.66rem;font-weight:800;background:#dcfce7;color:#15803d;border-radius:999px;padding:3px 9px;text-transform:uppercase}
 .gt-archived-badge{font-size:.66rem;font-weight:800;background:#f0f0f0;color:#888;border-radius:999px;padding:3px 9px;text-transform:uppercase}
-.gt-minibtn{border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 11px;font-size:.74rem;font-weight:700;color:var(--text);font-family:inherit}
+.gt-minibtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;text-align:center;text-decoration:none;cursor:pointer;border:1px solid var(--border);background:#fff;border-radius:6px;padding:5px 11px;font-size:.74rem;font-weight:700;color:var(--text);font-family:inherit}
 .gt-minibtn:hover{border-color:var(--purple);color:var(--purple)}
 .gt-minibtn.danger{color:#b91c1c;border-color:#fca5a5}
 .gt-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
