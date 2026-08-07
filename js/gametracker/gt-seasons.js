@@ -3,6 +3,13 @@
 // Unlike tournaments there is no shared lineup — each game keeps its own
 // availability/starters, since availability changes week to week.
 function gtSeason(id) { return GT.seasons.find(function(se){ return se.id === id; }); }
+// The "current" season: prefer an MLS Next season, else the most recently started/created.
+function gtCurrentSeason() {
+  if (!GT.seasons || !GT.seasons.length) return null;
+  var mls = GT.seasons.find(function(se){ return /mls next/i.test(se.name || ''); });
+  if (mls) return mls;
+  return GT.seasons.slice().sort(function(a, b){ return gtTsMillis(b.start_date || b.created_at) - gtTsMillis(a.start_date || a.created_at); })[0];
+}
 function gtSeasonEntGames(sid) {
   return GT.games.filter(function(g){ return g.season_id === sid; })
     .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });

@@ -483,6 +483,7 @@ function gtOpenGameEdit(gid) {
     '<label>Our Team Name</label><input type="text" id="gt-ge-us" value="' + gtAttr(gtOurName(g)) + '" placeholder="F6AD"/>' +
     '<label>Opponent</label><input type="text" id="gt-ge-opp" value="' + gtAttr(opp) + '"/>' +
     '<label>We are playing</label><div class="gt-avail-toggle"><button type="button" id="gt-ge-home" class="' + (g.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-away\').classList.remove(\'on-yes\')">🏠 Home</button><button type="button" id="gt-ge-away" class="' + (g.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-home\').classList.remove(\'on-yes\')">✈️ Away</button></div>' +
+    (GT.seasons && GT.seasons.length ? '<label>Season</label><select id="gt-ge-season"><option value="">\u2014 None \u2014</option>' + GT.seasons.slice().sort(function(a, b){ return gtTsMillis(b.start_date || b.created_at) - gtTsMillis(a.start_date || a.created_at); }).map(function(se){ return '<option value="' + se.id + '"' + ((g.season_id || '') === se.id ? ' selected' : '') + '>' + gtEsc(se.name) + '</option>'; }).join('') + '</select>' : '') +
     '<div class="gm-row"><div><label>Game Type</label><select id="gt-ge-type">' + ['league', 'tournament', 'friendly'].map(function(t){ return '<option value="' + t + '"' + (g.game_type === t ? ' selected' : '') + '>' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Knockout Round</label><select id="gt-ge-round"><option value="">— None —</option>' + GT_ROUNDS.map(function(r){ return '<option value="' + r[0] + '"' + ((g.round || '') === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select></div>' +
     '<div><label>Date</label><input type="date" id="gt-ge-date" value="' + dateVal + '"/></div></div>' +
@@ -514,6 +515,7 @@ function gtSaveGameEdit(gid) {
     away_team: side === 'home' ? opp : ourName,
     game_type: document.getElementById('gt-ge-type').value,
     round: (document.getElementById('gt-ge-round') || {}).value || '',
+    season_id: (document.getElementById('gt-ge-season') || {}).value || null,
     venue: document.getElementById('gt-ge-venue').value.trim(),
     venue_address: document.getElementById('gt-ge-vaddr').value.trim(),
     venue_city: document.getElementById('gt-ge-vcity').value.trim(),

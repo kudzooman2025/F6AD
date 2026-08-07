@@ -1351,7 +1351,8 @@ function schedPromoteToGame(schedId) {
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var gameRef = db.collection('gt_games').doc();
   var data = {
-    roster_id: roster.id, tournament_id: null, season_id: null,
+    roster_id: roster.id, tournament_id: null,
+    season_id: (typeof gtCurrentSeason === 'function' && gtCurrentSeason()) ? gtCurrentSeason().id : null,
     home_team: m.side === 'away' ? m.opp : m.ours,
     away_team: m.side === 'away' ? m.ours : m.opp,
     f6ad_side: m.side,
