@@ -93,7 +93,7 @@ function copyLink(url,btn) {
 function renderSchedule() {
   const today = new Date(); today.setHours(0,0,0,0);
   const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
-    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: gtScheduleType(g), _round: (typeof gtRoundLabel === 'function' ? gtRoundLabel(g.round) : ''), _gt: true, _rsvpId: g.id, _cancelId: 'game_' + g.id };
+    return { name: gtOurName(g) + ' vs ' + gtTheirName(g), date: gtGameDateStr(g), time: g.kickoff_time || '', location: [g.venue, g.field].filter(Boolean).join(' · '), type: gtScheduleType(g), _round: (typeof gtRoundLabel === 'function' ? gtRoundLabel(g.round) : ''), _seasonId: g.season_id || '', _gt: true, _rsvpId: g.id, _cancelId: 'game_' + g.id };
   }).filter(function(e){ return e.date; }) : [];
   const condEvents = (typeof COND_SESSIONS !== 'undefined') ? COND_SESSIONS.map(function(s){
     return { name: 'Summer Conditioning', date: s.id, time: '17:00', location: 'Germantown Academy', type: 'practice', _auto: true, _cancelId: 'cond_' + s.id };
@@ -126,11 +126,14 @@ function renderSchedule() {
     const day = d.getDate();
     const time = ev.time ? (() => { const [h,m]=ev.time.split(':'); const hr=+h; return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; })() : '';
     const canceled = !!(ev._cancelId && typeof canceledEvents !== 'undefined' && canceledEvents[ev._cancelId]);
+    var _seasonName = '';
+    if (ev._seasonId && typeof gtSeason === 'function') { var _se = gtSeason(ev._seasonId); if (_se) _seasonName = _se.name; }
+    if (!_seasonName && ev.date && typeof gtSeasonForDate === 'function') { var _sd = gtSeasonForDate(ev.date); if (_sd) _seasonName = _sd.name; }
     const staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
     return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}${staff?' editable':''}"${staff&&ev._cancelId?` onclick="schedEditEvent('${ev._cancelId}')" title="Click to edit this event"`:''}>
       <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
       <div class="event-info">
-        <div class="event-name"><span class="evn-text">${ev.name}</span>${ev._round?` <span class="round-badge">${ev._round}</span>`:''}${ev.source==='teamsnap'?' <span class="ts-badge">FC Delco</span>':''}${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
+        <div class="event-name"><span class="evn-text">${ev.name}</span>${ev._round?` <span class="round-badge">${ev._round}</span>`:''}${_seasonName?` <span class="season-badge">📅 ${_seasonName}</span>`:''}${ev.source==='teamsnap'?' <span class="ts-badge">FC Delco</span>':''}${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
         <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
         ${(!isPast && !canceled && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}" onclick="event.stopPropagation()">📋 RSVP / availability</a>` : ''}

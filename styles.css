@@ -855,6 +855,7 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .sched-edit:hover{background:#DDD6FE;}
 
 /* Knockout round badge on the Schedule page */
+.season-badge{display:inline-block;margin-left:6px;padding:1px 8px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#065f46;background:#d1fae5;border:1px solid #6ee7b7;border-radius:999px;vertical-align:middle;}
 .round-badge{display:inline-block;margin-left:6px;padding:1px 8px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#5A3FD6;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:999px;vertical-align:middle;}
 
 /* "Full game details" (promote to GameTracker) button on schedule cards */

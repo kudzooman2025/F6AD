@@ -8,7 +8,7 @@ function gtAttachListeners(defs) {
       GT.loaded[def[1]] = true;
       if (def[1] === 'chat') { if (typeof gtRenderChatMessages === 'function') gtRenderChatMessages(); return; }
       gtRerender();
-      if (def[1] === 'games') {
+      if (def[1] === 'games' || def[1] === 'seasons') {
         if (typeof renderSchedule === 'function') renderSchedule();
         if (typeof renderAdminSchedule === 'function' && document.getElementById('admin-schedule-list')) renderAdminSchedule();
       }

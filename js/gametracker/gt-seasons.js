@@ -4,6 +4,15 @@
 // availability/starters, since availability changes week to week.
 function gtSeason(id) { return GT.seasons.find(function(se){ return se.id === id; }); }
 // The "current" season: prefer an MLS Next season, else the most recently started/created.
+// The season whose date range contains a YYYY-MM-DD date (for labelling schedule rows).
+function gtSeasonForDate(ds) {
+  if (!ds || !GT.seasons) return null;
+  return GT.seasons.find(function(se){
+    if (!se.start_date) return false;
+    var end = se.end_date || se.start_date;
+    return ds >= se.start_date && ds <= end;
+  }) || null;
+}
 function gtCurrentSeason() {
   if (!GT.seasons || !GT.seasons.length) return null;
   var mls = GT.seasons.find(function(se){ return /mls next/i.test(se.name || ''); });
