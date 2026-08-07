@@ -184,6 +184,12 @@ let announcementItems = [];
 let venueItems = [];
 let scheduleFilter = 'all';
 let scheduleTeamFilter = 'all';
+
+// Expand/collapse a home-page section (GameTracker card, Announcements).
+function toggleHomeSection(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('collapsed');
+}
 let canceledEvents = {};
 let annComments = [];
 let discussionItems = [];

@@ -44,7 +44,7 @@ function gtListenHeavy() {
 // ---------- routing ----------
 function gtGo(path) { window.location.hash = path; }
 var SITE_PAGES = {
-  home: ['home-cards', 'announcements'],
+  home: ['home-cards', 'announcements', 'home-quicklinks'],
   schedule: ['schedule'],
   conditioning: ['conditioning', 'summer-overview'],
   tournaments: ['confirmed-summer', 'tournaments'],

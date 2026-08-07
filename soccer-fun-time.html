@@ -48,21 +48,20 @@
 <!-- MAIN -->
 <div class="container">
   <!-- HOME QUICK LINKS -->
-  <section id="home-cards" style="margin-bottom:36px">
-    <div class="home-spotlight">
-      <span class="hs-badge">👨‍👩‍👧 New for parents</span>
-      <h3 class="hs-title">Track your player's stats — live from the sideline</h3>
-      <p class="hs-desc">During any game, open GameTracker, pick your child, and tap to log their shots, saves, assists, tackles and more — every stat timestamped and private to you. Share what you want afterward and it counts toward the team stats. Watching the film later? Log it post-game with a clock you sync to your video.</p>
-      <div class="hs-actions">
-        <a class="hs-btn" href="#/gametracker">⚽ Open GameTracker</a>
-        <span class="hs-hint">Inside a game, tap <strong>“Track My Player.”</strong></span>
+  <section id="home-cards" style="margin-bottom:20px">
+    <div class="home-spotlight collapsed" id="gt-spotlight">
+      <button class="home-collapse-head" type="button" onclick="toggleHomeSection('gt-spotlight')" aria-label="Toggle GameTracker details">
+        <h3 class="hs-title">Track your player's stats — live from the sideline</h3>
+        <span class="home-chevron">▼</span>
+      </button>
+      <div class="home-collapse-body">
+        <span class="hs-badge">👨‍👩‍👧 New for parents</span>
+        <p class="hs-desc">During any game, open GameTracker, pick your child, and tap to log their shots, saves, assists, tackles and more — every stat timestamped and private to you. Share what you want afterward and it counts toward the team stats. Watching the film later? Log it post-game with a clock you sync to your video.</p>
+        <div class="hs-actions">
+          <a class="hs-btn" href="#/gametracker">⚽ Open GameTracker</a>
+          <span class="hs-hint">Inside a game, tap <strong>“Track My Player.”</strong></span>
+        </div>
       </div>
-    </div>
-    <div class="gt-bigbtns" style="margin-bottom:0">
-      <a class="gt-bigbtn" href="#/schedule"><span class="bb-icon">01</span><span class="bb-label">Schedule</span><span class="bb-desc">Games, practices &amp; events</span></a>
-      <a class="gt-bigbtn" href="#/gametracker/availability"><span class="bb-icon">02</span><span class="bb-label">Availability</span><span class="bb-desc">RSVP for games &amp; camps</span></a>
-      <a class="gt-bigbtn" href="#/tournaments"><span class="bb-icon">03</span><span class="bb-label">Tournament Voting</span><span class="bb-desc">Vote on next season</span></a>
-      <a class="gt-bigbtn" href="#/gametracker"><span class="bb-icon">04</span><span class="bb-label">GameTracker</span><span class="bb-desc">Live games &amp; season stats</span></a>
     </div>
   </section>
 
@@ -76,14 +75,25 @@
   </section>
 
   <!-- ANNOUNCEMENTS -->
-  <section id="announcements" class="ann-section">
-    <div class="section-header">
+  <section id="announcements" class="ann-section collapsed">
+    <div class="section-header home-collapse-head" onclick="toggleHomeSection('announcements')" style="cursor:pointer">
       <div class="section-title">📢 Announcements</div>
+      <span class="home-chevron">▼</span>
     </div>
-    <div class="ann-list" id="announcements-list"></div>
-    <div class="empty-state" id="ann-empty">
-      <span>📢</span>
-      <strong>No announcements yet.</strong><br>Use the Admin panel to post updates for the team.
+    <div class="home-collapse-body">
+      <div class="ann-list" id="announcements-list"></div>
+      <div class="empty-state" id="ann-empty">
+        <span>📢</span>
+        <strong>No announcements yet.</strong><br>Use the Admin panel to post updates for the team.
+      </div>
+    </div>
+  </section>
+
+  <!-- HOME QUICK LINKS (below announcements) -->
+  <section id="home-quicklinks" style="margin-bottom:36px">
+    <div class="gt-bigbtns" style="margin-bottom:0">
+      <a class="gt-bigbtn" href="#/schedule"><span class="bb-icon">01</span><span class="bb-label">Schedule</span><span class="bb-desc">Games, practices &amp; events</span></a>
+      <a class="gt-bigbtn" href="#/gametracker/availability"><span class="bb-icon">02</span><span class="bb-label">Availability</span><span class="bb-desc">RSVP for games &amp; camps</span></a>
     </div>
   </section>
 

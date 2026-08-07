@@ -954,6 +954,13 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .gt-pbadge.card-og{background:#EDE9FE;color:#5A3FD6}
 
 /* Home spotlight: parent stat tracking */
+.home-collapse-head{display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px;background:none;border:none;padding:0;margin:0;cursor:pointer;text-align:left;color:inherit;font:inherit}
+.home-collapse-head .hs-title{margin:0}
+.home-collapse-body{margin-top:12px}
+.home-spotlight.collapsed .home-collapse-body,.ann-section.collapsed .home-collapse-body{display:none}
+.ann-section.collapsed .section-header{margin-bottom:0}
+.home-chevron{transition:transform .25s;font-size:.7rem;color:#5A3FD6;flex:0 0 auto}
+.collapsed .home-chevron{transform:rotate(-90deg)}
 .home-spotlight{background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border:1.5px solid #C4B5FD;border-radius:16px;padding:22px 24px;margin-bottom:20px}
 .hs-badge{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#5A3FD6;background:#fff;border:1px solid #C4B5FD;border-radius:999px;padding:4px 12px;margin-bottom:12px}
 .hs-title{font-size:1.42rem;font-weight:900;color:#3c2e8f;margin:0 0 8px;line-height:1.2}
