@@ -186,6 +186,16 @@ let scheduleFilter = 'all';
 let scheduleTeamFilter = 'all';
 
 // Expand/collapse a home-page section (GameTracker card, Announcements).
+function gtSyncHeaderHeight() {
+  var h = document.querySelector('header');
+  if (h) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight + 'px');
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', gtSyncHeaderHeight);
+  window.addEventListener('load', gtSyncHeaderHeight);
+  window.addEventListener('orientationchange', gtSyncHeaderHeight);
+}
+
 function toggleHomeSection(id) {
   var el = document.getElementById(id);
   if (el) el.classList.toggle('collapsed');

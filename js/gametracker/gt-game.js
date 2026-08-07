@@ -251,6 +251,7 @@ function gtCreateGame() {
 
 // ---------- LIVE GAME VIEW ----------
 function gtRenderLive(view, gameId) {
+  if (typeof gtSyncHeaderHeight === 'function') gtSyncHeaderHeight();
   var g = gtGame(gameId);
   if (!g) {
     view.innerHTML = GT.loaded.games ? '<div class="gt-empty">Game not found. <a href="#/gametracker">Back to GameTracker</a></div>' : '<div class="gt-empty">Loading game…</div>';
@@ -301,8 +302,7 @@ function gtRenderLive(view, gameId) {
   var events = gtGameEvents(g.id);
   var onField = gtOnField(g.id);
   var players = availIds.map(function(pid){ return gtP(pid); }).filter(Boolean).sort(function(a, b) {
-    var an = a.jersey_number == null ? 999 : a.jersey_number, bn = b.jersey_number == null ? 999 : b.jersey_number;
-    return an - bn;
+    return String(gtPlayerName(a.id) || '').localeCompare(String(gtPlayerName(b.id) || ''), undefined, { sensitivity: 'base' });
   });
   html += gtStartingXiHtml(g.id);
   var gtOnCount = Object.keys(onField).filter(function(k){ return onField[k] === true; }).length;

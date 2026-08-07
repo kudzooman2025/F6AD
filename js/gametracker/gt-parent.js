@@ -145,25 +145,32 @@ function gtParentClock(g, e) {
   if (g.status === 'setup' && !e.game_clock_seconds) return 'pre';
   return gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + "'";
 }
+function gtToggleParentPanel(el) {
+  GT.parentCollapsed = !GT.parentCollapsed;
+  var p = (el && el.closest) ? el.closest('.gt-parent') : null;
+  if (p) p.classList.toggle('collapsed', GT.parentCollapsed);
+  var t = (el && el.querySelector) ? el.querySelector('.gt-parent-toggle') : null;
+  if (t) t.textContent = GT.parentCollapsed ? 'Show' : 'Hide';
+}
 function gtParentPanelHtml(g) {
   if (!g || g.status === 'complete' || gtGameCanceled(g)) return '';
   var avail = gtAvailIds(g.id).map(function(pid){ return gtP(pid); }).filter(Boolean)
     .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
-  var head = '<div class="gt-parent-head">👨‍👩‍👧 Track My Player <span class="gt-parent-sub">private to you until you share</span></div>';
+  var head = '<div class="gt-parent-head" onclick="gtToggleParentPanel(this)">👨‍👩‍👧 Track My Player <span class="gt-parent-sub">private to you until you share</span><span class="gt-parent-toggle">' + (GT.parentCollapsed ? 'Show' : 'Hide') + '</span></div>';
   if (!avail.length) return '';
   var pid = gtParentTrackPid(g);
   var selector = gtParentTrackSelect(g, pid);
   // no player chosen yet — just show the dropdown
   if (!pid) {
-    return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector + '</div></div>';
+    return '<div class="gt-parent' + (GT.parentCollapsed ? ' collapsed' : '') + '">' + head + '<div class="gt-parent-body">' + selector + '</div></div>';
   }
   // player chosen, but no name yet
   if (!gtParentName()) {
-    return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector +
+    return '<div class="gt-parent' + (GT.parentCollapsed ? ' collapsed' : '') + '">' + head + '<div class="gt-parent-body">' + selector +
       '<label class="gt-parent-lbl">Your name (so stats are attributed):</label>' +
       '<div class="gt-chat-bar"><input id="gt-chat-name" placeholder="Your name…" onkeydown="if(event.key===\'Enter\')gtSetChatName()"/><button class="btn-primary" onclick="gtSetChatName()">Start tracking</button></div></div></div>';
   }
-  return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + selector + gtParentBodyHtml(g, pid) + '</div></div>';
+  return '<div class="gt-parent' + (GT.parentCollapsed ? ' collapsed' : '') + '">' + head + '<div class="gt-parent-body">' + selector + gtParentBodyHtml(g, pid) + '</div></div>';
 }
 // Shared inner UI (who-line, claim chips, stat grid, note bar, log) used by both the
 // live panel and the film-session panel. Logging auto-detects the active clock.
@@ -274,9 +281,9 @@ function gtParentFilmPanelHtml(g) {
   if (!g || g.status !== 'complete' || gtGameCanceled(g)) return '';
   var avail = gtAvailIds(g.id).map(function(id){ return gtP(id); }).filter(Boolean);
   if (!avail.length) return '';
-  var head = '<div class="gt-parent-head">🎬 Film Session <span class="gt-parent-sub">log stats while you rewatch — synced to your video</span></div>';
+  var head = '<div class="gt-parent-head" onclick="gtToggleParentPanel(this)">🎬 Film Session <span class="gt-parent-sub">log stats while you rewatch — synced to your video</span><span class="gt-parent-toggle">' + (GT.parentCollapsed ? 'Show' : 'Hide') + '</span></div>';
   if (!gtFilmActive(g.id)) {
-    return '<div class="gt-parent">' + head + '<div class="gt-parent-body"><div class="gt-parent-note" style="margin:0 0 12px">Watching the game video? Start a film session, sync the clock to your video, then log stats for your player as you watch. Private until you share.</div>' +
+    return '<div class="gt-parent' + (GT.parentCollapsed ? ' collapsed' : '') + '">' + head + '<div class="gt-parent-body"><div class="gt-parent-note" style="margin:0 0 12px">Watching the game video? Start a film session, sync the clock to your video, then log stats for your player as you watch. Private until you share.</div>' +
       '<button class="btn-primary" onclick="gtFilmOpen(\'' + g.id + '\')">🎬 Start film session</button></div></div>';
   }
   var pid = gtParentTrackPid(g);
@@ -288,10 +295,10 @@ function gtParentFilmPanelHtml(g) {
     '<span class="gt-film-sync"><input id="gt-film-set" placeholder="MM:SS" value="' + gtFmtMMSS(Math.floor(gtFilmSeconds())) + '"/><button class="gt-minibtn" onclick="gtFilmSet(\'' + g.id + '\')">Sync to video</button></span>' +
     '</div><div class="gt-film-hint">Type the time shown on your video and hit “Sync to video,” then Play in step with it. Every stat you log stamps to this clock.</div>';
   if (!gtParentName()) {
-    return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + clockUi + selector +
+    return '<div class="gt-parent' + (GT.parentCollapsed ? ' collapsed' : '') + '">' + head + '<div class="gt-parent-body">' + clockUi + selector +
       '<label class="gt-parent-lbl">Your name (so stats are attributed):</label>' +
       '<div class="gt-chat-bar"><input id="gt-chat-name" placeholder="Your name…" onkeydown="if(event.key===\'Enter\')gtSetChatName()"/><button class="btn-primary" onclick="gtSetChatName()">Start tracking</button></div></div></div>';
   }
-  if (!pid) return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + clockUi + selector + '</div></div>';
-  return '<div class="gt-parent">' + head + '<div class="gt-parent-body">' + clockUi + selector + gtParentBodyHtml(g, pid) + '</div></div>';
+  if (!pid) return '<div class="gt-parent' + (GT.parentCollapsed ? ' collapsed' : '') + '">' + head + '<div class="gt-parent-body">' + clockUi + selector + '</div></div>';
+  return '<div class="gt-parent' + (GT.parentCollapsed ? ' collapsed' : '') + '">' + head + '<div class="gt-parent-body">' + clockUi + selector + gtParentBodyHtml(g, pid) + '</div></div>';
 }
