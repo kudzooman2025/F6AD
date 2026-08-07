@@ -111,7 +111,17 @@ function renderSchedule() {
   }
   const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
   const sorted = [...scheduleItems.filter(it => !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
-  const vis = (typeof scheduleFilter !== 'undefined' && scheduleFilter !== 'all') ? sorted.filter(ev => ev.type === scheduleFilter) : sorted;
+  // Populate the team dropdown from the teams actually present.
+  var _teamSel = document.getElementById('sched-team-filter');
+  if (_teamSel) {
+    var _present = {}; sorted.forEach(function(ev){ _present[schedTeamOf(ev)] = true; });
+    var _order = [['delco', 'FC Delco'], ['f6ad', 'F6AD'], ['other', 'Other']];
+    if (typeof scheduleTeamFilter !== 'undefined' && scheduleTeamFilter !== 'all' && !_present[scheduleTeamFilter]) scheduleTeamFilter = 'all';
+    _teamSel.innerHTML = '<option value="all">All teams</option>' + _order.filter(function(o){ return _present[o[0]]; }).map(function(o){ return '<option value="' + o[0] + '"' + (scheduleTeamFilter === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('');
+  }
+  const _typeOk = ev => (typeof scheduleFilter === 'undefined' || scheduleFilter === 'all' || ev.type === scheduleFilter);
+  const _teamOk = ev => (typeof scheduleTeamFilter === 'undefined' || scheduleTeamFilter === 'all' || schedTeamOf(ev) === scheduleTeamFilter);
+  const vis = sorted.filter(ev => _typeOk(ev) && _teamOk(ev));
   const upcoming = vis.filter(ev => new Date(ev.date + 'T00:00:00') >= today);
   const past     = vis.filter(ev => new Date(ev.date + 'T00:00:00') <  today);
 
@@ -169,6 +179,10 @@ function setScheduleFilter(f, btn) {
   scheduleFilter = f;
   document.querySelectorAll('#sched-filters .sched-chip').forEach(function(c){ c.classList.remove('active'); });
   if (btn) btn.classList.add('active');
+  renderSchedule();
+}
+function setScheduleTeam(v) {
+  scheduleTeamFilter = v;
   renderSchedule();
 }
 function toggleArchive() {
@@ -1317,6 +1331,17 @@ function schedEditEvent(cancelId) {
 
 
 // ===== Promote a TeamSnap (or manual) game/tournament into a full GameTracker game =====
+// Which team an event belongs to: our FC Delco / MLS Next AD side vs the "F6AD"
+// tournament-team side (else "other"). Used by the schedule team filter.
+function schedTeamOf(ev) {
+  if (!ev) return 'other';
+  var ours = ev._ourName || (typeof schedParseMatchup === 'function' ? schedParseMatchup(ev.name || '').ours : (ev.name || ''));
+  if (/delco|mls\s*next/i.test(ours)) return 'delco';
+  if (/f6ad/i.test(ours)) return 'f6ad';
+  if (/delco|mls\s*next/i.test(ev.name || '')) return 'delco';
+  if (/f6ad/i.test(ev.name || '')) return 'f6ad';
+  return 'other';
+}
 // Season tag rule: ONLY FC Delco / MLS Next AD *league games* carry a season label.
 // Tournaments, friendlies, practices/events, and any game where our side is the
 // "F6AD" tournament team are deliberately excluded.

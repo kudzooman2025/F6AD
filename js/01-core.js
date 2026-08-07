@@ -183,6 +183,7 @@ let pdMyCards = {};     // player-side: period -> published card doc
 let announcementItems = [];
 let venueItems = [];
 let scheduleFilter = 'all';
+let scheduleTeamFilter = 'all';
 let canceledEvents = {};
 let annComments = [];
 let discussionItems = [];

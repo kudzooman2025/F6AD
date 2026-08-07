@@ -99,6 +99,7 @@
       <button class="sched-chip" onclick="setScheduleFilter('friendly',this)">🤝 Friendlies</button>
       <button class="sched-chip" onclick="setScheduleFilter('practice',this)">🏃 Practices</button>
       <button class="sched-chip" onclick="setScheduleFilter('event',this)">📅 Events</button>
+      <select id="sched-team-filter" class="sched-team" onchange="setScheduleTeam(this.value)" title="Filter by team"><option value="all">All teams</option></select>
     </div>
     <div class="event-list" id="schedule-list"></div>
     <div class="empty-state" id="schedule-empty">
