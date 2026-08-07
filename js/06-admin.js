@@ -138,7 +138,7 @@ function renderSchedule() {
     const canceled = !!(ev._cancelId && typeof canceledEvents !== 'undefined' && canceledEvents[ev._cancelId]);
     var _seasonName = (typeof schedSeasonLabel === 'function') ? schedSeasonLabel(ev) : '';
     const staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
-    return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}${staff?' editable':''}"${staff&&ev._cancelId?` onclick="schedEditEvent('${ev._cancelId}')" title="Click to edit this event"`:''}>
+    return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}${ev._cancelId?' editable':''}"${ev._cancelId?` onclick="schedShowDetails('${ev._cancelId}')" title="Click for details"`:''}>
       <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
       <div class="event-info">
         <div class="event-name"><span class="evn-text">${ev.name}</span>${ev._round?` <span class="round-badge">${ev._round}</span>`:''}${_seasonName?` <span class="season-badge">📅 ${_seasonName}</span>`:''}${ev.source==='teamsnap'?' <span class="ts-badge">FC Delco</span>':''}${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
@@ -1331,6 +1331,67 @@ function schedEditEvent(cancelId) {
 
 
 // ===== Promote a TeamSnap (or manual) game/tournament into a full GameTracker game =====
+// Read-only game/event details popup (available to everyone, incl. parents).
+function schedShowDetails(cancelId) {
+  if (!cancelId || typeof gtOpenModal !== 'function') return;
+  var us = cancelId.indexOf('_'); if (us < 0) return;
+  var kind = cancelId.slice(0, us), id = cancelId.slice(us + 1);
+  var name = '', date = '', time = '', venue = '', addr = '', field = '', type = '', round = '', season = '', officialUrl = '', rsvpId = '', gtId = '', gtComplete = false;
+
+  if (kind === 'game') {
+    var g = gtGame(id); if (!g) { if (typeof showToast === 'function') showToast('Game not found.'); return; }
+    name = gtOurName(g) + ' vs ' + gtTheirName(g);
+    date = gtGameDateStr(g); time = g.kickoff_time || '';
+    venue = g.venue || ''; addr = [g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).join(', ');
+    field = g.field || ''; type = gtScheduleType(g);
+    round = (typeof gtRoundLabel === 'function') ? gtRoundLabel(g.round) : '';
+    officialUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
+    if (g.season_id && typeof gtSeason === 'function') { var se = gtSeason(g.season_id); if (se) season = se.name; }
+    rsvpId = g.id; gtId = g.id; gtComplete = (g.status === 'complete');
+  } else if (kind === 'sched') {
+    var ev = (typeof scheduleItems !== 'undefined') ? scheduleItems.find(function(e){ return e.id === id; }) : null;
+    if (!ev) { if (typeof showToast === 'function') showToast('Event not found.'); return; }
+    name = ev.name; date = ev.date; time = ev.time || '';
+    var parts = String(ev.location || '').split(' \u00b7 '); venue = parts[0] || ''; field = parts.slice(1).join(' \u00b7 ');
+    type = ev.type || '';
+    if (typeof schedSeasonLabel === 'function') season = schedSeasonLabel(ev) || '';
+    officialUrl = (ev.official_url || '');
+    rsvpId = ev._rsvpId || '';
+  } else {
+    // conditioning / camp / other auto events
+    var src = null;
+    if (typeof scheduleItems !== 'undefined') src = scheduleItems.find(function(e){ return ('sched_' + e.id) === cancelId; });
+    name = (src && src.name) || cancelId; 
+  }
+  if (!name) { if (typeof showToast === 'function') showToast('No details available.'); return; }
+
+  var typeLabel = type ? (type.charAt(0).toUpperCase() + type.slice(1)) : '';
+  var dObj = date ? new Date(date + 'T00:00:00') : null;
+  var dateStr = (dObj && !isNaN(dObj.getTime())) ? dObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : (date || '');
+  var timeStr = '';
+  if (time && /^\d{1,2}:\d{2}/.test(time)) { var hm = time.split(':'); var hr = +hm[0]; timeStr = (hr>12?hr-12:hr||12) + ':' + hm[1] + ' ' + (hr>=12?'PM':'AM'); }
+  var mapsUrl = addr ? ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((venue?venue+', ':'') + addr)) : '';
+
+  var h = '<h3>' + gtEsc(name) + '<button class="gm-close" onclick="gtCloseModal()">\u2715</button></h3>';
+  h += '<div class="sd-tags">';
+  if (typeLabel) h += '<span class="event-type type-' + gtEsc(type) + '">' + gtEsc(typeLabel) + '</span>';
+  if (round) h += '<span class="round-badge">' + gtEsc(round) + '</span>';
+  if (season) h += '<span class="season-badge">\ud83d\udcc5 ' + gtEsc(season) + '</span>';
+  h += '</div>';
+  h += '<div class="sd-rows">';
+  if (dateStr) h += '<div class="sd-row"><span class="sd-k">\ud83d\udcc5 When</span><span class="sd-v">' + gtEsc(dateStr) + (timeStr ? ' \u00b7 ' + gtEsc(timeStr) : '') + '</span></div>';
+  if (venue || addr) h += '<div class="sd-row"><span class="sd-k">\ud83d\udccd Where</span><span class="sd-v">' + gtEsc([venue, addr].filter(Boolean).join(' \u2014 ')) + (mapsUrl ? ' <a href="' + gtAttr(mapsUrl) + '" target="_blank" rel="noopener">map \u2192</a>' : '') + '</span></div>';
+  if (field) h += '<div class="sd-row"><span class="sd-k">\ud83e\udd45 Field</span><span class="sd-v">' + gtEsc(field) + '</span></div>';
+  h += '</div>';
+  if (officialUrl) h += '<a class="gt-tourn-link" href="' + gtAttr(officialUrl) + '" target="_blank" rel="noopener">\ud83d\udd17 Official tournament site \u2192</a>';
+  h += '<div class="gm-actions">';
+  if (rsvpId) h += '<a class="btn-primary" href="#/gametracker/rsvp/' + gtEsc(rsvpId) + '" onclick="gtCloseModal()">\ud83d\udccb RSVP / availability</a>';
+  if (gtId) h += '<a class="gt-minibtn" href="#/gametracker/' + (gtComplete ? 'review' : 'live') + '/' + gtEsc(gtId) + '" onclick="gtCloseModal()">' + (gtComplete ? '\ud83d\udcca Stats' : '\u26bd Open game') + '</a>';
+  h += '<button class="gt-minibtn" onclick="gtCloseModal()">Close</button>';
+  h += '</div>';
+  gtOpenModal(h);
+}
+
 // Which team an event belongs to: our FC Delco / MLS Next AD side vs the "F6AD"
 // tournament-team side (else "other"). Used by the schedule team filter.
 function schedTeamOf(ev) {

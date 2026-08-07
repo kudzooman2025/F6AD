@@ -856,6 +856,12 @@ nav a.nav-active:hover{color:#fff!important;background:var(--purple)!important;f
 .sched-edit:hover{background:#DDD6FE;}
 
 /* Knockout round badge on the Schedule page */
+.sd-tags{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 14px}
+.sd-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.sd-row{display:flex;gap:10px;font-size:.9rem;align-items:baseline}
+.sd-k{flex:0 0 88px;font-weight:800;color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+.sd-v{flex:1;color:var(--text)}
+.sd-v a{color:#5A3FD6;font-weight:700}
 .season-badge{display:inline-block;margin-left:6px;padding:1px 8px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#065f46;background:#d1fae5;border:1px solid #6ee7b7;border-radius:999px;vertical-align:middle;}
 .round-badge{display:inline-block;margin-left:6px;padding:1px 8px;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#5A3FD6;background:#EDE9FE;border:1px solid #C4B5FD;border-radius:999px;vertical-align:middle;}
 
