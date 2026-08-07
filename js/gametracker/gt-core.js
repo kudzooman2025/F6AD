@@ -13,6 +13,7 @@ var GT = {
   clockTimer: null,
   pendingEvent: null,
   openFeedItem: null,
+  serverOffset: 0,
   seasonSort: { col: 'goals', dir: -1 },
   seasonShowGuests: false,
   seasonFilters: { type: 'all', from: '', to: '', opp: '', team: '', round: '' },
@@ -71,6 +72,28 @@ function gtFmtDate(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function gtTsMillis(ts) { return ts && ts.toMillis ? ts.toMillis() : (ts ? new Date(ts).getTime() : 0); }
+// Estimated Firestore server time (device clock corrected by measured offset), so the
+// live game clock is right even when the device clock is fast/slow.
+function gtServerNow() { return Date.now() + (GT.serverOffset || 0); }
+var _gtLastClockSync = 0;
+function gtSyncServerClock(force) {
+  var now = Date.now();
+  if (!force && (now - _gtLastClockSync) < 120000) return;
+  _gtLastClockSync = now;
+  try {
+    var ref = db.collection('_serverclock').doc('ping');
+    var t0 = Date.now();
+    ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() })
+      .then(function(){ return ref.get({ source: 'server' }); })
+      .then(function(snap){
+        var t2 = Date.now();
+        var srv = snap && snap.get ? snap.get('t') : null;
+        if (!srv) return;
+        var serverMs = srv.toMillis ? srv.toMillis() : gtTsMillis(srv);
+        GT.serverOffset = (serverMs + (t2 - t0) / 2) - t2;
+      }).catch(function(){});
+  } catch (e) {}
+}
 function gtGameSortMs(g) {
   // sortable timestamp combining the game date with its kickoff time (if set)
   var base = gtTsMillis(g.played_at || g.created_at);
@@ -284,7 +307,7 @@ function gtClockSeconds(g) {
   if (!g) return 0;
   var base = g.clock_elapsed_seconds || 0;
   if (g.status === 'in_progress' && g.clock_started_at) {
-    base += (Date.now() - gtTsMillis(g.clock_started_at)) / 1000;
+    base += (gtServerNow() - gtTsMillis(g.clock_started_at)) / 1000;
   }
   return Math.max(0, Math.floor(base));
 }

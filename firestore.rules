@@ -121,5 +121,9 @@ service cloud.firestore {
 
     // ---- Legacy coach PIN collection: locked down, no longer used ----
     match /coaches/{doc} { allow read, write: if isAdmin(); }
+
+    // Ephemeral server-time ping: lets the app measure device clock skew so the
+    // live game clock is accurate. Holds no user data.
+    match /_serverclock/{doc} { allow read, write: if true; }
   }
 }

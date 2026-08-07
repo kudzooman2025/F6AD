@@ -34,6 +34,7 @@ function gtListen() {
 function gtListenHeavy() {
   if (GT.listeningHeavy) return;
   GT.listeningHeavy = true;
+  if (typeof gtSyncServerClock === 'function') gtSyncServerClock(true);
   gtAttachListeners([
     ['gt_events', 'events'], ['gt_subs', 'subs'], ['gt_availability', 'avail'],
     ['gt_chat', 'chat'], ['gt_rsvp', 'rsvp'],

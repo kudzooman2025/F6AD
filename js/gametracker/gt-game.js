@@ -252,6 +252,7 @@ function gtCreateGame() {
 // ---------- LIVE GAME VIEW ----------
 function gtRenderLive(view, gameId) {
   if (typeof gtSyncHeaderHeight === 'function') gtSyncHeaderHeight();
+  if (typeof gtSyncServerClock === 'function') gtSyncServerClock();
   var g = gtGame(gameId);
   if (!g) {
     view.innerHTML = GT.loaded.games ? '<div class="gt-empty">Game not found. <a href="#/gametracker">Back to GameTracker</a></div>' : '<div class="gt-empty">Loading game…</div>';
