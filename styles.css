@@ -1193,3 +1193,49 @@ html[data-theme="contrast"] select{border-width:2px}
 html[data-theme="contrast"] .event-detail,
 html[data-theme="contrast"] .gt-sub,
 html[data-theme="contrast"] .ann-body{color:#2a2a31}
+
+/* ---------- DARK: comprehensive neutral surfaces (bg+text only; accent borders preserved) ---------- */
+html[data-theme="dark"] .vote-summary-bar,
+html[data-theme="dark"] .filter-btn,
+html[data-theme="dark"] .vote-btn,
+html[data-theme="dark"] .ann-item,
+html[data-theme="dark"] .season-tab,
+html[data-theme="dark"] .cond-card,
+html[data-theme="dark"] .cond-name-input,
+html[data-theme="dark"] .log-stat,
+html[data-theme="dark"] .progress-bar-wrap,
+html[data-theme="dark"] .group-chip,
+html[data-theme="dark"] .attendance-table-wrap,
+html[data-theme="dark"] .kanban-card,
+html[data-theme="dark"] .admin-att-item,
+html[data-theme="dark"] .admin-att-item-ext,
+html[data-theme="dark"] .gt-gitem,
+html[data-theme="dark"] .gt-evtype,
+html[data-theme="dark"] .gt-fitem,
+html[data-theme="dark"] .gt-table-wrap,
+html[data-theme="dark"] .gt-roster-card,
+html[data-theme="dark"] .gt-stat-box,
+html[data-theme="dark"] .gt-pk,
+html[data-theme="dark"] .gt-autocomplete-list,
+html[data-theme="dark"] .gt-claim-chip,
+html[data-theme="dark"] .rsvp-idselect,
+html[data-theme="dark"] .gt-filters input[type=date],
+html[data-theme="dark"] .gt-filters input[type=text],
+html[data-theme="dark"] .gt-filters select,
+html[data-theme="dark"] .gt-lock input,
+html[data-theme="dark"] .voter-bar input,
+html[data-theme="dark"] .login-form input,
+html[data-theme="dark"] .form-group input,
+html[data-theme="dark"] .form-group textarea,
+html[data-theme="dark"] .form-group select,
+html[data-theme="dark"] .log-field input,
+html[data-theme="dark"] .log-field textarea,
+html[data-theme="dark"] .log-field select,
+html[data-theme="dark"] .gt-bigbtn{background:#1e1c26;color:var(--text);border-color:#2a2833}
+html[data-theme="dark"] .gt-gitem,
+html[data-theme="dark"] .gt-fitem{color:var(--text)}
+html[data-theme="dark"] .gt-pcard.gk{background:#2a2410;border-color:#7a5a12}
+html[data-theme="dark"] .season-tab.active{background:var(--purple);color:#fff;border-color:var(--purple)}
+html[data-theme="dark"] .gt-table th{background:#1a1922}
+html[data-theme="dark"] .gt-table td,html[data-theme="dark"] .gt-table th{border-color:#2a2833}
+html[data-theme="dark"] table,html[data-theme="dark"] .att-overview-table td{color:var(--text)}
