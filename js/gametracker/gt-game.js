@@ -787,6 +787,42 @@ function gtDeleteEvent(eid) {
     showToast('Event deleted.');
   }).catch(function(err){ showToast('Error: ' + err.message); });
 }
+function gtOpenAddEvent(gid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var g = gtGame(gid); if (!g) return;
+  var typeOpts = GT_EVENT_TYPES.map(function(t){ return '<option value="' + t.id + '">' + t.emoji + ' ' + t.label + '</option>'; }).join('') +
+    '<option value="opponent_goal">😣 Opponent Goal</option>';
+  var playerOpts = gtAvailIds(gid).map(function(id){ return gtP(id); }).filter(Boolean)
+    .sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); })
+    .map(function(pl){ return '<option value="' + pl.id + '">' + (pl.jersey_number != null ? '#' + pl.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pl.id)) + '</option>'; }).join('');
+  gtOpenModal(
+    '<h3><span>➕ Add Event</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<label>Event type</label><select id="gt-add-type" onchange="var o=this.value.indexOf(\'opponent\')===0;var r=document.getElementById(\'gt-add-prow\');if(r)r.style.display=o?\'none\':\'\'">' + typeOpts + '</select>' +
+    '<div id="gt-add-prow"><label>Player</label><select id="gt-add-player">' + playerOpts + '</select></div>' +
+    '<label>Time on game clock (MM:SS as shown in the timeline)</label><input type="text" id="gt-add-time" value="0:00" placeholder="MM:SS"/>' +
+    '<label>Notes</label><textarea id="gt-add-notes"></textarea>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveAddEvent(\'' + gid + '\')">Add to timeline</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtSaveAddEvent(gid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  var type = document.getElementById('gt-add-type').value;
+  var isOpp = type.indexOf('opponent') === 0;
+  var total = gtParseMMSS(document.getElementById('gt-add-time').value);
+  if (total == null) { showToast('Time must be MM:SS.'); return; }
+  var ps = gtNominalToPeriodSec(g, total);
+  var pid = isOpp ? '' : ((document.getElementById('gt-add-player') || {}).value || '');
+  if (!isOpp && !pid) { showToast('Pick a player.'); return; }
+  var notes = document.getElementById('gt-add-notes').value.trim();
+  db.collection('gt_events').add({ game_id: gid, player_id: pid, event_type: type, game_clock_seconds: ps.sec, period: ps.period, notes: notes, youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(function(){
+      if (type === 'goal') return gtBumpScore(g, 'us', 1);
+      if (type === 'own_goal' || type === 'opponent_goal') return gtBumpScore(g, 'them', 1);
+    })
+    .then(function(){ showToast('Event added to timeline ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
 function gtOpenEditEvent(eid) {
   if (!gtCanEdit()) return;
   var e = GT.events.find(function(x){ return x.id === eid; });
@@ -810,8 +846,7 @@ function gtOpenEditEvent(eid) {
       ? '<div class="gm-clock">' + gtEventType(e.event_type).emoji + ' ' + gtEsc(gtTheirName(g)) + ' — ' + gtEsc(gtEventType(e.event_type).label) + '</div>'
       : '<label>Event type</label><select id="gt-edit-type">' + typeOpts + '</select>' +
         '<label>Player</label><select id="gt-edit-player">' + playerOpts + '</select>') +
-    '<label>Period</label><select id="gt-edit-period">' + periodOpts + '</select>' +
-    '<label>Time on game clock (MM:SS within period)</label><input type="text" id="gt-edit-time" value="' + gtFmtMMSS(e.game_clock_seconds || 0) + '" placeholder="MM:SS"/>' +
+    '<label>Time on game clock (MM:SS as shown in the timeline)</label><input type="text" id="gt-edit-time" value="' + gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + '" placeholder="MM:SS"/>' +
     '<label>Notes</label><textarea id="gt-edit-notes">' + gtEsc(e.notes || '') + '</textarea>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveEditEvent(\'' + eid + '\')">💾 Save Changes</button>' +
     '<button class="gt-minibtn danger" style="padding:10px 16px" onclick="gtDeleteEvent(\'' + eid + '\');gtCloseModal()">🗑 Delete</button></div>'
@@ -823,11 +858,11 @@ function gtSaveEditEvent(eid) {
   if (!e) return;
   var g = gtGame(e.game_id);
   var isOpp = (e.event_type || '').indexOf('opponent') === 0;
-  var sec = gtParseMMSS(document.getElementById('gt-edit-time').value);
-  if (sec == null) { showToast('Time must be MM:SS.'); return; }
-  var period = parseInt(document.getElementById('gt-edit-period').value, 10) || 1;
+  var _total = gtParseMMSS(document.getElementById('gt-edit-time').value);
+  if (_total == null) { showToast('Time must be MM:SS.'); return; }
+  var _ps = gtNominalToPeriodSec(g, _total);
   var notes = document.getElementById('gt-edit-notes').value.trim();
-  var upd = { game_clock_seconds: sec, period: period, notes: notes };
+  var upd = { game_clock_seconds: _ps.sec, period: _ps.period, notes: notes };
   var newType = e.event_type;
   if (!isOpp) {
     newType = document.getElementById('gt-edit-type').value || e.event_type;
@@ -947,6 +982,36 @@ function gtSaveMassSub(gid, clock, period) {
     batch.set(ref, { game_id: gid, player_out_id: offs[i], player_in_id: ons[i], position: posByPid[ons[i]] || '', game_clock_seconds: clock, period: period, created_at: ts });
   }
   batch.commit().then(function(){ showToast(ons.length + ' substitution' + (ons.length === 1 ? '' : 's') + ' applied 🔄'); gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtOpenSubEditor(sid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var sb = GT.subs.find(function(x){ return x.id === sid; });
+  if (!sb) return;
+  var g = gtGame(sb.game_id); if (!g) return;
+  var isOn = !!sb.player_in_id;
+  var nominal = gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds));
+  gtOpenModal(
+    '<h3>✏️ Edit Substitution<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted)">' + gtEsc(gtSubDesc(sb)) + '</p>' +
+    '<label>Time on game clock (MM:SS as shown in the timeline)</label><input type="text" id="gt-sub-etime" value="' + nominal + '" placeholder="MM:SS"/>' +
+    (isOn ? '<label>Position</label><select id="gt-subpos-edit">' + gtPositionOptions(sb.position || '') + '</select>' : '') +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveSubEdit(\'' + sid + '\')">💾 Save</button><button class="gt-minibtn danger" onclick="gtDeleteSub(\'' + sid + '\')">🗑 Delete</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtSaveSubEdit(sid) {
+  if (!gtCanEdit()) return;
+  var sb = GT.subs.find(function(x){ return x.id === sid; });
+  if (!sb) return;
+  var g = gtGame(sb.game_id);
+  var total = gtParseMMSS(document.getElementById('gt-sub-etime').value);
+  if (total == null) { showToast('Time must be MM:SS.'); return; }
+  var ps = gtNominalToPeriodSec(g, total);
+  var upd = { game_clock_seconds: ps.sec, period: ps.period };
+  var posEl = document.getElementById('gt-subpos-edit');
+  if (posEl) upd.position = posEl.value;
+  db.collection('gt_subs').doc(sid).update(upd)
+    .then(function(){ showToast('Substitution updated ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtEditSubPosition(sid) {
   if (!gtCanEdit()) return;

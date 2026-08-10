@@ -147,8 +147,10 @@ function gtChatTime(ts) {
 function gtChatMsgsHtml(gid) {
   var msgs = gtGameChat(gid);
   if (!msgs.length) return '<div class="gt-chat-empty">No messages yet. Say hi 👋</div>';
+  var g = gtGame(gid);
   return msgs.map(function(m){
-    return '<div class="gt-chat-msg">' + (gtCanEdit() ? '<button class="gt-chat-del" title="Delete message" onclick="gtDeleteChat(\'' + m.id + '\')">🗑</button>' : '') + '<span class="cm-name">' + gtEsc(m.name || '') + '</span> <span class="cm-time">' + gtChatTime(m.created_at) + '</span><div class="cm-text">' + gtEsc(m.text || '') + '</div></div>';
+    var when = (m.game_clock_seconds != null && g) ? (gtFmtMMSS(gtDisplayCumSec(g, m.game_period || 1, m.game_clock_seconds)) + "'") : gtChatTime(m.created_at);
+    return '<div class="gt-chat-msg">' + (gtCanEdit() ? '<button class="gt-chat-del" title="Delete message" onclick="gtDeleteChat(\'' + m.id + '\')">🗑</button>' : '') + '<span class="cm-name">' + gtEsc(m.name || '') + '</span> <span class="cm-time">' + when + '</span><div class="cm-text">' + gtEsc(m.text || '') + '</div></div>';
   }).join('');
 }
 function gtChatPanelHtml(gid) {
@@ -170,7 +172,10 @@ function gtSendChat(gid) {
   var inp = document.getElementById('gt-chat-input');
   var text = (inp ? inp.value : '').trim();
   if (!text) return;
-  db.collection('gt_chat').add({ game_id: gid, name: name, text: text, created_at: firebase.firestore.FieldValue.serverTimestamp() })
+  var _g = gtGame(gid);
+  var _chat = { game_id: gid, name: name, text: text, created_at: firebase.firestore.FieldValue.serverTimestamp() };
+  if (_g) { _chat.game_period = _g.current_period || 1; _chat.game_clock_seconds = (typeof gtClockSeconds === 'function') ? gtClockSeconds(_g) : 0; }
+  db.collection('gt_chat').add(_chat)
     .then(function(){ GT.chatDraft = ''; var i = document.getElementById('gt-chat-input'); if (i) { i.value = ''; i.focus(); } })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -364,6 +369,16 @@ function gtDisplayCumSec(g, period, sec) {
   if (!g) return sec || 0;
   var dur = (g.period_duration_minutes || 0) * 60;
   return ((period || 1) - 1) * dur + (sec || 0);
+}
+// Convert a full-game (timeline) time in seconds into a period + within-period seconds,
+// the inverse of gtDisplayCumSec, so "what you type is what the timeline shows".
+function gtNominalToPeriodSec(g, totalSec) {
+  var dur = ((g && g.period_duration_minutes) || 0) * 60;
+  var np = (g && g.num_periods) || 2;
+  if (dur <= 0) return { period: 1, sec: Math.max(0, totalSec || 0) };
+  var period = Math.min(np, Math.floor((totalSec || 0) / dur) + 1);
+  if (period < 1) period = 1;
+  return { period: period, sec: Math.max(0, (totalSec || 0) - (period - 1) * dur) };
 }
 function gtTotalSeconds(g) {
   // total actual seconds played so far in the game

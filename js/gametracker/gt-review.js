@@ -36,7 +36,7 @@ function gtRenderReview(view, gameId) {
   html += (typeof gtParentSharePanelHtml === 'function' ? gtParentSharePanelHtml(g) : '');
   html += gtStartingXiHtml(g.id);
   // timeline with period markers
-  html += '<div class="section-title" style="margin-bottom:12px">⏱ Event Timeline' + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap an event to edit or delete</span>' : '') + '</div>';
+  html += '<div class="section-title" style="margin-bottom:12px">⏱ Event Timeline' + (canEdit ? ' <button class="gt-minibtn" style="padding:3px 12px;font-size:.72rem" onclick="gtOpenAddEvent(\'' + g.id + '\')">➕ Add event</button> <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap an event to edit or delete</span>' : '') + '</div>';
   if (!events.length) html += '<div class="gt-empty">No events were logged in this game.</div>';
   else {
     var lastPeriod = 0;
@@ -57,10 +57,8 @@ function gtRenderReview(view, gameId) {
     html += '<div class="section-title" style="margin:22px 0 12px">🔄 Substitutions</div><div class="gt-feed">' +
       subLog.map(function(sb) {
         var posBtn = '';
-        if (sb.player_in_id) {
-          if (canEdit) posBtn = ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtEditSubPosition(\'' + sb.id + '\')">✏️ Pos</button>';
-          else if (_mineSub.indexOf(sb.player_in_id) >= 0) posBtn = ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtParentEditSubPos(\'' + sb.id + '\')">✏️ My position</button>';
-        }
+        if (canEdit) posBtn = ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtOpenSubEditor(\'' + sb.id + '\')">✏️ Edit</button>';
+        else if (sb.player_in_id && _mineSub.indexOf(sb.player_in_id) >= 0) posBtn = ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtParentEditSubPos(\'' + sb.id + '\')">✏️ My position</button>';
         return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>' + gtSubRowText(sb) + posBtn + '</div>';
       }).join('') + '</div>';
   }
