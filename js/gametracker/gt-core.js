@@ -15,6 +15,7 @@ var GT = {
   openFeedItem: null,
   serverOffset: 0,
   upcomingCollapsed: false,
+  pastCollapsed: false,
   seasonSort: { col: 'goals', dir: -1 },
   seasonShowGuests: false,
   seasonFilters: { type: 'all', from: '', to: '', opp: '', team: '', round: '' },

@@ -252,12 +252,23 @@ function gtRenderHome(view) {
       '<div class="home-collapse-body"><div class="gt-glist">' + upcoming.map(gtGameItem).join('') + '</div></div></div>';
   }
   if (past.length) {
-    html += '<div class="section-title" style="margin-bottom:14px">📜 Past Games</div><div class="gt-glist">' + past.map(gtGameItem).join('') + '</div>';
+    var pcol = GT.pastCollapsed;
+    html += '<div class="ann-section' + (pcol ? ' collapsed' : '') + '" id="gt-past-sec">' +
+      '<div class="section-header" style="margin-bottom:14px"><div class="section-title" style="margin:0">📜 Past Games (' + past.length + ')</div>' +
+      '<button class="home-expand-btn" id="gt-past-toggle" onclick="gtTogglePast()">' + (pcol ? 'Expand' : 'Collapse') + '</button></div>' +
+      '<div class="home-collapse-body"><div class="gt-glist">' + past.map(gtGameItem).join('') + '</div></div></div>';
   }
   if (!inProgress.length && !upcoming.length && !past.length) {
     html += '<div class="gt-empty">No games scheduled currently, check back.</div>';
   }
   view.innerHTML = html;
+}
+function gtTogglePast() {
+  GT.pastCollapsed = !GT.pastCollapsed;
+  var el = document.getElementById('gt-past-sec');
+  if (el) el.classList.toggle('collapsed', GT.pastCollapsed);
+  var b = document.getElementById('gt-past-toggle');
+  if (b) b.textContent = GT.pastCollapsed ? 'Expand' : 'Collapse';
 }
 function gtToggleUpcoming() {
   GT.upcomingCollapsed = !GT.upcomingCollapsed;
