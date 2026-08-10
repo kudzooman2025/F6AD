@@ -1296,3 +1296,12 @@ html[data-theme="dark"] .gt-recon-mo.io-u{background:#26242f;border-color:#3a384
 .gt-le-row select{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.8rem;font-family:inherit;background:#fff;color:var(--text)}
 html[data-theme="dark"] .gt-le-row{border-color:#2a2833}
 html[data-theme="dark"] .gt-le-row select{background:#1e1c26;color:var(--text);border-color:#3a3846}
+
+/* Coach reconciliation action buttons */
+.gt-recon-stats{display:flex;flex-direction:column;gap:5px;margin-top:5px}
+.gt-recon-stat{display:inline-flex;align-items:center;gap:6px;font-size:.82rem}
+.gt-recon-ok,.gt-recon-no{border:none;border-radius:6px;padding:1px 8px;font-size:.72rem;font-weight:800;cursor:pointer;font-family:inherit}
+.gt-recon-ok{background:#16a34a;color:#fff;margin-left:6px}
+.gt-recon-no{background:#e5e7eb;color:#991b1b}
+.gt-recon-line .gt-recon-ok{padding:2px 10px}
+html[data-theme="dark"] .gt-recon-no{background:#3a1717;color:#f3a3a3}

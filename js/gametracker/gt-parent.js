@@ -301,42 +301,85 @@ function gtParentReviewSectionHtml(g) {
 }
 
 
-// ---- review: COACH reconciliation (staff only) — items families sent for review ----
+// ---- review: COACH reconciliation (staff only) — confirm / edit what families sent ----
 function gtParentCoachReviewHtml(g) {
   if (!g || !gtCanEdit()) return '';
   var items = gtParentEventsFor(g.id).filter(function(e){ return e.visibility === 'coach'; });
   if (!items.length) return '';
   var byPlayer = {};
   items.forEach(function(e){ (byPlayer[e.player_id] = byPlayer[e.player_id] || []).push(e); });
-  var html = '<div class="section-title" style="margin:26px 0 12px">🔎 Player/Parent Review <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">sent for reconciliation — not in team totals</span></div>';
+  var html = '<div class="section-title" style="margin:26px 0 12px">🔎 Player/Parent Review <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">confirm or edit what families sent — nothing counts until you confirm</span></div>';
   Object.keys(byPlayer).forEach(function(pid){
     var evs = byPlayer[pid];
     var authors = {}; evs.forEach(function(e){ authors[e.author_token] = e.author_name || 'Someone'; });
-    var coachIv = (typeof gtOnFieldIntervals === 'function') ? null : null;
-    html += '<div class="gt-recon"><div class="gt-recon-name">' + gtEsc(gtPlayerName(pid)) + '</div>';
-    // coach's official on-field windows for comparison
+    html += '<div class="gt-recon"><div class="gt-recon-name">' + gtEsc(gtPlayerName(pid)) + '<button class="gt-minibtn" style="float:right;padding:2px 9px;font-size:.68rem" onclick="gtCoachClearReview(\'' + g.id + '\',\'' + pid + '\')">Clear review</button></div>';
     var official = (typeof gtOnFieldIntervals === 'function') ? gtOnFieldIntervals(g.id, pid) : [];
     html += '<div class="gt-recon-official">Coach record (from subs): <strong>' + gtFmtIntervals(g, official) + '</strong> · ' + Math.round((gtMinutesMap(g.id)[pid] || 0) / 60) + ' min</div>';
     Object.keys(authors).forEach(function(tok){
       var mine = evs.filter(function(e){ return e.author_token === tok; });
       var inplay = mine.filter(function(e){ return e.type === 'in_play'; });
-      var tally = { S: 0, NS: 0, U: 0 }; inplay.forEach(function(e){ tally[e.outcome || 'U']++; });
+      var stats = mine.filter(function(e){ return gtParentType(e.type).stat; });
+      var notes = mine.filter(function(e){ return e.type === 'note'; });
       var iv = gtParentReviewIntervals(g.id, pid, tok);
+      var ivMin = 0; iv.forEach(function(x){ ivMin += (x[1] - x[0]); }); ivMin = Math.round(ivMin / 60);
       html += '<div class="gt-recon-author"><div class="gt-recon-by">👤 ' + gtEsc(authors[tok]) + '</div>';
-      if (iv.length) html += '<div class="gt-recon-line">Their on-field: <strong>' + gtFmtIntervals(g, iv) + '</strong></div>';
+      if (iv.length) {
+        html += '<div class="gt-recon-line">Their on-field: <strong>' + gtFmtIntervals(g, iv) + '</strong> (' + ivMin + ' min) ' +
+          '<button class="gt-minibtn gt-recon-ok" onclick="gtCoachApplyReviewMinutes(\'' + g.id + '\',\'' + pid + '\',\'' + tok + '\',' + ivMin + ')">✓ Use as ' + ivMin + ' min</button></div>';
+      }
+      if (stats.length) {
+        html += '<div class="gt-recon-line">Stats to confirm:</div><div class="gt-recon-stats">' + stats.map(function(e){
+          var t = gtParentType(e.type);
+          return '<span class="gt-recon-stat">[' + gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + "'] " + t.emoji + ' ' + gtEsc(t.label) +
+            '<button class="gt-recon-ok" title="Add to official team stats" onclick="gtCoachConfirmStat(\'' + e.id + '\')">✓</button>' +
+            '<button class="gt-recon-no" title="Dismiss" onclick="gtCoachDismissItem(\'' + e.id + '\')">✕</button></span>';
+        }).join('') + '</div>';
+      }
       if (inplay.length) {
-        html += '<div class="gt-recon-line">In-play: <span class="io-ok">' + tally.S + ' S</span> · <span class="io-no">' + tally.NS + ' NS</span> · <span class="io-u">' + tally.U + ' U</span></div>';
+        var tally = { S: 0, NS: 0, U: 0 }; inplay.forEach(function(e){ tally[e.outcome || 'U']++; });
+        html += '<div class="gt-recon-line">In-play (film review): <span class="io-ok">' + tally.S + ' S</span> · <span class="io-no">' + tally.NS + ' NS</span> · <span class="io-u">' + tally.U + ' U</span></div>';
         html += '<div class="gt-recon-moments">' + inplay.slice().sort(function(a,b){ return gtCumSec(g,a.period,a.game_clock_seconds)-gtCumSec(g,b.period,b.game_clock_seconds); }).map(function(e){
           return '<span class="gt-recon-mo io-' + (e.outcome==='S'?'ok':e.outcome==='NS'?'no':'u') + '">[' + gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + "'] " + (e.outcome || 'U') + '</span>';
         }).join('') + '</div>';
       }
-      var others = mine.filter(function(e){ return e.type !== 'in_play' && e.type !== 'sub_on' && e.type !== 'sub_off' && e.type !== 'started'; });
-      if (others.length) html += '<div class="gt-recon-line">Also noted: ' + others.map(function(e){ var t=gtParentType(e.type); return t.emoji + ' ' + gtEsc(e.type==='note'?('“'+e.text+'”'):t.label); }).join(' · ') + '</div>';
+      if (notes.length) html += '<div class="gt-recon-line">Notes: ' + notes.map(function(e){ return '\u201c' + gtEsc(e.text) + '\u201d'; }).join(' · ') + '</div>';
       html += '</div>';
     });
     html += '</div>';
   });
   return html;
+}
+// Confirm a family-submitted stat into the official team totals (makes it public).
+function gtCoachConfirmStat(id) {
+  if (!gtCanEdit()) return;
+  db.collection('gt_parent_events').doc(id).set({ visibility: 'public', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .then(function(){ showToast('Added to official stats \u2713'); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Dismiss a single submitted item.
+function gtCoachDismissItem(id) {
+  if (!gtCanEdit()) return;
+  db.collection('gt_parent_events').doc(id).delete().then(function(){ showToast('Dismissed'); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Accept a family's on-field time as the player's official minutes, and clear that submission.
+function gtCoachApplyReviewMinutes(gid, pid, tok, mins) {
+  if (!gtCanEdit()) return;
+  if (!window.confirm('Set ' + gtPlayerShort(pid) + "'s official minutes to " + mins + ' based on the family\'s on-field times?')) return;
+  var ae = gtGameAvailEntry(gid, pid);
+  var data = { minutes_override: mins };
+  var op;
+  if (ae) op = db.collection('gt_availability').doc(ae.id).set(data, { merge: true });
+  else { data.game_id = gid; data.player_id = pid; data.available = true; data.notes = ''; data.created_at = firebase.firestore.FieldValue.serverTimestamp(); op = db.collection('gt_availability').add(data); }
+  var subEvs = gtParentEventsFor(gid, pid).filter(function(e){ return e.author_token === tok && e.visibility === 'coach' && (e.type === 'sub_on' || e.type === 'sub_off' || e.type === 'started'); });
+  op.then(function(){ var b = db.batch(); subEvs.forEach(function(e){ b.delete(db.collection('gt_parent_events').doc(e.id)); }); return b.commit(); })
+    .then(function(){ showToast('Minutes set to ' + mins + ' \u2713'); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Clear all review items a family sent for one player.
+function gtCoachClearReview(gid, pid) {
+  if (!gtCanEdit()) return;
+  if (!window.confirm('Clear all review items submitted for ' + gtPlayerShort(pid) + '?')) return;
+  var items = gtParentEventsFor(gid, pid).filter(function(e){ return e.visibility === 'coach'; });
+  var b = db.batch(); items.forEach(function(e){ b.delete(db.collection('gt_parent_events').doc(e.id)); });
+  b.commit().then(function(){ showToast('Review cleared'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 
 // ===================== FILM SESSION (post-game watch-back) =====================
