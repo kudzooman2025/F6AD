@@ -1315,3 +1315,15 @@ html[data-theme="dark"] .gt-recon-no{background:#3a1717;color:#f3a3a3}
 html[data-theme="dark"] .gt-feedback-card{background:#2a1414;border-color:#7a2626}
 html[data-theme="dark"] .gt-feedback-head{color:#f3a3a3}
 html[data-theme="dark"] .gt-feedback-note{color:#f3b3b3}
+
+/* Game end-reason (ended before full time) */
+.gt-endreason-list{display:flex;flex-direction:column;gap:8px}
+.gt-endreason-btn{text-align:left;border:1px solid var(--border-strong);background:#fff;color:var(--text);border-radius:10px;padding:11px 14px;font-size:.92rem;font-weight:600;cursor:pointer;font-family:inherit}
+.gt-endreason-btn:hover{background:#f2f1f5;border-color:var(--purple)}
+.gt-endreason-badge{margin-top:8px;font-size:.85rem;font-weight:700;color:#b45309;background:#fef3c7;border:1px solid #fcd34d;border-radius:999px;padding:4px 12px;display:inline-block}
+.gt-endreason-badge a{color:#92400e}
+.gt-st-early{background:#fef3c7;color:#92400e}
+html[data-theme="dark"] .gt-endreason-btn{background:#1e1c26;border-color:#3a3846;color:var(--text)}
+html[data-theme="dark"] .gt-endreason-btn:hover{background:#26242f}
+html[data-theme="dark"] .gt-endreason-badge{background:#3a2c10;border-color:#7a5a12;color:#f5d08a}
+html[data-theme="dark"] .gt-st-early{background:#3a2c10;color:#f5d08a}

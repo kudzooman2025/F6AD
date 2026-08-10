@@ -629,12 +629,47 @@ function gtEndGame(gid) {
   if (tied && g.phase !== 'pk') { gtOpenDrawDecision(gid, g.phase === 'ot'); return; }
   gtFinishGame(gid);
 }
-function gtFinishGame(gid) {
+var GT_END_REASONS = [
+  ['', '✅ Full time (normal finish)'],
+  ['Weather / lightning', '🌩️ Weather / lightning'],
+  ['Field conditions', '🚧 Field conditions'],
+  ['Abandoned by referee', '🛑 Abandoned by referee'],
+  ['Injury stoppage', '🚑 Injury stoppage'],
+  ['Curfew / time limit', '⏰ Curfew / time limit'],
+  ['Mercy rule', '➗ Mercy rule'],
+  ['__other__', '✏️ Other…']
+];
+function gtFinishGame(gid) { gtOpenEndReason(gid); }
+function gtOpenEndReason(gid, edit) {
+  var g = gtGame(gid); if (!g) return;
+  var btns = GT_END_REASONS.map(function(r){ return '<button class="gt-endreason-btn" onclick="gtChooseEndReason(\'' + gid + '\',\'' + r[0] + '\',' + (edit ? 'true' : 'false') + ')">' + r[1] + '</button>'; }).join('');
+  gtOpenModal(
+    '<h3>🏁 End Game<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted);margin-bottom:12px">' + (edit ? 'Tag why this game ended before full time.' : 'How did the game end? If it stopped before full time, tag why so it\'s recorded on the game.') + '</p>' +
+    '<div class="gt-endreason-list">' + btns + '</div>'
+  );
+}
+function gtChooseEndReason(gid, reason, edit) {
+  if (reason === '__other__') {
+    var t = window.prompt('Reason the game ended early:', '');
+    if (t === null) return;
+    reason = (t || '').trim() || 'Ended early';
+  }
+  if (edit) gtApplyEndReason(gid, reason); else gtDoFinishGame(gid, reason);
+}
+// Set/clear the end reason on an already-finished game (does not touch the clock/score).
+function gtApplyEndReason(gid, reason) {
+  if (!gtCanEdit()) return;
+  gtGameUpdate(gid, { end_reason: reason ? reason : firebase.firestore.FieldValue.delete() })
+    .then(function(){ showToast(reason ? 'Tagged: ' + reason : 'End reason cleared'); gtCloseModal(); });
+}
+function gtDoFinishGame(gid, reason) {
   var g = gtGame(gid); if (!g) return;
   var pe = Object.assign({}, g.period_elapsed || {});
   if (g.status !== 'between_periods' && g.status !== 'pk_shootout') pe[g.current_period || 1] = gtClockSeconds(g);
-  gtGameUpdate(gid, { status: 'complete', period_elapsed: pe, clock_elapsed_seconds: 0, clock_started_at: null })
-    .then(function() { gtGo('/gametracker/review/' + gid); });
+  var upd = { status: 'complete', period_elapsed: pe, clock_elapsed_seconds: 0, clock_started_at: null };
+  upd.end_reason = reason ? reason : firebase.firestore.FieldValue.delete();
+  gtGameUpdate(gid, upd).then(function() { gtCloseModal(); gtGo('/gametracker/review/' + gid); });
 }
 
 // ---------- event logging ----------

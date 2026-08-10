@@ -15,6 +15,7 @@ function gtRenderReview(view, gameId) {
     '<div style="font-size:1.25rem;font-weight:900;margin-top:8px">' + gtEsc(gtHomeName(g)) + ' <span style="font-size:1.6rem;color:var(--purple)">' + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span> ' + gtEsc(gtAwayName(g)) + '</div>' +
     (g.pk_winner ? '<div style="font-size:.85rem;color:var(--muted);margin-top:2px">🥅 Penalties: ' + gtEsc(gtOurName(g)) + ' ' + gtPkScore(g).us + '–' + gtPkScore(g).them + ' ' + gtEsc(gtTheirName(g)) + '</div>' : '') +
     (res ? '<div style="margin-top:6px"><span class="gt-result-' + res.toLowerCase() + '" style="font-size:1rem">' + (res === 'W' ? '✅ Win' : res === 'L' ? '❌ Loss' : '➖ Draw') + '</span></div>' : '<div style="margin-top:6px">' + gtStatusPill(g) + (canEdit ? ' <a href="#/gametracker/live/' + g.id + '" style="font-size:.8rem;font-weight:700">Open live view →</a>' : '') + '</div>') +
+    (g.end_reason ? '<div class="gt-endreason-badge">⛔ Ended before full time — ' + gtEsc(g.end_reason) + (canEdit ? ' <a onclick="gtOpenEndReason(\'' + g.id + '\',true)" style="font-weight:700">edit</a>' : '') + '</div>' : (canEdit && g.status === 'complete' ? '<div style="margin-top:6px"><a class="gt-minibtn" style="padding:2px 10px;font-size:.72rem" onclick="gtOpenEndReason(\'' + g.id + '\',true)">⛔ Tag early end</a></div>' : '')) +
     '</div>';
   var _tUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
   if (_tUrl) html += '<a class="gt-tourn-link" href="' + gtAttr(_tUrl) + '" target="_blank" rel="noopener">🔗 Official tournament site →</a>';
