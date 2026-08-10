@@ -230,7 +230,9 @@ function gtGameItem(g) {
 
 // ---------- LANDING ----------
 function gtRenderHome(view) {
-  var live = GT.games.filter(function(g){ return g.status !== 'complete'; })
+  var inProgress = GT.games.filter(function(g){ return g.status === 'in_progress' || g.status === 'paused' || g.status === 'between_periods'; })
+    .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
+  var upcoming = GT.games.filter(function(g){ return g.status !== 'complete' && g.status !== 'in_progress' && g.status !== 'paused' && g.status !== 'between_periods'; })
     .sort(function(a, b){ return gtGameSortMs(a) - gtGameSortMs(b); });
   var past = GT.games.filter(function(g){ return g.status === 'complete'; })
     .sort(function(a, b){ return gtGameSortMs(b) - gtGameSortMs(a); });
@@ -238,16 +240,30 @@ function gtRenderHome(view) {
     '<div class="gt-title">⚽ GameTracker</div>' +
     '<div class="gt-sub">Log live game events, track the clock, and build season stats.</div>';
   if (gtCanEdit()) html += '<button class="btn-primary" style="margin:2px 0 20px" onclick="gtStartSetup()">➕ Create New Game</button>';
-  if (live.length) {
+  if (inProgress.length) {
     html += '<div class="section-title" style="margin-bottom:14px">🟢 Games In Progress</div><div class="gt-glist" style="margin-bottom:28px">' +
-      live.map(gtGameItem).join('') + '</div>';
+      inProgress.map(gtGameItem).join('') + '</div>';
+  }
+  if (upcoming.length) {
+    var col = GT.upcomingCollapsed;
+    html += '<div class="ann-section' + (col ? ' collapsed' : '') + '" id="gt-upcoming-sec" style="margin-bottom:28px">' +
+      '<div class="section-header" style="margin-bottom:14px"><div class="section-title" style="margin:0">📅 Upcoming Games (' + upcoming.length + ')</div>' +
+      '<button class="home-expand-btn" id="gt-upcoming-toggle" onclick="gtToggleUpcoming()">' + (col ? 'Expand' : 'Collapse') + '</button></div>' +
+      '<div class="home-collapse-body"><div class="gt-glist">' + upcoming.map(gtGameItem).join('') + '</div></div></div>';
   }
   if (past.length) {
     html += '<div class="section-title" style="margin-bottom:14px">📜 Past Games</div><div class="gt-glist">' + past.map(gtGameItem).join('') + '</div>';
   }
-  if (!live.length && !past.length) {
+  if (!inProgress.length && !upcoming.length && !past.length) {
     html += '<div class="gt-empty">No games scheduled currently, check back.</div>';
   }
   view.innerHTML = html;
+}
+function gtToggleUpcoming() {
+  GT.upcomingCollapsed = !GT.upcomingCollapsed;
+  var el = document.getElementById('gt-upcoming-sec');
+  if (el) el.classList.toggle('collapsed', GT.upcomingCollapsed);
+  var b = document.getElementById('gt-upcoming-toggle');
+  if (b) b.textContent = GT.upcomingCollapsed ? 'Expand' : 'Collapse';
 }
 
