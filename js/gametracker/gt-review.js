@@ -32,6 +32,7 @@ function gtRenderReview(view, gameId) {
     '<div class="gt-stat-box"><div class="sb-num">' + totals.tackle + '</div><div class="sb-label">Tackles</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + (totals.yellow_card + totals.red_card) + '</div><div class="sb-label">Cards</div></div>' +
     '</div>';
+  html += (typeof gtParentFeedbackHtml === 'function' ? gtParentFeedbackHtml(g) : '');
   html += (typeof gtParentSharePanelHtml === 'function' ? gtParentSharePanelHtml(g) : '');
   html += gtStartingXiHtml(g.id);
   // timeline with period markers

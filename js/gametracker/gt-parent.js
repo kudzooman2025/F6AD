@@ -325,14 +325,15 @@ function gtParentCoachReviewHtml(g) {
       html += '<div class="gt-recon-author"><div class="gt-recon-by">👤 ' + gtEsc(authors[tok]) + '</div>';
       if (iv.length) {
         html += '<div class="gt-recon-line">Their on-field: <strong>' + gtFmtIntervals(g, iv) + '</strong> (' + ivMin + ' min) ' +
-          '<button class="gt-minibtn gt-recon-ok" onclick="gtCoachApplyReviewMinutes(\'' + g.id + '\',\'' + pid + '\',\'' + tok + '\',' + ivMin + ')">✓ Use as ' + ivMin + ' min</button></div>';
+          '<button class="gt-minibtn gt-recon-ok" onclick="gtCoachApplyReviewMinutes(\'' + g.id + '\',\'' + pid + '\',\'' + tok + '\',' + ivMin + ')">✓ Use as ' + ivMin + ' min</button>' +
+          '<button class="gt-recon-no" style="margin-left:6px" onclick="gtCoachRejectOnfield(\'' + g.id + '\',\'' + pid + '\',\'' + tok + '\')">✕ Reject</button></div>';
       }
       if (stats.length) {
         html += '<div class="gt-recon-line">Stats to confirm:</div><div class="gt-recon-stats">' + stats.map(function(e){
           var t = gtParentType(e.type);
           return '<span class="gt-recon-stat">[' + gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + "'] " + t.emoji + ' ' + gtEsc(t.label) +
             '<button class="gt-recon-ok" title="Add to official team stats" onclick="gtCoachConfirmStat(\'' + e.id + '\')">✓</button>' +
-            '<button class="gt-recon-no" title="Dismiss" onclick="gtCoachDismissItem(\'' + e.id + '\')">✕</button></span>';
+            '<button class="gt-recon-no" title="Reject (note to family)" onclick="gtCoachDismissItem(\'' + e.id + '\')">✕</button></span>';
         }).join('') + '</div>';
       }
       if (inplay.length) {
@@ -355,10 +356,45 @@ function gtCoachConfirmStat(id) {
   db.collection('gt_parent_events').doc(id).set({ visibility: 'public', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .then(function(){ showToast('Added to official stats \u2713'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
-// Dismiss a single submitted item.
+// Reject a single submitted item, with an optional note back to the family.
 function gtCoachDismissItem(id) {
   if (!gtCanEdit()) return;
-  db.collection('gt_parent_events').doc(id).delete().then(function(){ showToast('Dismissed'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  var reason = window.prompt('Reject this item.\n\nOptional message to the family (why it was rejected):', '');
+  if (reason === null) return;
+  db.collection('gt_parent_events').doc(id).set({ visibility: 'rejected', coach_note: reason || '', coach_name: (gtParentName() || 'Coach'), updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .then(function(){ showToast('Rejected' + (reason ? ' with note to family' : '')); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Reject a family's submitted on-field time, with an optional note back.
+function gtCoachRejectOnfield(gid, pid, tok) {
+  if (!gtCanEdit()) return;
+  var reason = window.prompt('Reject the submitted on-field time.\n\nOptional message to the family (why):', '');
+  if (reason === null) return;
+  var evs = gtParentEventsFor(gid, pid).filter(function(e){ return e.author_token === tok && e.visibility === 'coach' && (e.type === 'sub_on' || e.type === 'sub_off' || e.type === 'started'); });
+  if (!evs.length) return;
+  var b = db.batch();
+  evs.forEach(function(e){ b.set(db.collection('gt_parent_events').doc(e.id), { visibility: 'rejected', coach_note: reason || '', coach_name: (gtParentName() || 'Coach'), updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
+  b.commit().then(function(){ showToast('On-field time rejected' + (reason ? ' with note' : '')); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Family-facing: coach feedback on items they submitted (rejections + notes).
+function gtParentFeedbackHtml(g) {
+  if (!g) return '';
+  var tok = gtParentToken();
+  var rej = gtParentEventsFor(g.id).filter(function(e){ return e.author_token === tok && e.visibility === 'rejected'; })
+    .sort(function(a, b){ return gtCumSec(g, a.period, a.game_clock_seconds) - gtCumSec(g, b.period, b.game_clock_seconds); });
+  if (!rej.length) return '';
+  var byPid = {}; rej.forEach(function(e){ (byPid[e.player_id] = byPid[e.player_id] || []).push(e); });
+  var html = '<div class="gt-feedback-card"><div class="gt-feedback-head">📩 Coach feedback on your review</div>';
+  Object.keys(byPid).forEach(function(pid){
+    html += '<div class="gt-feedback-player"><strong>' + gtEsc(gtPlayerName(pid)) + '</strong></div>';
+    byPid[pid].forEach(function(e){
+      var t = gtParentType(e.type);
+      var what = (e.type === 'sub_on' || e.type === 'sub_off' || e.type === 'started') ? 'on-field time' : (t.emoji + ' ' + t.label + (e.type === 'in_play' ? ' (' + (e.outcome || 'U') + ')' : ''));
+      html += '<div class="gt-feedback-row">❌ <strong>' + gtEsc(what) + '</strong> was not accepted' + (e.coach_note ? ' — <span class="gt-feedback-note">“' + gtEsc(e.coach_note) + '”</span>' : '.') +
+        ' <button class="gt-plog-x" title="Got it" onclick="gtParentDelete(\'' + e.id + '\')">✓</button></div>';
+    });
+  });
+  html += '<div class="gt-parent-note" style="margin-top:8px">Tap ✓ to clear a note once seen. You can re-track and re-send if needed.</div></div>';
+  return html;
 }
 // Accept a family's on-field time as the player's official minutes, and clear that submission.
 function gtCoachApplyReviewMinutes(gid, pid, tok, mins) {

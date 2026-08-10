@@ -1305,3 +1305,13 @@ html[data-theme="dark"] .gt-le-row select{background:#1e1c26;color:var(--text);b
 .gt-recon-no{background:#e5e7eb;color:#991b1b}
 .gt-recon-line .gt-recon-ok{padding:2px 10px}
 html[data-theme="dark"] .gt-recon-no{background:#3a1717;color:#f3a3a3}
+
+/* Family-facing coach feedback on their review submissions */
+.gt-feedback-card{border:1.5px solid #fca5a5;background:#fef2f2;border-radius:14px;padding:14px 16px;margin:0 0 20px}
+.gt-feedback-head{font-weight:800;color:#b91c1c;margin-bottom:8px}
+.gt-feedback-player{font-size:.9rem;margin-top:8px}
+.gt-feedback-row{font-size:.85rem;margin:4px 0;line-height:1.5}
+.gt-feedback-note{color:#7f1d1d;font-style:italic}
+html[data-theme="dark"] .gt-feedback-card{background:#2a1414;border-color:#7a2626}
+html[data-theme="dark"] .gt-feedback-head{color:#f3a3a3}
+html[data-theme="dark"] .gt-feedback-note{color:#f3b3b3}
