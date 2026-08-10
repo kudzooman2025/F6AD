@@ -50,7 +50,12 @@ service cloud.firestore {
     match /gt_games/{doc}        { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /gt_availability/{doc} { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /gt_events/{doc}       { allow read: if true; allow write: if isStaff() || isAdmin(); }
-    match /gt_subs/{doc}         { allow read: if true; allow write: if isStaff() || isAdmin(); }
+    match /gt_subs/{doc} {
+      allow read: if true;
+      allow create, delete: if isStaff() || isAdmin();
+      // staff edit anything; anyone may correct ONLY the position field (parent/player review)
+      allow update: if isStaff() || isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['position']);
+    }
     match /gt_tournaments/{doc}  { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /gt_seasons/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /venues/{doc}          { allow read: if true; allow write: if isStaff() || isAdmin(); }

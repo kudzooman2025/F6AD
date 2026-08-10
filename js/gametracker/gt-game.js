@@ -977,6 +977,62 @@ function gtSaveSubPosition(sid) {
     .then(function(){ showToast('Sub position updated ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
+function gtOpenLineupEditor(gid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var g = gtGame(gid); if (!g) return;
+  var limit = g.players_per_side || 11;
+  var players = gtAvailIds(gid).map(function(pid){ return gtP(pid); }).filter(Boolean)
+    .sort(function(a, b){ return String(gtPlayerName(a.id) || '').localeCompare(String(gtPlayerName(b.id) || ''), undefined, { sensitivity: 'base' }); });
+  var rows = players.map(function(p){
+    var ae = gtGameAvailEntry(gid, p.id) || {};
+    var started = !!ae.started;
+    var pos = ae.start_position || p.default_position || '';
+    return '<div class="gt-le-row">' +
+      '<label class="gt-le-name"><input type="checkbox" id="le-cb-' + p.id + '"' + (started ? ' checked' : '') + ' onchange="gtLeSet(\'' + gid + '\',\'' + p.id + '\')"/> ' +
+      (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(p.id)) + '</label>' +
+      '<select id="le-pos-' + p.id + '" onchange="gtLeSet(\'' + gid + '\',\'' + p.id + '\')">' + gtPositionOptions(pos) + '</select>' +
+      '</div>';
+  }).join('');
+  gtOpenModal(
+    '<h3>✏️ Starting Lineup <span id="gt-le-count" style="font-size:.75rem;color:var(--muted);font-weight:600">' + gtStarters(gid).length + '/' + limit + '</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">Check who started and set the position they started in. Changes save instantly.</p>' +
+    '<div class="gt-le-list">' + rows + '</div>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtCloseModal()">Done</button></div>'
+  );
+}
+function gtLeSet(gid, pid) {
+  var cb = document.getElementById('le-cb-' + pid);
+  var sel = document.getElementById('le-pos-' + pid);
+  var started = cb ? cb.checked : false;
+  gtSetStarter(gid, pid, started, (started && sel) ? sel.value : '');
+  var c = document.getElementById('gt-le-count');
+  if (c) { var g = gtGame(gid); c.textContent = gtStarters(gid).length + '/' + ((g && g.players_per_side) || 11); }
+}
+// Parent/player: edit ONLY the position their own player came on as (position-only write).
+function gtParentCanEditSub(sb) {
+  if (gtCanEdit()) return true;
+  var mine = (typeof gtMyRsvpPlayers === 'function') ? gtMyRsvpPlayers() : [];
+  return !!(sb && sb.player_in_id && mine.indexOf(sb.player_in_id) >= 0);
+}
+function gtParentEditSubPos(sid) {
+  var sb = GT.subs.find(function(x){ return x.id === sid; });
+  if (!sb) return;
+  if (!gtParentCanEditSub(sb)) { showToast('You can only edit your own player\'s position.'); return; }
+  gtOpenModal(
+    '<h3>Position when subbed on<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted)">' + gtEsc(gtPlayerShort(sb.player_in_id)) + ' came on at [' + gtFmtMMSS(gtDisplayCumSec(gtGame(sb.game_id), sb.period, sb.game_clock_seconds)) + "']. Set the position they played.</p>" +
+    '<label>Position</label><select id="gt-psubpos">' + gtPositionOptions(sb.position || '') + '</select>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtParentSaveSubPos(\'' + sid + '\')">Save</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtParentSaveSubPos(sid) {
+  var sb = GT.subs.find(function(x){ return x.id === sid; });
+  if (!sb || !gtParentCanEditSub(sb)) return;
+  var pos = document.getElementById('gt-psubpos').value;
+  db.collection('gt_subs').doc(sid).update({ position: pos })
+    .then(function(){ showToast('Position updated ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
 function gtSetStarter(gid, pid, started, pos) {
   if (!gtCanEdit()) return;
   var ae = gtGameAvailEntry(gid, pid);

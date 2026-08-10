@@ -52,9 +52,15 @@ function gtRenderReview(view, gameId) {
   // substitution log
   var subLog = gtGameSubs(g.id);
   if (subLog.length) {
+    var _mineSub = (typeof gtMyRsvpPlayers === 'function') ? gtMyRsvpPlayers() : [];
     html += '<div class="section-title" style="margin:22px 0 12px">🔄 Substitutions</div><div class="gt-feed">' +
       subLog.map(function(sb) {
-        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>' + gtSubRowText(sb) + (canEdit && sb.player_in_id ? ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtEditSubPosition(\'' + sb.id + '\')">✏️ Pos</button>' : '') + '</div>';
+        var posBtn = '';
+        if (sb.player_in_id) {
+          if (canEdit) posBtn = ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtEditSubPosition(\'' + sb.id + '\')">✏️ Pos</button>';
+          else if (_mineSub.indexOf(sb.player_in_id) >= 0) posBtn = ' <button class="gt-minibtn" style="padding:2px 8px;font-size:.7rem" onclick="event.stopPropagation();gtParentEditSubPos(\'' + sb.id + '\')">✏️ My position</button>';
+        }
+        return '<div class="gt-fitem"><span class="fi-min">[' + gtFmtMMSS(gtDisplayCumSec(g, sb.period, sb.game_clock_seconds)) + ']</span>' + gtSubRowText(sb) + posBtn + '</div>';
       }).join('') + '</div>';
   }
   // player stat table

@@ -1288,3 +1288,11 @@ html[data-theme="dark"] .gt-recon-mo{border-color:#3a3846}
 html[data-theme="dark"] .gt-recon-mo.io-ok{background:#12331f;border-color:#1f5c34;color:#7ee2a3}
 html[data-theme="dark"] .gt-recon-mo.io-no{background:#3a1717;border-color:#7a2626;color:#f3a3a3}
 html[data-theme="dark"] .gt-recon-mo.io-u{background:#26242f;border-color:#3a3846;color:#c9c8d2}
+
+/* Lineup editor */
+.gt-le-list{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;margin-bottom:8px}
+.gt-le-row{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--border);border-radius:8px;padding:7px 10px}
+.gt-le-name{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9rem;flex:1;cursor:pointer}
+.gt-le-row select{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.8rem;font-family:inherit;background:#fff;color:var(--text)}
+html[data-theme="dark"] .gt-le-row{border-color:#2a2833}
+html[data-theme="dark"] .gt-le-row select{background:#1e1c26;color:var(--text);border-color:#3a3846}
