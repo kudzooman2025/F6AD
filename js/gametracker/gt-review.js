@@ -78,6 +78,7 @@ function gtRenderReview(view, gameId) {
     html += '</tbody></table></div>';
   }
   html += (typeof gtParentReviewSectionHtml === 'function' ? gtParentReviewSectionHtml(g) : '');
+  html += (typeof gtParentCoachReviewHtml === 'function' ? gtParentCoachReviewHtml(g) : '');
   html += gtChatPanelHtml(g.id);
   html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="btn-primary" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Share</button>' +
@@ -458,7 +459,7 @@ function gtRenderPlayerProfile(view, pid) {
     var phead = pcols.map(function(c) {
       var isNum = c[0] !== 'date' && c[0] !== 'opp';
       return '<th class="' + (isNum ? 'num ' : '') + (ps.col === c[0] ? 'sorted' : '') + '" style="cursor:pointer" onclick="gtPlayerSortBy(\'' + c[0] + '\')">' + c[1] + (ps.col === c[0] ? (ps.dir > 0 ? ' \u25b2' : ' \u25bc') : '') + '</th>';
-    }).join('') + '<th>Highlights</th>';
+    }).join('') + '<th>⏱ On field</th><th>Highlights</th>';
     html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr>' + phead + '</tr></thead><tbody>';
     rows.forEach(function(r) {
       var g = r.g, res = gtResult(g);
@@ -468,6 +469,7 @@ function gtRenderPlayerProfile(view, pid) {
         '<td class="num">' + (r.st.goal || '') + '</td><td class="num">' + (r.st.assist || '') + '</td><td class="num">' + (r.st.shot_on_target || '') + '</td><td class="num">' + (r.st.shot || '') + '</td><td class="num">' + (r.st.save || '') + '</td><td class="num">' + (r.st.tackle || '') + '</td>' +
         '<td class="num">' + (r.st.pass || '') + '</td><td class="num">' + (r.st.pass_comp || '') + '</td><td class="num">' + (r.st.own_goal || '') + '</td>' +
         '<td class="num">' + r.mins + '</td>' +
+        '<td style="font-size:.78rem;white-space:nowrap">' + ((typeof gtOnFieldIntervals === 'function') ? gtFmtIntervals(g, gtOnFieldIntervals(g.id, pid)) : '—') + '</td>' +
         '<td>' + r.highlights.map(function(e) {
           return '<a class="gt-yt-thumb" href="' + gtAttr(e.youtube_url) + '" target="_blank" rel="noopener"><img src="https://img.youtube.com/vi/' + gtYtId(e.youtube_url) + '/default.jpg" alt=""/>▶ ' + gtNominalMinute(g, e.period, e.game_clock_seconds) + '&prime;</a> ';
         }).join('') + '</td></tr>';

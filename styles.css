@@ -1258,3 +1258,33 @@ html[data-theme="dark"] .sched-fulledit{filter:brightness(.82)}
 .gt-restart-btn{display:block;margin:12px auto 0;background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:999px;padding:6px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;opacity:.85}
 .gt-restart-btn:hover{opacity:1;background:rgba(255,255,255,.12)}
 .gt-clock-hint{color:rgba(255,255,255,.7);font-size:.72rem;margin-top:10px;line-height:1.4}
+
+/* ===== Film-review: In-Play S/NS/U + coach reconciliation ===== */
+.gt-io{display:inline-flex;gap:3px;margin:0 6px;vertical-align:middle}
+.gt-io-btn{border:1px solid var(--border-strong);background:#fff;color:var(--muted);border-radius:6px;padding:1px 7px;font-size:.66rem;font-weight:800;cursor:pointer;font-family:inherit}
+.gt-io-btn.on.io-ok{background:#16a34a;color:#fff;border-color:#16a34a}
+.gt-io-btn.on.io-no{background:#dc2626;color:#fff;border-color:#dc2626}
+.gt-io-btn.on.io-u{background:#6b7280;color:#fff;border-color:#6b7280}
+.gt-plog-edit{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;margin-left:4px;padding:0 3px}
+.gt-plog-edit:hover{color:var(--purple)}
+.gt-plog-coach{font-size:.66rem;font-weight:800;color:#4c33b8;background:#EDE9FE;border-radius:999px;padding:1px 7px;margin-left:4px}
+.gt-coachbtn{border-color:#C4B5FD!important;color:#4c33b8!important}
+.gt-recon{border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#fff}
+.gt-recon-name{font-weight:800;font-size:.98rem;margin-bottom:4px}
+.gt-recon-official{font-size:.8rem;color:var(--muted);margin-bottom:8px}
+.gt-recon-author{border-top:1px dashed var(--border);padding-top:8px;margin-top:8px}
+.gt-recon-by{font-weight:700;font-size:.86rem;margin-bottom:4px}
+.gt-recon-line{font-size:.82rem;margin:2px 0}
+.gt-recon-moments{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.gt-recon-mo{font-size:.7rem;font-weight:700;border-radius:6px;padding:2px 7px;border:1px solid var(--border)}
+.io-ok{color:#15803d}.io-no{color:#b91c1c}.io-u{color:#6b7280}
+.gt-recon-mo.io-ok{background:#dcfce7;border-color:#86efac}
+.gt-recon-mo.io-no{background:#fee2e2;border-color:#fca5a5}
+.gt-recon-mo.io-u{background:#f3f4f6;border-color:#d1d5db}
+
+html[data-theme="dark"] .gt-recon{background:#1e1c26;border-color:#2a2833}
+html[data-theme="dark"] .gt-io-btn{background:#1e1c26;border-color:#3a3846;color:#a6a5b2}
+html[data-theme="dark"] .gt-recon-mo{border-color:#3a3846}
+html[data-theme="dark"] .gt-recon-mo.io-ok{background:#12331f;border-color:#1f5c34;color:#7ee2a3}
+html[data-theme="dark"] .gt-recon-mo.io-no{background:#3a1717;border-color:#7a2626;color:#f3a3a3}
+html[data-theme="dark"] .gt-recon-mo.io-u{background:#26242f;border-color:#3a3846;color:#c9c8d2}

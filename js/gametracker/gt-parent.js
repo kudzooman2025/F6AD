@@ -14,8 +14,12 @@ var GT_PARENT_TYPES = [
   { id: 'save',    label: 'Save',      emoji: '🧤', stat: 'save' },
   { id: 'tackle',  label: 'Tackle',    emoji: '🛡️', stat: 'tackle' },
   { id: 'pass',    label: 'Pass',      emoji: '➡️', stat: 'pass' },
-  { id: 'pass_comp', label: 'Pass Comp', emoji: '✅', stat: 'pass_comp' }
+  { id: 'pass_comp', label: 'Pass Comp', emoji: '✅', stat: 'pass_comp' },
+  { id: 'in_play', label: 'In Play', emoji: '⏺', stat: false }
 ];
+// Film-review outcome for an "In Play" moment.
+var GT_INPLAY = [['S', 'Success', 'ok'], ['NS', 'Not Success', 'no'], ['U', 'Undetermined', 'u']];
+function gtInplayLabel(o) { var m = { S: 'Success', NS: 'Not Success', U: 'Undetermined' }; return m[o] || 'Undetermined'; }
 var GT_PARENT_CLAIMABLE = ['sub_on', 'sub_off', 'assist', 'shot', 'sot', 'save', 'tackle', 'pass', 'pass_comp'];
 function gtParentType(id) { return GT_PARENT_TYPES.find(function(t){ return t.id === id; }) || { id: id, label: id, emoji: '•', stat: false }; }
 
@@ -105,11 +109,14 @@ function gtParentLog(gid, pid, type) {
   if (!gtParentName()) { showToast('Add your name in the panel first so stats are attributed.'); return; }
   var g = gtGame(gid); if (!g) return;
   var _t = gtParentEventTime(g);
-  db.collection('gt_parent_events').add({
+  var _doc = {
     game_id: gid, player_id: pid, author_token: gtParentToken(), author_name: gtParentName(),
     type: type, game_clock_seconds: _t.sec, period: _t.period, mode: _t.mode,
     text: '', visibility: 'private', created_at: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function(){ showToast(gtParentType(type).emoji + ' ' + gtParentType(type).label + ' logged (private)'); })
+  };
+  if (type === 'in_play') _doc.outcome = 'U';
+  db.collection('gt_parent_events').add(_doc)
+    .then(function(){ showToast(gtParentType(type).emoji + ' ' + gtParentType(type).label + ' logged (private)'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtParentNote(gid, pid) {
@@ -141,6 +148,57 @@ function gtParentPublishAll(gid, pid, includeNotes) {
 }
 
 // ---- live panel ----
+// Set the S / NS / U outcome on an "In Play" moment.
+function gtParentSetOutcome(id, outcome) {
+  db.collection('gt_parent_events').doc(id).set({ outcome: outcome, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Edit the game-clock time of one of my logged moments (for film review).
+function gtParentEditTime(id) {
+  var e = (GT.parentEvents || []).find(function(x){ return x.id === id; });
+  if (!e) return;
+  var g = gtGame(e.game_id); if (!g) return;
+  var cur = gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds));
+  var v = window.prompt('Set the game-clock time (MM:SS) for this:', cur);
+  if (v == null) return;
+  var mmss = gtParseMMSS(v);
+  if (mmss == null) { showToast('Enter the time as MM:SS.'); return; }
+  var dur = (g.period_duration_minutes || 0) * 60;
+  var period = dur > 0 ? Math.min((g.num_periods || 2), Math.floor(mmss / dur) + 1) : 1;
+  var sec = dur > 0 ? (mmss - (period - 1) * dur) : mmss;
+  db.collection('gt_parent_events').doc(id).set({ game_clock_seconds: sec, period: period, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .catch(function(err){ showToast('Error: ' + err.message); });
+}
+// Share my tracked items for a player with the COACH only (for reconciliation) —
+// does NOT add to public team totals.
+function gtParentPublishCoach(gid, pid) {
+  var items = gtMyParentEvents(gid, pid).filter(function(e){ return e.visibility !== 'public' && e.visibility !== 'coach'; });
+  if (!items.length) { showToast('Nothing new to send to the coach.'); return; }
+  var batch = db.batch();
+  items.forEach(function(e){ batch.set(db.collection('gt_parent_events').doc(e.id), { visibility: 'coach', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
+  batch.commit().then(function(){ showToast('Sent ' + items.length + ' item' + (items.length === 1 ? '' : 's') + ' to the coach for review \ud83d\udc41\ufe0f'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Build on-field intervals from a single author's own sub_on / sub_off / started events (their review copy).
+function gtParentReviewIntervals(gid, pid, tok) {
+  var g = gtGame(gid); if (!g) return [];
+  var evs = gtParentEventsFor(gid, pid).filter(function(e){ return e.author_token === tok && (e.type === 'sub_on' || e.type === 'sub_off' || e.type === 'started'); })
+    .map(function(e){ return { t: gtCumSec(g, e.period, e.game_clock_seconds), on: (e.type !== 'sub_off') }; })
+    .sort(function(a, b){ return a.t - b.t; });
+  if (!evs.length) return [];
+  var total = gtTotalSeconds(g);
+  var intervals = [], onAt = null;
+  evs.forEach(function(ev){
+    if (ev.on && onAt == null) onAt = ev.t;
+    else if (!ev.on && onAt != null) { intervals.push([onAt, ev.t]); onAt = null; }
+  });
+  if (onAt != null) intervals.push([onAt, total]);
+  return intervals;
+}
+function gtFmtIntervals(g, iv) {
+  if (!iv || !iv.length) return '—';
+  return iv.map(function(x){ return gtFmtMMSS(x[0]) + "\u2013" + gtFmtMMSS(x[1]); }).join(', ');
+}
 function gtParentClock(g, e) {
   if (g.status === 'setup' && !e.game_clock_seconds) return 'pre';
   return gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + "'";
@@ -186,10 +244,19 @@ function gtParentBodyHtml(g, pid) {
   var mylog = gtMyParentEvents(g.id, pid);
   var logHtml = mylog.length ? mylog.slice().reverse().map(function(e){
     var t = gtParentType(e.type);
+    var shareTag = e.visibility === 'public' ? ' <span class="gt-plog-pub">shared</span>' : (e.visibility === 'coach' ? ' <span class="gt-plog-coach">→ coach</span>' : '');
+    var outcomeUi = '';
+    if (e.type === 'in_play') {
+      outcomeUi = '<span class="gt-io">' + GT_INPLAY.map(function(o){
+        return '<button class="gt-io-btn io-' + o[2] + ((e.outcome || 'U') === o[0] ? ' on' : '') + '" title="' + o[1] + '" onclick="gtParentSetOutcome(\'' + e.id + '\',\'' + o[0] + '\')">' + o[0] + '</button>';
+      }).join('') + '</span>';
+    }
+    var canTime = (e.type === 'in_play' || e.type === 'sub_on' || e.type === 'sub_off' || e.type === 'started');
     return '<div class="gt-plog-row"><span class="gt-plog-t">[' + gtParentClock(g, e) + ']</span> ' + t.emoji + ' ' +
-      gtEsc(e.type === 'note' ? ('“' + e.text + '”') : t.label) + (e.mode === 'film' ? ' <span class="gt-film-tag">film</span>' : '') + (e.visibility === 'public' ? ' <span class="gt-plog-pub">shared</span>' : '') +
+      gtEsc(e.type === 'note' ? ('“' + e.text + '”') : t.label) + (e.mode === 'film' ? ' <span class="gt-film-tag">film</span>' : '') + shareTag + outcomeUi +
+      (canTime ? '<button class="gt-plog-edit" title="Edit time" onclick="gtParentEditTime(\'' + e.id + '\')">✎</button>' : '') +
       '<button class="gt-plog-x" title="Delete" onclick="gtParentDelete(\'' + e.id + '\')">✕</button></div>';
-  }).join('') : '<div class="gt-parent-empty">No stats logged yet — tap a button above.</div>';
+  }).join('') : '<div class="gt-parent-empty">No moments logged yet — tap a button above.</div>';
   return '<div class="gt-parent-who">Tracking <strong>' + gtEsc(gtPlayerName(pid)) + '</strong> as ' + gtEsc(gtParentName()) + ' · <a onclick="gtSetChatName(true)">change name</a></div>' +
     '<div class="gt-claim-row"><span class="gt-claim-lbl">I\'m tracking:</span>' + claimChips + '</div>' +
     '<div class="gt-pstat-grid">' + statBtns + '</div>' +
@@ -211,9 +278,9 @@ function gtParentSharePanelHtml(g) {
       var t = gtParentType(e.type);
       return '<label class="gt-share-row"><input type="checkbox"' + (e.visibility === 'public' ? ' checked' : '') + ' onchange="gtParentSetVisibility(\'' + e.id + '\',this.checked?\'public\':\'private\')"/> <span class="gt-plog-t">[' + gtParentClock(g, e) + ']</span> ' + t.emoji + ' ' + gtEsc(e.type === 'note' ? ('“' + e.text + '”') : t.label) + (e.type === 'note' ? ' <span class="gt-note-tag">note</span>' : '') + '</label>';
     }).join('');
-    html += '<div class="gt-share-actions"><button class="gt-minibtn" onclick="gtParentPublishAll(\'' + g.id + '\',\'' + pid + '\',false)">Share all stats</button><button class="gt-minibtn" onclick="gtParentPublishAll(\'' + g.id + '\',\'' + pid + '\',true)">Share incl. notes</button></div></div>';
+    html += '<div class="gt-share-actions"><button class="gt-minibtn" onclick="gtParentPublishAll(\'' + g.id + '\',\'' + pid + '\',false)">Share all stats</button><button class="gt-minibtn" onclick="gtParentPublishAll(\'' + g.id + '\',\'' + pid + '\',true)">Share incl. notes</button><button class="gt-minibtn gt-coachbtn" onclick="gtParentPublishCoach(\'' + g.id + '\',\'' + pid + '\')">👁️ Send to coach (review only)</button></div></div>';
   });
-  html += '<div class="gt-parent-note">Notes stay private unless you check them. Shared stats add to that player\'s team totals.</div></div></div>';
+  html += '<div class="gt-parent-note">“Share” adds stats to that player\'s <strong>team totals</strong>. “Send to coach” keeps items <strong>private to the coach</strong> for reconciliation — nothing goes to team totals. In-play (S/NS/U) moments and your reviewed sub on/off times are best sent to the coach.</div></div></div>';
   return html;
 }
 
@@ -233,6 +300,44 @@ function gtParentReviewSectionHtml(g) {
   return '<div class="section-title" style="margin:26px 0 12px">👨‍👩‍👧 Parent-Reported' + (canEd ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove</span>' : '') + '</div><div class="gt-feed">' + rows + '</div>';
 }
 
+
+// ---- review: COACH reconciliation (staff only) — items families sent for review ----
+function gtParentCoachReviewHtml(g) {
+  if (!g || !gtCanEdit()) return '';
+  var items = gtParentEventsFor(g.id).filter(function(e){ return e.visibility === 'coach'; });
+  if (!items.length) return '';
+  var byPlayer = {};
+  items.forEach(function(e){ (byPlayer[e.player_id] = byPlayer[e.player_id] || []).push(e); });
+  var html = '<div class="section-title" style="margin:26px 0 12px">🔎 Player/Parent Review <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">sent for reconciliation — not in team totals</span></div>';
+  Object.keys(byPlayer).forEach(function(pid){
+    var evs = byPlayer[pid];
+    var authors = {}; evs.forEach(function(e){ authors[e.author_token] = e.author_name || 'Someone'; });
+    var coachIv = (typeof gtOnFieldIntervals === 'function') ? null : null;
+    html += '<div class="gt-recon"><div class="gt-recon-name">' + gtEsc(gtPlayerName(pid)) + '</div>';
+    // coach's official on-field windows for comparison
+    var official = (typeof gtOnFieldIntervals === 'function') ? gtOnFieldIntervals(g.id, pid) : [];
+    html += '<div class="gt-recon-official">Coach record (from subs): <strong>' + gtFmtIntervals(g, official) + '</strong> · ' + Math.round((gtMinutesMap(g.id)[pid] || 0) / 60) + ' min</div>';
+    Object.keys(authors).forEach(function(tok){
+      var mine = evs.filter(function(e){ return e.author_token === tok; });
+      var inplay = mine.filter(function(e){ return e.type === 'in_play'; });
+      var tally = { S: 0, NS: 0, U: 0 }; inplay.forEach(function(e){ tally[e.outcome || 'U']++; });
+      var iv = gtParentReviewIntervals(g.id, pid, tok);
+      html += '<div class="gt-recon-author"><div class="gt-recon-by">👤 ' + gtEsc(authors[tok]) + '</div>';
+      if (iv.length) html += '<div class="gt-recon-line">Their on-field: <strong>' + gtFmtIntervals(g, iv) + '</strong></div>';
+      if (inplay.length) {
+        html += '<div class="gt-recon-line">In-play: <span class="io-ok">' + tally.S + ' S</span> · <span class="io-no">' + tally.NS + ' NS</span> · <span class="io-u">' + tally.U + ' U</span></div>';
+        html += '<div class="gt-recon-moments">' + inplay.slice().sort(function(a,b){ return gtCumSec(g,a.period,a.game_clock_seconds)-gtCumSec(g,b.period,b.game_clock_seconds); }).map(function(e){
+          return '<span class="gt-recon-mo io-' + (e.outcome==='S'?'ok':e.outcome==='NS'?'no':'u') + '">[' + gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + "'] " + (e.outcome || 'U') + '</span>';
+        }).join('') + '</div>';
+      }
+      var others = mine.filter(function(e){ return e.type !== 'in_play' && e.type !== 'sub_on' && e.type !== 'sub_off' && e.type !== 'started'; });
+      if (others.length) html += '<div class="gt-recon-line">Also noted: ' + others.map(function(e){ var t=gtParentType(e.type); return t.emoji + ' ' + gtEsc(e.type==='note'?('“'+e.text+'”'):t.label); }).join(' · ') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  return html;
+}
 
 // ===================== FILM SESSION (post-game watch-back) =====================
 // A device-local clock the parent syncs to their video. Stats logged during a film
