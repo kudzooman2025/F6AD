@@ -14,9 +14,9 @@
     ],
     "headers": [
       {
-        "source": "**/*.@(js|css)",
+        "source": "**",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=120, stale-while-revalidate=86400" }
+          { "key": "Cache-Control", "value": "no-cache" }
         ]
       },
       {
@@ -26,9 +26,9 @@
         ]
       },
       {
-        "source": "**",
+        "source": "**/*.@(js|css)",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
+          { "key": "Cache-Control", "value": "public, max-age=120, stale-while-revalidate=86400" }
         ]
       }
     ]
