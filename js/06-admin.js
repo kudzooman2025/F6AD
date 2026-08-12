@@ -110,7 +110,7 @@ function renderSchedule() {
     });
   }
   const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
-  const sorted = [...scheduleItems.filter(it => !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
+  const sorted = [...scheduleItems.filter(it => !it.suppressed && !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
   // Populate the team dropdown from the teams actually present.
   var _teamSel = document.getElementById('sched-team-filter');
   if (_teamSel) {
@@ -208,7 +208,7 @@ function renderAdminSchedule() {
       }
     });
   }
-  const items = [...scheduleItems.filter(it => !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const items = [...scheduleItems.filter(it => !it.suppressed && !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
   const el = document.getElementById('admin-schedule-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
   el.innerHTML = items.map(ev => `
@@ -1289,6 +1289,13 @@ function schedDeleteEvent(cancelId) {
     return;
   }
   if (kind === 'sched') {
+    var _ev = (typeof scheduleItems !== 'undefined') ? scheduleItems.find(function(e){ return e.id === rest; }) : null;
+    if (_ev && _ev.source === 'teamsnap') {
+      if (!confirm('Remove this TeamSnap event from the schedule?\n\nIt stays hidden and the daily TeamSnap sync will NOT bring it back — use this when you\'ve added your own games in its place.')) return;
+      db.collection('schedule').doc(rest).set({ suppressed: true, manual_override: true, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+        .then(function(){ showToast('TeamSnap event removed — it won\'t sync back.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+      return;
+    }
     if (!confirm('Delete this schedule event? This cannot be undone.')) return;
     db.collection('schedule').doc(rest).delete().then(function(){ showToast('Event deleted.'); }).catch(function(e){ showToast('Error: ' + e.message); });
     return;
