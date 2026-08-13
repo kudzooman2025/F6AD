@@ -6,10 +6,20 @@ const firebaseConfig = {
   projectId: "f6ad-2913b",
   storageBucket: "f6ad-2913b.firebasestorage.app",
   messagingSenderId: "1000483275960",
-  appId: "1:1000483275960:web:f9f9974965854a5cbfa04d"
+  appId: "1:1000483275960:web:f9f9974965854a5cbfa04d",
+  measurementId: "G-B9H05C9HYM"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+// Google Analytics (GA4) — aggregate, anonymous usage stats in the Firebase/GA console.
+var f6adAnalytics = null;
+try { if (firebase.analytics) f6adAnalytics = firebase.analytics(); } catch (e) {}
+if (typeof window !== 'undefined' && f6adAnalytics) {
+  window.addEventListener('hashchange', function() {
+    try { f6adAnalytics.logEvent('page_view', { page_path: location.hash || '/', page_title: document.title, page_location: location.href }); } catch (e) {}
+  });
+}
 
 // Offline support: cache data and queue writes locally so live stat entry keeps
 // working on a flaky field connection. Reads serve from cache; writes sync when
