@@ -204,6 +204,33 @@ if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', initTheme);
 }
 
+// Lightweight, privacy-light visitor logging: one row per device (persistent anon id),
+// updated at most once per 30 min. Names appear only if the person entered one.
+function f6adLogVisit() {
+  try {
+    var tok;
+    try { tok = localStorage.getItem('gt_parent_token'); if (!tok) { tok = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); localStorage.setItem('gt_parent_token', tok); } } catch (e) { tok = 'anon'; }
+    var now = Date.now(), last = 0;
+    try { last = +(localStorage.getItem('f6ad_visit_ts') || 0); } catch (e) {}
+    if (now - last < 30 * 60 * 1000) return;
+    try { localStorage.setItem('f6ad_visit_ts', String(now)); } catch (e) {}
+    var name = ''; try { name = localStorage.getItem('gt_chat_name') || ''; } catch (e) {}
+    var created = false; try { if (!localStorage.getItem('f6ad_visit_created')) { created = true; localStorage.setItem('f6ad_visit_created', '1'); } } catch (e) {}
+    if (typeof db === 'undefined' || !db) return;
+    var data = {
+      token: tok, name: name, last_page: (location.hash || '/'),
+      ua: (navigator.userAgent || '').slice(0, 200), ref: (document.referrer || '').slice(0, 200),
+      last_seen: firebase.firestore.FieldValue.serverTimestamp(),
+      visits: firebase.firestore.FieldValue.increment(1)
+    };
+    if (created) data.first_seen = firebase.firestore.FieldValue.serverTimestamp();
+    db.collection('site_visits').doc(tok).set(data, { merge: true }).catch(function(){});
+  } catch (e) {}
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', function(){ setTimeout(f6adLogVisit, 1800); });
+}
+
 function toggleNavMenu(e) {
   if (e) e.stopPropagation();
   var nav = document.getElementById('main-nav');

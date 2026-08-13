@@ -330,6 +330,7 @@
           <button class="admin-tab" onclick="switchTab('families',this)">👪 Families</button>
           <button class="admin-tab" onclick="switchTab('feedback',this)">💬 Feedback</button>
           <button class="admin-tab" onclick="switchTab('devcards',this)">🃏 Player Cards</button>
+          <button class="admin-tab" onclick="switchTab('visitors',this)">👀 Visitors</button>
           <button class="admin-tab" onclick="switchTab('settings',this)">⚙️ Settings</button>
         </div>
 
@@ -489,6 +490,10 @@
         <div id="tab-feedback" class="tab-panel">
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">Suggestions and bug reports from the team.</p>
           <div id="admin-feedback-list"></div>
+        </div>
+        <div id="tab-visitors" class="tab-panel">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:6px">Every device that opens the site is logged here — even without signing in. A name shows only if the person entered one (for chat or player tracking); otherwise they appear as an anonymous device. Updated at most once every 30 minutes per device.</p>
+          <div id="admin-visitors-list"></div>
         </div>
         <div id="tab-settings" class="tab-panel">
           <div style="max-width:400px">

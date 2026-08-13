@@ -130,5 +130,8 @@ service cloud.firestore {
     // Ephemeral server-time ping: lets the app measure device clock skew so the
     // live game clock is accurate. Holds no user data.
     match /_serverclock/{doc} { allow read, write: if true; }
+
+    // Visitor log: anyone can record their own device visit; only admins can read it.
+    match /site_visits/{doc} { allow read, delete: if isAdmin(); allow create, update: if true; }
   }
 }

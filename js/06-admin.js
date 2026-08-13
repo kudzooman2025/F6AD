@@ -682,6 +682,7 @@ function switchTab(tab, btn) {
   if(tab==='families') renderAdminFamilies();
   if(tab==='feedback') renderAdminFeedback();
   if(tab==='devcards') renderAdminDevCards();
+  if(tab==='visitors') renderAdminVisitors();
   document.querySelectorAll('.admin-tab').forEach(function(t){ t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   btn.classList.add('active');
@@ -1559,4 +1560,42 @@ function teamsnapSyncNow() {
       else r.text().then(function(t){ showToast('Sync request failed (' + r.status + ').'); });
     });
   }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+
+
+// ===================== ADMIN: VISITORS =====================
+function f6adRel(ms) {
+  var s = Math.floor((Date.now() - ms) / 1000);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+  var d = Math.floor(s / 86400);
+  if (d < 30) return d + 'd ago';
+  return new Date(ms).toLocaleDateString();
+}
+function f6adBrowser(ua) {
+  ua = ua || '';
+  var os = /iPhone|iPad|iPod/.test(ua) ? 'iOS' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac/.test(ua) ? 'Mac' : '';
+  var b = /Edg/.test(ua) ? 'Edge' : /OPR|Opera/.test(ua) ? 'Opera' : /Chrome/.test(ua) ? 'Chrome' : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'Browser';
+  return (os ? os + ' · ' : '') + b;
+}
+function renderAdminVisitors() {
+  var box = document.getElementById('admin-visitors-list');
+  if (!box) return;
+  box.innerHTML = '<p style="font-size:.85rem;color:var(--muted)">Loading…</p>';
+  db.collection('site_visits').orderBy('last_seen', 'desc').limit(500).get().then(function(snap) {
+    var rows = []; snap.forEach(function(d){ rows.push(d.data() || {}); });
+    var now = Date.now();
+    var day = rows.filter(function(r){ return r.last_seen && (now - r.last_seen.toMillis()) < 864e5; }).length;
+    var week = rows.filter(function(r){ return r.last_seen && (now - r.last_seen.toMillis()) < 7 * 864e5; }).length;
+    var head = '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font-size:.9rem"><span><strong>' + rows.length + '</strong> devices</span><span>🟢 <strong>' + day + '</strong> active today</span><span><strong>' + week + '</strong> this week</span></div>';
+    if (!rows.length) { box.innerHTML = head + '<p style="font-size:.85rem;color:var(--muted)">No visits recorded yet.</p>'; return; }
+    box.innerHTML = head + rows.map(function(r) {
+      var name = (r.name && r.name.trim()) ? gtEsc(r.name) : '<span style="color:var(--muted)">Anonymous</span>';
+      var lastSeen = r.last_seen ? f6adRel(r.last_seen.toMillis()) : '—';
+      var dev = gtEsc((r.token || '').slice(0, 10));
+      return '<div class="admin-item"><div class="admin-item-info"><strong>' + name + '</strong> <span style="color:var(--muted);font-size:.78rem">· ' + f6adBrowser(r.ua) + ' · ' + dev + '</span>' +
+        '<span>last seen ' + lastSeen + ' · ' + (r.visits || 1) + ' visit' + ((r.visits || 1) === 1 ? '' : 's') + (r.last_page ? ' · <code>' + gtEsc(r.last_page) + '</code>' : '') + '</span></div></div>';
+    }).join('');
+  }).catch(function(e){ box.innerHTML = '<p style="color:#b91c1c;font-size:.85rem">' + gtEsc(e.message) + '</p>'; });
 }
