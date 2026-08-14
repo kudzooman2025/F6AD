@@ -1191,6 +1191,7 @@ function renderAdminCoaches() {
   var staff = Object.keys(staffData).map(function(id){ return Object.assign({id:id}, staffData[id]); });
   if(!staff.length) {
     container.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No staff accounts yet. Add one below.</p>';
+    if (typeof renderAdminAccounts === 'function') renderAdminAccounts();
     return;
   }
   var tbl = document.createElement('table'); tbl.className = 'coaches-table';
@@ -1226,6 +1227,7 @@ function renderAdminCoaches() {
   tbl.appendChild(tbody);
   container.innerHTML = '';
   container.appendChild(tbl);
+  if (typeof renderAdminAccounts === 'function') renderAdminAccounts();
 }
 
 function adminAddCoach() {
@@ -1598,4 +1600,46 @@ function renderAdminVisitors() {
         '<span>last seen ' + lastSeen + ' · ' + (r.visits || 1) + ' visit' + ((r.visits || 1) === 1 ? '' : 's') + (r.last_page ? ' · <code>' + gtEsc(r.last_page) + '</code>' : '') + '</span></div></div>';
     }).join('');
   }).catch(function(e){ box.innerHTML = '<p style="color:#b91c1c;font-size:.85rem">' + gtEsc(e.message) + '</p>'; });
+}
+
+
+// ===================== ADMIN: SIGNED-UP ACCOUNTS / PROMOTE =====================
+function renderAdminAccounts() {
+  var box = document.getElementById('admin-accounts-list');
+  if (!box) return;
+  box.innerHTML = '<p style="font-size:.82rem;color:var(--muted)">Loading…</p>';
+  db.collection('user_directory').get().then(function(snap) {
+    var rows = []; snap.forEach(function(d){ rows.push(Object.assign({ uid: d.id }, d.data() || {})); });
+    rows.sort(function(a, b){ return (b.last_seen && b.last_seen.toMillis ? b.last_seen.toMillis() : 0) - (a.last_seen && a.last_seen.toMillis ? a.last_seen.toMillis() : 0); });
+    if (!rows.length) { box.innerHTML = '<p style="font-size:.82rem;color:var(--muted)">No sign-ins recorded yet. Accounts appear here once they sign in (after this update).</p>'; return; }
+    box.innerHTML = rows.map(function(r) {
+      var isStaff = !!(staffData && staffData[r.uid]);
+      var role = isStaff ? staffData[r.uid].role : '';
+      var badge = isStaff ? '<span style="background:' + (role === 'admin' ? '#fef3c7;color:#92400e' : '#ede9fe;color:#5b21b6') + ';padding:2px 8px;border-radius:999px;font-size:.7rem;font-weight:800;margin-left:6px">' + (role === 'admin' ? 'ADMIN' : 'COACH') + '</span>' : '';
+      var actions = isStaff
+        ? '<button class="btn-danger" style="padding:3px 9px;font-size:.7rem" onclick="adminRemoveStaff(\'' + r.uid + '\')">Remove staff</button>'
+        : '<button class="btn-primary" style="padding:3px 9px;font-size:.7rem" onclick="adminMakeStaff(\'' + r.uid + '\',\'' + gtAttr(r.email || '') + '\',\'coach\')">Make coach</button><button class="btn-edit" style="padding:3px 9px;font-size:.7rem;margin-left:5px" onclick="adminMakeStaff(\'' + r.uid + '\',\'' + gtAttr(r.email || '') + '\',\'admin\')">Make admin</button>';
+      return '<div class="admin-item"><div class="admin-item-info"><strong>' + gtEsc(r.email || r.uid) + '</strong>' + badge + '<span>' + (r.last_seen ? 'signed in ' + f6adRel(r.last_seen.toMillis()) : '') + '</span></div><div class="admin-item-actions">' + actions + '</div></div>';
+    }).join('');
+  }).catch(function(e){ box.innerHTML = '<p style="color:#b91c1c;font-size:.82rem">' + gtEsc(e.message) + '</p>'; });
+}
+function adminMakeStaff(uid, email, role) {
+  db.collection('staff').doc(uid).set({ name: email || uid, email: email || '', role: (role === 'admin' ? 'admin' : 'coach'), created_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .then(function(){ showToast('Granted ' + (role === 'admin' ? 'admin' : 'coach') + ' access ✓'); renderAdminAccounts(); })
+    .catch(function(e){ showToast('Error: ' + authErrMsg(e)); });
+}
+function adminRemoveStaff(uid) {
+  if (authUser && uid === authUser.uid) { showToast("You can't remove your own access."); return; }
+  if (!confirm('Remove staff access for this account?')) return;
+  db.collection('staff').doc(uid).delete().then(function(){ showToast('Staff access removed.'); renderAdminAccounts(); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function adminPromoteExisting() {
+  var name = document.getElementById('promo-name').value.trim();
+  var email = document.getElementById('promo-email').value.trim();
+  var uid = document.getElementById('promo-uid').value.trim();
+  var role = document.getElementById('promo-role').value;
+  if (!uid) { showToast('Enter the person\'s Firebase User UID (from the console).'); return; }
+  db.collection('staff').doc(uid).set({ name: name || email || uid, email: email, role: (role === 'admin' ? 'admin' : 'coach'), created_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .then(function(){ document.getElementById('promo-name').value = ''; document.getElementById('promo-email').value = ''; document.getElementById('promo-uid').value = ''; showToast((name || email || 'Account') + ' granted ' + role + ' access ✓'); renderAdminAccounts(); })
+    .catch(function(e){ showToast('Error: ' + authErrMsg(e)); });
 }

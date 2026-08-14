@@ -133,5 +133,8 @@ service cloud.firestore {
 
     // Visitor log: anyone can record their own device visit; only admins can read it.
     match /site_visits/{doc} { allow read, delete: if isAdmin(); allow create, update: if true; }
+
+    // Account directory: a signed-in user records their own entry; admins read all.
+    match /user_directory/{uid} { allow read, delete: if isAdmin(); allow write: if signedIn() && request.auth.uid == uid; }
   }
 }

@@ -461,7 +461,26 @@
         <div id="tab-coaches" class="tab-panel">
           <p style="font-size:.85rem;color:var(--muted);margin-bottom:16px">Manage staff accounts. Coaches can run GameTracker and log sessions; admins can also use this panel.</p>
           <div id="admin-coaches-list"></div>
-          <div class="add-coach-form">
+
+          <p style="font-weight:800;font-size:.88rem;margin:22px 0 4px">👤 Signed-up Accounts</p>
+          <p style="font-size:.76rem;color:var(--muted);margin-bottom:10px">Everyone who has signed in shows up here. Click <strong>Make coach</strong> to promote an existing account — no new password needed.</p>
+          <div id="admin-accounts-list"></div>
+
+          <div class="add-coach-form" style="margin-top:18px">
+            <p style="font-weight:800;font-size:.88rem;margin-bottom:4px">🔑 Promote an existing account (by UID)</p>
+            <p style="font-size:.76rem;color:var(--muted);margin-bottom:12px">Use this if someone got “email already in use.” Get their <strong>User UID</strong> from Firebase console → Authentication → Users (copy icon next to their row).</p>
+            <div class="form-row">
+              <div class="form-group"><label>Name</label><input type="text" id="promo-name" placeholder="Mark Semanick"/></div>
+              <div class="form-group"><label>Email</label><input type="text" id="promo-email" placeholder="them@example.com"/></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Firebase User UID</label><input type="text" id="promo-uid" placeholder="e.g. 0aUO1u71w8..."/></div>
+              <div class="form-group"><label>Role</label><select id="promo-role"><option value="coach">Coach</option><option value="admin">Admin</option></select></div>
+            </div>
+            <button class="btn-primary" onclick="adminPromoteExisting()">Grant Staff Access</button>
+          </div>
+
+          <div class="add-coach-form" style="margin-top:16px">
             <p style="font-weight:800;font-size:.88rem;margin-bottom:12px">➕ Add Staff Account</p>
             <div class="form-row">
               <div class="form-group"><label>Name</label><input type="text" id="new-coach-name" placeholder="Coach Smith"/></div>

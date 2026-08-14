@@ -75,6 +75,9 @@ function subscribeStaff() {
 }
 firebase.auth().onAuthStateChanged(function(u) {
   authUser = u;
+  if (u && u.email) {
+    db.collection('user_directory').doc(u.uid).set({ email: u.email, name: u.displayName || '', last_seen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(function(){});
+  }
   if (!u) {
     authRole = null; authStaffName = ''; coachName = '';
     subscribeStaff(); authRefreshUI();
