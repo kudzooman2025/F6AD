@@ -249,7 +249,9 @@ function gtRenderSeason(view) {
   html += '<div class="gt-stat-strip">' +
     '<div class="gt-stat-box"><div class="sb-num">' + w + '-' + l + '-' + d + '</div><div class="sb-label">W-L-D</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + games.length + '</div><div class="sb-label">Games</div></div>' +
-    '<div class="gt-stat-box"><div class="sb-num">' + (tot.gs || 0) + '</div><div class="sb-label">Starts</div></div>' +
+    // (no team-wide "Starts" box — it referenced `tot`, which only exists in the
+    // player profile, and threw a ReferenceError that blanked this whole page.
+    // Per-player starts are the 🟢 GS column in the Player Stats table below.)
     '<div class="gt-stat-box"><div class="sb-num">' + gf + '</div><div class="sb-label">Goals For</div></div>' +
     '<div class="gt-stat-box"><div class="sb-num">' + ga + '</div><div class="sb-label">Goals Against</div></div>' +
     '</div>';
