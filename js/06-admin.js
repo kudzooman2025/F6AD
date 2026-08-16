@@ -90,6 +90,33 @@ function copyLink(url,btn) {
   navigator.clipboard.writeText(url).then(function(){var o=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=o;},1800);});
 }
 
+// ---- TeamSnap de-duplication ----
+// A TeamSnap row is hidden when its game already exists in GameTracker. The
+// gt_game_id back-link only gets written when someone promotes the schedule row,
+// so games created directly in GameTracker used to show up twice. Fall back to
+// matching on date + the opponent parsed out of "... vs X" / "... at X".
+function schedOppKey(s) {
+  var m = String(s || '').match(/\b(?:vs\.?|at)\b\s+(.+)$/i);
+  return m ? m[1].toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() : '';
+}
+function schedDupOfGtGame(it) {
+  if (it.type === 'tournament') return false;   // tournaments link via gt_tournament_id
+  if (typeof GT === 'undefined' || !GT.games || typeof gtGameDateStr !== 'function') return false;
+  var key = schedOppKey(it.name);
+  if (!key) return false;
+  return GT.games.some(function(g) {
+    if (gtGameDateStr(g) !== it.date) return false;
+    var opp = String(gtTheirName(g) || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (!opp) return false;
+    return opp.indexOf(key) === 0 || key.indexOf(opp) === 0;
+  });
+}
+function schedHidden(it) {
+  return !!it.suppressed
+    || !!(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))
+    || schedDupOfGtGame(it);
+}
+
 function renderSchedule() {
   const today = new Date(); today.setHours(0,0,0,0);
   const gtEvents = (typeof GT !== 'undefined' && GT.games) ? GT.games.map(function(g){
@@ -110,7 +137,7 @@ function renderSchedule() {
     });
   }
   const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
-  const sorted = [...scheduleItems.filter(it => !it.suppressed && !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
+  const sorted = [...scheduleItems.filter(it => !schedHidden(it)).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
   // Populate the team dropdown from the teams actually present.
   var _teamSel = document.getElementById('sched-team-filter');
   if (_teamSel) {
@@ -208,7 +235,7 @@ function renderAdminSchedule() {
       }
     });
   }
-  const items = [...scheduleItems.filter(it => !it.suppressed && !(it.promoted && it.gt_game_id && typeof gtGame === 'function' && gtGame(it.gt_game_id))).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
+  const items = [...scheduleItems.filter(it => !schedHidden(it)).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtRows, ...condRows, ...campRows].sort((a,b) => new Date(a.date) - new Date(b.date));
   const el = document.getElementById('admin-schedule-list');
   if (!items.length) { el.innerHTML = '<p style="font-size:.85rem;color:var(--muted);margin-bottom:14px">No events yet.</p>'; return; }
   el.innerHTML = items.map(ev => `

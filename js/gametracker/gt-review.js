@@ -217,7 +217,10 @@ function gtRenderSeason(view) {
   if (f.season === undefined && GT.loaded.seasons && GT.seasons.length) {
     var _cur = GT.seasons.find(function(se){ return /mls next/i.test(se.name || ''); }) ||
       GT.seasons.slice().sort(function(a, b){ return gtTsMillis(b.created_at) - gtTsMillis(a.created_at); })[0];
-    f.season = _cur ? _cur.id : '';
+    // Never preselect a season that has no completed games — it renders an empty
+    // stats table, which reads as "stats aren't tracking". Show everything instead.
+    var _hasGames = _cur && GT.games.some(function(g){ return g.status === 'complete' && g.season_id === _cur.id; });
+    f.season = _hasGames ? _cur.id : '';
   }
   var games = gtSeasonGames();
   var w = 0, l = 0, d = 0, gf = 0, ga = 0;
