@@ -240,6 +240,7 @@ function gtRenderHome(view) {
   var past = GT.games.filter(function(g){ return g.status === 'complete'; })
     .sort(function(a, b){ return gtGameSortMs(b) - gtGameSortMs(a); });
   var html = gtLockBanner() +
+    (typeof gtGuestAppsQueueHtml === 'function' ? gtGuestAppsQueueHtml() : '') +
     (typeof gtReviewQueueHtml === 'function' ? gtReviewQueueHtml() : '') +
     '<div class="gt-title">⚽ GameTracker</div>' +
     '<div class="gt-sub">Log live game events, track the clock, and build season stats.</div>';

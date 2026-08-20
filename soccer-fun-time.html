@@ -52,6 +52,7 @@
 <div class="container">
   <!-- HOME QUICK LINKS -->
   <section id="home-cards" style="margin-bottom:20px">
+    <div id="guest-signup-banner"></div>
     <div class="home-spotlight collapsed" id="gt-spotlight">
       <span class="hs-badge">👨‍👩‍👧 New for parents</span>
       <h3 class="hs-title">Track your player's stats — live from the sideline</h3>
@@ -527,6 +528,8 @@
           <hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">
           <div id="site-flags-box" style="margin-bottom:24px"></div>
           <hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">
+          <div id="guest-signup-flag-box" style="margin-bottom:24px"></div>
+          <hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">
           <div id="gt-timeline-flags-box" style="margin-bottom:24px"></div>
           <hr style="margin:24px 0;border:none;border-top:1px solid var(--border)">
           <p style="font-weight:800;font-size:.9rem;margin-bottom:10px">Admin Actions</p>
@@ -566,6 +569,37 @@
       <label style="margin-top:12px">Your email (optional)</label>
       <input type="email" id="fb-email" placeholder="So we can reply to you"/>
       <div class="gm-actions" style="margin-top:16px"><button class="btn-primary" onclick="submitFeedback()">Send Feedback</button><button class="gt-minibtn" onclick="closeFeedback()">Cancel</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======= GUEST PLAYER SIGN-UP ======= -->
+<div class="modal-overlay" id="guest-signup-overlay" onclick="guestSignupOverlayClick(event)">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header"><h2>⚽ Guest Player Sign-Up</h2><button class="modal-close" onclick="closeGuestSignup()">✕</button></div>
+    <div class="modal-body fb-form">
+      <p style="font-size:.88rem;color:var(--muted);margin-bottom:14px">Interested in guesting with us? Fill this in and a coach will review it. We'll reach out if there's a fit.</p>
+      <label>Player name <span style="color:#b91c1c">*</span></label>
+      <input type="text" id="ga-player" placeholder="First and last name"/>
+      <label style="margin-top:12px">Parent / guardian name <span style="color:#b91c1c">*</span></label>
+      <input type="text" id="ga-parent" placeholder="Who should we contact?"/>
+      <label style="margin-top:12px">Phone <span style="color:#b91c1c">*</span></label>
+      <input type="tel" id="ga-phone" placeholder="(215) 555-0142"/>
+      <label style="margin-top:12px">Email <span style="color:#b91c1c">*</span></label>
+      <input type="email" id="ga-email" placeholder="you@example.com"/>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border)">
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">Optional — but it helps a coach place the player.</p>
+      <label>Position</label>
+      <input type="text" id="ga-position" placeholder="e.g. Center back, Winger, GK"/>
+      <label style="margin-top:12px">Current team / club</label>
+      <input type="text" id="ga-team" placeholder="Who do they play for now?"/>
+      <label style="margin-top:12px">Location</label>
+      <input type="text" id="ga-location" placeholder="Town or area"/>
+      <label style="margin-top:12px">Referred by</label>
+      <input type="text" id="ga-referred" placeholder="Who told you about us?"/>
+      <label style="margin-top:12px">Anything else</label>
+      <textarea id="ga-notes" rows="3" placeholder="Birth year, availability, experience…"></textarea>
+      <div class="gm-actions" style="margin-top:16px"><button class="btn-primary" onclick="submitGuestSignup()">Submit Application</button><button class="gt-minibtn" onclick="closeGuestSignup()">Cancel</button></div>
     </div>
   </div>
 </div>
@@ -616,6 +650,7 @@
 <script src="js/10-feedback.js"></script>
 <script src="js/11-devcard.js"></script>
 <script src="js/12-devplayer.js"></script>
+<script src="js/13-guests.js"></script>
 <script src="js/08-init.js"></script>
 </body>
 </html>

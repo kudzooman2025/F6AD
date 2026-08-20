@@ -66,6 +66,8 @@ service cloud.firestore {
     match /site_flags/{doc}     { allow read: if true; allow write: if isAdmin(); }
     match /site_secrets/{doc}   { allow read, write: if isAdmin(); }
     match /feedback/{doc}       { allow create: if true; allow read, update, delete: if isStaff() || isAdmin(); }
+    // Guest-player applications: the public may submit, only staff may read or act.
+    match /gt_guest_apps/{doc}  { allow create: if true; allow read, update, delete: if isStaff() || isAdmin(); }
     match /pd_config/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /pd_evals/{doc} {
       allow read: if isStaff() || isAdmin();

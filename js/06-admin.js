@@ -1535,6 +1535,7 @@ function applySiteFlags() {
     var link = document.querySelector(sec.sel);
     if (link) link.style.display = (siteFlags && siteFlags['hide_' + sec.key]) ? 'none' : '';
   });
+  if (typeof renderGuestBanner === 'function') renderGuestBanner();
 }
 function toggleSiteFlag(key) {
   if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
@@ -1548,7 +1549,10 @@ function toggleSiteFlag(key) {
 function renderGtReviewAlert() {
   var box = document.getElementById('gt-review-alert-box');
   if (!box) return;
-  box.innerHTML = (typeof gtReviewQueueHtml === 'function') ? gtReviewQueueHtml({ closeAdmin: true }) : '';
+  if (typeof guestAppsListen === 'function') guestAppsListen();
+  box.innerHTML =
+    ((typeof gtGuestAppsQueueHtml === 'function') ? gtGuestAppsQueueHtml({ closeAdmin: true }) : '') +
+    ((typeof gtReviewQueueHtml === 'function') ? gtReviewQueueHtml({ closeAdmin: true }) : '');
 }
 
 // ===== Which approved parent-reported stats appear in the game Event Timeline =====
@@ -1605,6 +1609,8 @@ function renderSiteFlags() {
     '<p style="font-size:.75rem;color:var(--muted);margin:0 0 6px">Hide any menu item. The page and its data stay — it\'s just removed from the top menu and can be shown again anytime.</p>' +
     rows;
   renderGtTimelineFlags();
+  if (typeof renderGuestFlagBox === 'function') renderGuestFlagBox();
+  if (typeof renderGuestBanner === 'function') renderGuestBanner();
   if (typeof gtRerender === 'function') gtRerender();
 }
 
