@@ -1574,9 +1574,10 @@ function gtTimelineShowsParentType(typeId) {
   var v = (typeof siteFlags !== 'undefined' && siteFlags) ? siteFlags['gt_tl_' + typeId] : undefined;
   return (typeof v === 'boolean') ? v : d.on;   // saved choice wins, else the default
 }
-function toggleGtTimelineType(typeId) {
+function toggleGtTimelineType(typeId) { setGtTimelineType(typeId, !gtTimelineShowsParentType(typeId)); }
+function setGtTimelineType(typeId, val) {
   if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
-  var val = !gtTimelineShowsParentType(typeId);
+  val = !!val;
   var data = {}; data['gt_tl_' + typeId] = val;
   db.collection('site_flags').doc('main').set(data, { merge: true })
     .then(function(){ showToast(val ? 'Now shown in the timeline.' : 'Moved to Parent-Reported.'); })
@@ -1585,14 +1586,18 @@ function toggleGtTimelineType(typeId) {
 function renderGtTimelineFlags() {
   var box = document.getElementById('gt-timeline-flags-box');
   if (!box) return;
+  // A checkbox reads as state ("is it on?") rather than as an action, which a
+  // Show/Hide button does not — ticked means it appears in the timeline.
   var rows = GT_TIMELINE_PARENT_TYPES.map(function(t){
     var on = gtTimelineShowsParentType(t.id);
-    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--border)">' +
-      '<span style="font-size:.86rem">' + t.label + ' <span style="color:var(--muted);font-size:.78rem">(' + (on ? 'in timeline' : 'parent-reported only') + ')</span></span>' +
-      '<button class="btn-edit" onclick="toggleGtTimelineType(\'' + t.id + '\')">' + (on ? '\u{1F648} Hide' : '\u21A9 Show') + '</button></div>';
+    var cid = 'gt-tl-cb-' + t.id;
+    return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border)">' +
+      '<input type="checkbox" id="' + cid + '"' + (on ? ' checked' : '') +
+      ' onchange="setGtTimelineType(\'' + t.id + '\', this.checked)" style="width:17px;height:17px;flex:0 0 auto;cursor:pointer"/>' +
+      '<label for="' + cid + '" style="margin:0;font-size:.86rem;cursor:pointer">' + t.label + '</label></div>';
   }).join('');
   box.innerHTML = '<p style="font-weight:800;font-size:.9rem;margin:0 0 6px">Parent Stats in the Event Timeline</p>' +
-    '<p style="font-size:.75rem;color:var(--muted);margin:0 0 6px">Pick which approved parent-reported stats appear in each game\'s Event Timeline. Hidden types still count in all stats \u2014 they just show in the Parent-Reported section instead.</p>' +
+    '<p style="font-size:.75rem;color:var(--muted);margin:0 0 6px">Ticked = shows in each game\'s Event Timeline. Unticked types still count in every stat total \u2014 they just appear in the Parent-Reported section further down the game page instead.</p>' +
     rows;
 }
 

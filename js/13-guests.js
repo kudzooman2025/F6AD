@@ -41,6 +41,26 @@ function openGuestSignup() { document.getElementById('guest-signup-overlay').cla
 function guestSignupUrl() {
   return window.location.origin + window.location.pathname + '#/guest-signup';
 }
+// Share the form. Phones get the native share sheet (text/WhatsApp/email in one
+// tap); everything else falls back to copying the link.
+function shareGuestSignup(btn) {
+  var url = guestSignupUrl();
+  var payload = { title: 'F6AD Guest Player Sign-Up', text: 'Sign up to be a guest player with F6AD:', url: url };
+  if (navigator.share) {
+    navigator.share(payload).catch(function(){});
+    return;
+  }
+  var done = function() {
+    if (!btn) { showToast('Link copied ✓'); return; }
+    var o = btn.textContent; btn.textContent = '✓ Copied!';
+    setTimeout(function(){ btn.textContent = o; }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done).catch(function(){ window.prompt('Copy this link:', url); });
+  } else {
+    window.prompt('Copy this link:', url);
+  }
+}
 function guestSignupCheckHash() {
   if ((window.location.hash || '').indexOf('#/guest-signup') === 0) openGuestSignup();
 }
