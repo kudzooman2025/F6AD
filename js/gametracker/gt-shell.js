@@ -12,6 +12,9 @@ function gtAttachListeners(defs) {
         if (typeof renderSchedule === 'function') renderSchedule();
         if (typeof renderAdminSchedule === 'function' && document.getElementById('admin-schedule-list')) renderAdminSchedule();
       }
+      if (def[1] === 'parentEvents') {
+        if (typeof renderGtReviewAlert === 'function') renderGtReviewAlert();
+      }
       if (def[1] === 'games' || def[1] === 'tournaments') {
         if (typeof renderConfirmedSummer === 'function') renderConfirmedSummer();
       }
@@ -237,6 +240,7 @@ function gtRenderHome(view) {
   var past = GT.games.filter(function(g){ return g.status === 'complete'; })
     .sort(function(a, b){ return gtGameSortMs(b) - gtGameSortMs(a); });
   var html = gtLockBanner() +
+    (typeof gtReviewQueueHtml === 'function' ? gtReviewQueueHtml() : '') +
     '<div class="gt-title">⚽ GameTracker</div>' +
     '<div class="gt-sub">Log live game events, track the clock, and build season stats.</div>';
   if (gtCanEdit()) html += '<button class="btn-primary" style="margin:2px 0 20px" onclick="gtStartSetup()">➕ Create New Game</button>';

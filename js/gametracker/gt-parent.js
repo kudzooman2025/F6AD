@@ -64,7 +64,7 @@ function gtPublicParentStatEvents(gid) {
   return gtPublicParentEvents(gid).map(function(e){
     var t = gtParentType(e.type);
     if (!t.stat) return null;
-    return { id: 'pp_' + e.id, game_id: e.game_id, player_id: e.player_id, event_type: t.stat, period: e.period || 1, game_clock_seconds: e.game_clock_seconds || 0, notes: e.text || '', source: 'parent', parent_event_id: e.id };
+    return { id: 'pp_' + e.id, game_id: e.game_id, player_id: e.player_id, event_type: t.stat, period: e.period || 1, game_clock_seconds: e.game_clock_seconds || 0, notes: e.text || '', source: 'parent', author_name: e.author_name || '', parent_type: e.type, parent_event_id: e.id };
   }).filter(Boolean);
 }
 // coach events + published parent stat events (for STAT totals only)
@@ -287,7 +287,14 @@ function gtParentSharePanelHtml(g) {
 // ---- review: public parent-reported section (visible to all; coach can remove) ----
 function gtParentReviewSectionHtml(g) {
   if (!g) return '';
-  var pub = gtPublicParentEvents(g.id).slice().sort(function(a, b){ return gtCumSec(g, a.period, a.game_clock_seconds) - gtCumSec(g, b.period, b.game_clock_seconds); });
+  // Approved stat items live in the Event Timeline, so this section carries the
+  // non-stat items (notes, on/off, in-play) plus any stat type the coach has
+  // switched off for the timeline. Nothing is hidden outright, and nothing doubles up.
+  var pub = gtPublicParentEvents(g.id).filter(function(e){
+    if (!gtParentType(e.type).stat) return true;
+    return (typeof gtTimelineShowsParentType === 'function') ? !gtTimelineShowsParentType(e.type) : false;
+  })
+    .slice().sort(function(a, b){ return gtCumSec(g, a.period, a.game_clock_seconds) - gtCumSec(g, b.period, b.game_clock_seconds); });
   if (!pub.length) return '';
   var canEd = gtCanEdit();
   var rows = pub.map(function(e){
@@ -300,6 +307,44 @@ function gtParentReviewSectionHtml(g) {
   return '<div class="section-title" style="margin:26px 0 12px">👨‍👩‍👧 Parent-Reported' + (canEd ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap ✕ to remove</span>' : '') + '</div><div class="gt-feed">' + rows + '</div>';
 }
 
+
+// ---- coach/admin: what families have submitted and nobody has ruled on yet ----
+function gtPendingReviewByGame() {
+  var out = {};
+  (GT.parentEvents || []).forEach(function(e) {
+    if (e.visibility !== 'coach') return;
+    if (!gtGame(e.game_id)) return;
+    (out[e.game_id] = out[e.game_id] || []).push(e);
+  });
+  return out;
+}
+function gtPendingReviewCount() {
+  var by = gtPendingReviewByGame(), n = 0;
+  Object.keys(by).forEach(function(k){ n += by[k].length; });
+  return n;
+}
+// Renders the "needs review" banner, or '' when the queue is empty / viewer isn't staff.
+// opts.closeAdmin adds a click handler so the links work from inside the admin overlay.
+function gtReviewQueueHtml(opts) {
+  if (typeof gtCanEdit === 'function' && !gtCanEdit()) return '';
+  var by = gtPendingReviewByGame();
+  var gids = Object.keys(by);
+  if (!gids.length) return '';
+  gids.sort(function(a, b){ return gtGameSortMs(gtGame(b)) - gtGameSortMs(gtGame(a)); });
+  var total = 0; gids.forEach(function(gid){ total += by[gid].length; });
+  var rows = gids.map(function(gid) {
+    var g = gtGame(gid), items = by[gid];
+    var seen = {}, names = [];
+    items.forEach(function(e){ if (e.player_id && !seen[e.player_id]) { seen[e.player_id] = 1; names.push(gtPlayerShort(e.player_id)); } });
+    return '<div class="gt-rq-row">' +
+      '<div class="gt-rq-info"><strong>' + gtEsc(gtFmtDate(g.played_at || g.created_at)) + ' vs ' + gtEsc(gtTheirName(g) || '?') + '</strong>' +
+      '<span class="gt-rq-meta">' + items.length + ' item' + (items.length === 1 ? '' : 's') + (names.length ? ' · ' + gtEsc(names.join(', ')) : '') + '</span></div>' +
+      '<a class="gt-rq-btn" href="#/gametracker/review/' + gid + '"' +
+      (opts && opts.closeAdmin ? ' onclick="closeAdmin()"' : '') + '>Review →</a></div>';
+  }).join('');
+  return '<div class="gt-review-queue"><div class="gt-rq-head">🔔 ' + total + ' parent-tracked stat' +
+    (total === 1 ? '' : 's') + ' awaiting your review</div>' + rows + '</div>';
+}
 
 // ---- review: COACH reconciliation (staff only) — confirm / edit what families sent ----
 function gtParentCoachReviewHtml(g) {

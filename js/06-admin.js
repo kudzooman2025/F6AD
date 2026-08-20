@@ -690,6 +690,10 @@ function showAdminPanel() {
   if (typeof attachConditioningListeners === 'function') attachConditioningListeners();
   if (typeof attachFeedbackListener === 'function') attachFeedbackListener();
   if (typeof attachDevCardsListener === 'function') attachDevCardsListener();
+  // The parent-stat collections only attach once GameTracker is opened, so pull them
+  // in here too — otherwise the review alert has nothing to count.
+  if (typeof gtListenHeavy === 'function') gtListenHeavy();
+  if (typeof renderGtReviewAlert === 'function') renderGtReviewAlert();
   var pwEl = document.getElementById('admin-pw-input');
   if (pwEl) pwEl.value = '';
   var acct = document.getElementById('settings-account-line');
@@ -1540,6 +1544,54 @@ function toggleSiteFlag(key) {
     .then(function(){ showToast(val ? 'Hidden from the menu.' : 'Shown in the menu.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
+// ===== "Needs review" alert at the top of the admin panel =====
+function renderGtReviewAlert() {
+  var box = document.getElementById('gt-review-alert-box');
+  if (!box) return;
+  box.innerHTML = (typeof gtReviewQueueHtml === 'function') ? gtReviewQueueHtml({ closeAdmin: true }) : '';
+}
+
+// ===== Which approved parent-reported stats appear in the game Event Timeline =====
+// Types switched OFF still count in every total (stat strip, player table, season
+// stats) — they simply render in the Parent-Reported section instead of the
+// timeline, so a parent logging 60 passes can't bury the goals.
+var GT_TIMELINE_PARENT_TYPES = [
+  { id: 'assist',    label: '\u{1F170}\uFE0F Assists',           on: true  },
+  { id: 'sot',       label: '\u{1F3AF} Shots on Target',   on: true  },
+  { id: 'shot',      label: '\u{1F4A8} Shots',             on: true  },
+  { id: 'save',      label: '\u{1F9E4} Saves',             on: true  },
+  { id: 'tackle',    label: '\u{1F6E1}\uFE0F Tackles',          on: true  },
+  { id: 'pass',      label: '\u27A1\uFE0F Passes',              on: false },
+  { id: 'pass_comp', label: '\u2705 Passes Completed',    on: false }
+];
+function gtTimelineShowsParentType(typeId) {
+  var d = GT_TIMELINE_PARENT_TYPES.find(function(t){ return t.id === typeId; });
+  if (!d) return true;
+  var v = (typeof siteFlags !== 'undefined' && siteFlags) ? siteFlags['gt_tl_' + typeId] : undefined;
+  return (typeof v === 'boolean') ? v : d.on;   // saved choice wins, else the default
+}
+function toggleGtTimelineType(typeId) {
+  if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
+  var val = !gtTimelineShowsParentType(typeId);
+  var data = {}; data['gt_tl_' + typeId] = val;
+  db.collection('site_flags').doc('main').set(data, { merge: true })
+    .then(function(){ showToast(val ? 'Now shown in the timeline.' : 'Moved to Parent-Reported.'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function renderGtTimelineFlags() {
+  var box = document.getElementById('gt-timeline-flags-box');
+  if (!box) return;
+  var rows = GT_TIMELINE_PARENT_TYPES.map(function(t){
+    var on = gtTimelineShowsParentType(t.id);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--border)">' +
+      '<span style="font-size:.86rem">' + t.label + ' <span style="color:var(--muted);font-size:.78rem">(' + (on ? 'in timeline' : 'parent-reported only') + ')</span></span>' +
+      '<button class="btn-edit" onclick="toggleGtTimelineType(\'' + t.id + '\')">' + (on ? '\u{1F648} Hide' : '\u21A9 Show') + '</button></div>';
+  }).join('');
+  box.innerHTML = '<p style="font-weight:800;font-size:.9rem;margin:0 0 6px">Parent Stats in the Event Timeline</p>' +
+    '<p style="font-size:.75rem;color:var(--muted);margin:0 0 6px">Pick which approved parent-reported stats appear in each game\'s Event Timeline. Hidden types still count in all stats \u2014 they just show in the Parent-Reported section instead.</p>' +
+    rows;
+}
+
 function renderSiteFlags() {
   var box = document.getElementById('site-flags-box');
   if (!box) return;
@@ -1552,6 +1604,8 @@ function renderSiteFlags() {
   box.innerHTML = '<p style="font-weight:800;font-size:.9rem;margin:0 0 6px">Site Sections</p>' +
     '<p style="font-size:.75rem;color:var(--muted);margin:0 0 6px">Hide any menu item. The page and its data stay — it\'s just removed from the top menu and can be shown again anytime.</p>' +
     rows;
+  renderGtTimelineFlags();
+  if (typeof gtRerender === 'function') gtRerender();
 }
 
 

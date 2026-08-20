@@ -419,6 +419,17 @@ function gtFeedItem(g, e, canEdit) {
   var gameClockStr = (e.period > (g.num_periods || 2))
     ? ('OT' + (e.period - (g.num_periods || 2)) + ' ' + gtFmtMMSS(e.game_clock_seconds))
     : gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds));
+  // Approved parent-reported stats are shown inline, badged. They live in
+  // gt_parent_events (not gt_events), so the coach event editor can't touch
+  // them — the only action is removing the approval.
+  var isParent = e.source === 'parent';
+  if (isParent) {
+    return '<div class="gt-fitem">' +
+      '<span class="fi-min">[' + gameClockStr + ']</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label +
+      ' <span class="gt-parent-badge">parent-reported' + (e.author_name ? ' · ' + gtEsc(e.author_name) : '') + '</span>' +
+      (canEdit ? '<button class="gt-plog-x" title="Un-approve — sends it back to the review queue" onclick="event.stopPropagation();gtParentSetVisibility(\'' + e.parent_event_id + '\', \'coach\')">✕</button>' : '') +
+      '</div>';
+  }
   return '<div class="gt-fitem' + (open ? ' open' : '') + '" onclick="gtToggleFeedItem(\'' + e.id + '\')">' +
     '<span class="fi-min">[' + gameClockStr + ']</span>' + t.emoji + ' <strong>' + who + '</strong> — ' + t.label +
     (e.notes ? ' <span class="fi-note">· ' + gtEsc(e.notes) + '</span>' : '') +

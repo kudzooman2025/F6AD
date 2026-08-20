@@ -1327,3 +1327,13 @@ html[data-theme="dark"] .gt-endreason-btn{background:#1e1c26;border-color:#3a384
 html[data-theme="dark"] .gt-endreason-btn:hover{background:#26242f}
 html[data-theme="dark"] .gt-endreason-badge{background:#3a2c10;border-color:#7a5a12;color:#f5d08a}
 html[data-theme="dark"] .gt-st-early{background:#3a2c10;color:#f5d08a}
+
+/* Review queue — family submissions waiting on a coach decision (staff only) */
+.gt-review-queue{background:var(--purple-light);border:1px solid var(--border-strong);border-left:4px solid var(--purple);border-radius:12px;padding:12px 14px;margin-bottom:18px}
+.gt-rq-head{font-weight:800;font-size:.9rem;color:var(--text);margin-bottom:6px}
+.gt-rq-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--border)}
+.gt-rq-info{display:flex;flex-direction:column;min-width:0}
+.gt-rq-info strong{font-size:.86rem;color:var(--text)}
+.gt-rq-meta{font-size:.76rem;color:var(--muted)}
+.gt-rq-btn{flex:0 0 auto;background:var(--purple);color:#fff;font-weight:800;font-size:.76rem;text-decoration:none;padding:6px 14px;border-radius:999px;white-space:nowrap}
+.gt-rq-btn:hover{background:var(--purple-dark)}

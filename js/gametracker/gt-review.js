@@ -38,11 +38,20 @@ function gtRenderReview(view, gameId) {
   html += gtStartingXiHtml(g.id);
   // timeline with period markers
   html += '<div class="section-title" style="margin-bottom:12px">⏱ Event Timeline' + (canEdit ? ' <button class="gt-minibtn" style="padding:3px 12px;font-size:.72rem" onclick="gtOpenAddEvent(\'' + g.id + '\')">➕ Add event</button> <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">tap an event to edit or delete</span>' : '') + '</div>';
-  if (!events.length) html += '<div class="gt-empty">No events were logged in this game.</div>';
+  // Approved parent-reported stats belong in the timeline alongside coach events.
+  var timeline = statEvents.filter(function(e) {
+    if (e.source !== 'parent') return true;
+    return (typeof gtTimelineShowsParentType === 'function') ? gtTimelineShowsParentType(e.parent_type) : true;
+  }).sort(function(a, b) {
+    var ta = gtCumSec(g, a.period, a.game_clock_seconds), tb = gtCumSec(g, b.period, b.game_clock_seconds);
+    if (ta !== tb) return ta - tb;
+    return gtTsMillis(a.created_at) - gtTsMillis(b.created_at);
+  });
+  if (!timeline.length) html += '<div class="gt-empty">No events were logged in this game.</div>';
   else {
     var lastPeriod = 0;
     html += '<div class="gt-feed">';
-    events.forEach(function(e) {
+    timeline.forEach(function(e) {
       if (e.period !== lastPeriod) {
         lastPeriod = e.period;
         html += '<div class="gt-period-marker">— ' + gtEsc(gtPeriodLabel(g, e.period, 'in_progress')) + ' —</div>';
