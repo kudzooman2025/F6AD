@@ -75,7 +75,9 @@ function gtRenderRoster(view) {
       html += '<tr><td class="num" style="font-weight:900;color:var(--purple)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
         '<td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span> <span class="gt-guest-badge">Guest</span>' + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</td>' +
         '<td>' + gtEsc(p.position || '—') + '</td>' +
-        (canEdit ? '<td style="white-space:nowrap"><button class="gt-minibtn" onclick="gtOpenGuestForm(\'' + p.id + '\')">Edit</button> <button class="gt-minibtn danger" onclick="gtDeletePlayer(\'' + p.id + '\')">Remove</button></td>' : '') +
+        (canEdit ? '<td style="white-space:nowrap"><button class="gt-minibtn" onclick="gtOpenGuestForm(\'' + p.id + '\')">Edit</button> ' +
+          '<button class="gt-minibtn" onclick="gtConvertGuest(\'' + p.id + '\')">⬆ Make Full Player</button> ' +
+          '<button class="gt-minibtn danger" onclick="gtDeletePlayer(\'' + p.id + '\')">Remove</button></td>' : '') +
         '</tr>';
     });
     html += '</tbody></table></div>';
@@ -320,11 +322,45 @@ function gtEmailAllParents(rid) {
   window.location.href = 'mailto:?bcc=' + emails.join(',') + '&subject=' + encodeURIComponent(subject);
   showToast('Opening email to ' + emails.length + ' parent' + (emails.length === 1 ? '' : 's') + '…');
 }
-function gtConvertGuest(pid) {
+// Guest -> full squad player. Both fields have to move together: clearing
+// is_guest while roster_id is still the '__guests__' sentinel drops the player
+// out of the guest pool AND off every real roster, stranding them.
+function gtPromoteGuest(pid, rid) {
   if (!gtCanEdit()) return;
-  db.collection('gt_players').doc(pid).set({ is_guest: false }, { merge: true })
-    .then(function(){ showToast(gtPlayerName(pid) + ' converted to full player ✓'); })
+  var r = gtRoster(rid);
+  if (!r) { showToast('Pick a roster to move them onto.'); return; }
+  db.collection('gt_players').doc(pid).set({
+    is_guest: false, roster_id: rid,
+    updated_at: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true })
+    .then(function(){
+      if (typeof gtCloseModal === 'function') gtCloseModal();
+      showToast(gtPlayerName(pid) + ' is now a full player on ' + r.name + ' ✓');
+    })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtConvertGuest(pid) {
+  if (!gtCanEdit()) { showToast('Coach login required.'); return; }
+  var rosters = GT.rosters.filter(function(r){ return !r.archived; });
+  if (!rosters.length) { showToast('Create a roster first, then promote them onto it.'); return; }
+  var name = gtPlayerName(pid);
+  // One squad is the normal case — don't make them pick from a list of one.
+  if (rosters.length === 1) {
+    if (!confirm('Move ' + name + ' onto ' + rosters[0].name + ' as a full player?\n\nEvery stat and game already logged is kept.')) return;
+    gtPromoteGuest(pid, rosters[0].id);
+    return;
+  }
+  var active = rosters.find(function(r){ return r.is_active; }) || rosters[0];
+  gtOpenModal(
+    '<h3>⬆ Make Full Player<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted);margin-bottom:12px">' + gtEsc(name) +
+    ' keeps every stat and game already logged.</p>' +
+    '<label>Add to roster</label><select id="gt-pg-roster">' +
+    rosters.map(function(r){ return '<option value="' + r.id + '"' + (r.id === active.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') +
+    '</select>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtPromoteGuest(\'' + pid + '\', document.getElementById(\'gt-pg-roster\').value)">Make Full Player</button>' +
+    '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
 }
 function gtMakeGuest(pid) {
   if (!gtCanEdit()) return;
