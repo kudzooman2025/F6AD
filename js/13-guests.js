@@ -45,7 +45,7 @@ function guestSignupUrl() {
 // tap); everything else falls back to copying the link.
 function shareGuestSignup(btn) {
   var url = guestSignupUrl();
-  var payload = { title: 'F6AD Guest Player Sign-Up', text: 'Sign up to be a guest player with F6AD:', url: url };
+  var payload = { title: appText('shortName') + ' Guest Player Sign-Up', text: 'Sign up to be a guest player with ' + appTeamName() + ':', url: url };
   if (navigator.share) {
     navigator.share(payload).catch(function(){});
     return;

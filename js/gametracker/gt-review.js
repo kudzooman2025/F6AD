@@ -137,7 +137,7 @@ function gtExportGame(gid) {
     lines.push('[' + gtFmtMMSS(gtDisplayCumSec(g, e.period, e.game_clock_seconds)) + '] ' + who + ' - ' + t.label + (e.notes ? ' (' + e.notes + ')' : '') + (e.youtube_url ? ' ' + e.youtube_url : ''));
   });
   lines.push('');
-  lines.push('— F6AD GameTracker');
+  lines.push('— ' + appText('shortName') + ' GameTracker');
   navigator.clipboard.writeText(lines.join('\n')).then(function(){ showToast('Game summary copied!'); });
 }
 function gtPdfDate(ts) {
@@ -156,7 +156,7 @@ function gtExportGamePDF(gid) {
   var doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter' });
   var purple = [123, 47, 212];
   doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(purple[0], purple[1], purple[2]);
-  doc.text('F6AD GameTracker', 40, 48);
+  doc.text(appText('shortName') + ' GameTracker', 40, 48);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(110);
   doc.text((g.game_type || 'game') + '  ·  ' + gtFmtDate(g.played_at || g.created_at) + (g.venue ? '  ·  ' + g.venue : ''), 40, 66);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(20);
@@ -193,7 +193,7 @@ function gtExportGamePDF(gid) {
       margin: { left: 40, right: 40 }
     });
   }
-  doc.save('F6AD_vs_' + String(gtTheirName(g) || 'game').replace(/[^a-z0-9]+/gi, '_') + '_' + gtPdfDate(g.played_at || g.created_at) + '.pdf');
+  doc.save(appText('shortName').replace(/[^a-z0-9]+/gi, '_') + '_vs_' + String(gtTheirName(g) || 'game').replace(/[^a-z0-9]+/gi, '_') + '_' + gtPdfDate(g.played_at || g.created_at) + '.pdf');
   showToast('PDF exported ✓');
 }
 
@@ -572,7 +572,7 @@ function gtRenderPlayerCard(view, pid) {
   if (!p) { view.innerHTML = GT.loaded.players ? '<div class="gt-empty">Player not found. <a href="#/gametracker/roster">Back</a></div>' : '<div class="gt-empty">Loading…</div>'; return; }
   var pr = (typeof gtProfile === 'function') ? gtProfile(pid) : {};
   var t = gtPlayerCareerTotals(pid);
-  var team = gtRoster(p.roster_id) ? gtRoster(p.roster_id).name : 'F6AD';
+  var team = gtRoster(p.roster_id) ? gtRoster(p.roster_id).name : appTeamName();
   var subline = [p.position || '', pr.class_year ? 'Class of ' + pr.class_year : '', team].filter(Boolean).join(' · ');
   var reel = (pr.featured_highlights || []).concat(t.highlights);
   var seen = {}, thumbs = [];

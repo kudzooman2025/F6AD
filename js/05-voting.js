@@ -307,7 +307,7 @@ function shareVotes() {
   allocated.sort(function(a,b){return b.credits-a.credits;});
   var used=allocated.reduce(function(s,x){return s+x.credits;},0);
   var label={fall:'Fall 2026',winter:'Winter 2026',spring:'Spring 2027'}[season];
-  var text='F6AD '+label.toUpperCase()+' CREDITS -- '+name+'\n'+Array(49).join('=')+'\n'+used+'/'+TOTAL_CREDITS+' credits used\n';
+  var text=appText('shortName')+' '+label.toUpperCase()+' CREDITS -- '+name+'\n'+Array(49).join('=')+'\n'+used+'/'+TOTAL_CREDITS+' credits used\n';
   if(allocated.length) text+='\nALLOCATED:\n'+allocated.map(function(x){return '  '+x.name+' -- '+x.credits;}).join('\n');
   if(unallocated.length) text+='\n\nNO CREDITS:\n'+unallocated.map(function(x){return '  '+x;}).join('\n');
   navigator.clipboard.writeText(text).then(function(){showToast('Credits summary copied!');});

@@ -22,7 +22,7 @@
 <!-- HEADER -->
 <header>
   <div class="header-inner">
-    <a class="logo" href="#/home" aria-label="Go to home"><span class="logo-mark"></span><h1>F6AD</h1></a>
+    <a class="logo" href="#/home" aria-label="Go to home"><span class="logo-mark"></span><h1 data-app="shortName">F6AD</h1></a>
     <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu" aria-expanded="false" onclick="toggleNavMenu(event)"><span></span><span></span><span></span></button>
     <nav id="main-nav" onclick="if(event.target.closest('a,button'))closeNavMenu()">
       <div class="theme-switch" onclick="event.stopPropagation()"><button data-theme-val="light" onclick="setTheme('light')">☀️ Light</button><button data-theme-val="dark" onclick="setTheme('dark')">🌙 Dark</button><button data-theme-val="contrast" onclick="setTheme('contrast')">🔆 Sunlight</button></div>
@@ -44,8 +44,8 @@
 
 <!-- HERO -->
 <div class="hero">
-  <h2>F6AD</h2>
-  <p>U14 Boys · 2026–2027</p>
+  <h2 data-app="heroTitle">F6AD</h2>
+  <p data-app="tagline">U14 Boys · 2026–2027</p>
 </div>
 
 <!-- MAIN -->
@@ -208,7 +208,7 @@
     </div>
     <!-- FALL PANEL -->
     <div id="season-panel-fall" class="season-panel active">
-      <p class="vote-intro" style="margin-bottom:20px">Help choose which Fall 2026 tournaments F6AD registers for. Each family gets <strong>1,000 credits</strong> to spread across as many as they like &mdash; max 200 per tournament.</p>
+      <p class="vote-intro" style="margin-bottom:20px">Help choose which Fall 2026 tournaments <span data-app="shortName">F6AD</span> registers for. Each family gets <strong>1,000 credits</strong> to spread across as many as they like &mdash; max 200 per tournament.</p>
       <div class="vote-summary-bar" id="vote-summary-bar-fall" style="display:none">
         <div class="vote-counts"><span class="vc yes">&#x1F4B0; <span id="count-used-fall">0</span> / 1000 credits allocated</span><span style="font-size:.8rem;color:var(--muted)" id="count-remaining-fall"></span></div>
       </div>
@@ -284,7 +284,7 @@
 </div>
 
 <footer>
-  <strong>F6AD</strong> &nbsp;·&nbsp; U14 Boys · 2026–2027 &nbsp;·&nbsp; ⚽ Let's go!
+  <strong data-app="shortName">F6AD</strong> &nbsp;·&nbsp; <span data-app="tagline">U14 Boys · 2026–2027</span> &nbsp;·&nbsp; ⚽ Let's go!
 </footer>
 
 <!-- TOAST -->

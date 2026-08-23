@@ -122,7 +122,7 @@ function gtImportTeamSnapTournament(schedId) {
   var lineup = {};
   gtRosterPlayers(roster.id).filter(function(p){ return !p.is_guest; }).forEach(function(p){ lineup[p.id] = { available: true, paid: false, note: '' }; });
   var data = {
-    name: ev.name, team_name: (gtRoster(roster.id) ? gtRoster(roster.id).name : 'F6AD'),
+    name: ev.name, team_name: (gtRoster(roster.id) ? gtRoster(roster.id).name : appTeamName()),
     base_roster_id: roster.id, start_date: ev.date || '', end_date: ev.date || '',
     venue: ev.location || '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '',
     players_per_side: 11, official_url: '', lineup: lineup,
@@ -140,11 +140,11 @@ function gtOpenTournamentForm(tid) {
   var t = tid ? gtTournament(tid) : null;
   var rosters = GT.rosters.filter(function(r){ return !r.archived; });
   var defRid = t ? t.base_roster_id : (gtActiveRoster() ? gtActiveRoster().id : (rosters[0] ? rosters[0].id : ''));
-  var defName = t ? (t.team_name || '') : (gtRoster(defRid) ? gtRoster(defRid).name : 'F6AD');
+  var defName = t ? (t.team_name || '') : (gtRoster(defRid) ? gtRoster(defRid).name : appTeamName());
   gtOpenModal(
     '<h3>' + (t ? '✏️ Edit Tournament' : '➕ Create Tournament') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<label>Tournament Name</label><input type="text" id="gt-tf-name" value="' + gtAttr(t ? t.name : '') + '" placeholder="Memorial Day Classic 2026"/>' +
-    '<label>Team Name (how your team is shown in games)</label><input type="text" id="gt-tf-team" value="' + gtAttr(defName) + '" placeholder="F6AD"/>' +
+    '<label>Team Name (how your team is shown in games)</label><input type="text" id="gt-tf-team" value="' + gtAttr(defName) + '" placeholder="' + gtAttr(appTeamName()) + '"/>' +
     '<label>Official tournament link</label><input type="url" id="gt-tf-url" value="' + gtAttr(t ? (t.official_url || '') : '') + '" placeholder="https://tournament-website.com"/>' +
     (t ? '' :
       '<label>Base Roster (squad to pull players from)</label><select id="gt-tf-roster">' +
@@ -360,13 +360,13 @@ function gtStartTournamentGame(tid) {
   });
   GT.setup = {
     step: 1,
-    home_team: t.team_name || (ros ? ros.name : 'F6AD'),
+    home_team: t.team_name || (ros ? ros.name : appTeamName()),
     away_team: '', f6ad_side: 'home', game_type: 'tournament', venue: t.venue || '', venue_address: t.venue_address || '', venue_city: t.venue_city || '', venue_state: t.venue_state || '', venue_zip: t.venue_zip || '', field: '',
-    num_periods: 2, period_duration_minutes: 35, players_per_side: t.players_per_side || 11,
+    num_periods: t.num_periods || appGameDefaults().num_periods, period_duration_minutes: t.period_duration_minutes || appGameDefaults().period_duration_minutes, players_per_side: t.players_per_side || appGameDefaults().players_per_side,
     roster_id: t.base_roster_id,
     avail: avail, notes: {}, guests: [], guestIds: guestIds, kickoff_time: '', game_date: gtTodayStr(),
     tournament_id: tid, season_id: null,
-    started: {}, startPos: {}, team_name: t.team_name || (ros ? ros.name : 'F6AD')
+    started: {}, startPos: {}, team_name: t.team_name || (ros ? ros.name : appTeamName())
   };
   gtGo('/gametracker/new');
 }

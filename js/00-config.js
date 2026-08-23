@@ -14,6 +14,13 @@ var APP_CONFIG = {
   siteTitle:   'F6AD — U14 Boys 2026',
   teamName:    'F6AD',
   clubName:    'FC Delco',
+
+  // What the site actually SAYS. shortName is the header/footer wordmark,
+  // heroTitle the big line on the home page, tagline the line under it.
+  // Any of them left blank falls back to teamName.
+  shortName:   'F6AD',
+  heroTitle:   'F6AD',
+  tagline:     'U14 Boys · 2026–2027',
   domain:      'f6ad.space',
   githubRepo:  'kudzooman2025/F6AD',
 
@@ -60,7 +67,20 @@ var APP_CONFIG = {
     dark:     '#4831A8',   // hover / pressed
     soft:     '#F1EEFF',   // tinted panels and badges (light theme)
     softDark: '#241D3F',   // the same tint on the dark theme
-    accent:   ''           // optional second colour; blank = use primary
+    accent:   '',          // optional second colour; blank = use primary
+    // Sunlight/high-contrast mode. Blank = reuse primary/dark.
+    contrast:     '#4326B8',
+    contrastDark: '#2F1A86'
+  },
+
+  // ---- match format -------------------------------------------------------
+  // What a NEW game defaults to for this team. A season (or tournament) can
+  // override any of it; this is what you get before one is chosen, so a 9v9
+  // team never has to correct 11v11 and 35-minute halves on every game.
+  game: {
+    periods:       2,
+    periodMinutes: 35,
+    playersPerSide: 11
   },
 
   // ---- club-specific content ----------------------------------------------
@@ -77,8 +97,14 @@ function applyAppBrand() {
   var css = ':root{' +
     (b.primary ? '--brand:' + b.primary + ';' : '') +
     (b.dark    ? '--brand-dark:' + b.dark + ';' : '') +
-    (b.soft    ? '--brand-soft:' + b.soft + ';--accent-soft:' + b.soft + ';' : '') + '}' +
+    (b.soft    ? '--brand-soft:' + b.soft + ';--accent-soft:' + b.soft + ';' : '') +
+    (b.accent  ? '--accent:' + b.accent + ';' : '') + '}' +
     (b.softDark ? 'html[data-theme="dark"]{--brand-soft:' + b.softDark + ';--accent-soft:' + b.softDark + ';}' : '');
+  // Sunlight mode hardcodes a deeper purple in styles.css; override it too, or
+  // a navy team goes violet the moment someone taps the high-contrast theme.
+  var cp = b.contrast || b.primary, cd = b.contrastDark || b.dark;
+  if (cp || cd) css += 'html[data-theme="contrast"]{' +
+    (cp ? '--brand:' + cp + ';' : '') + (cd ? '--brand-dark:' + cd + ';' : '') + '}';
   var el = document.createElement('style');
   el.id = 'app-brand';
   el.textContent = css;
@@ -86,8 +112,65 @@ function applyAppBrand() {
   var mc = document.querySelector('meta[name="theme-color"]');
   if (mc && b.primary) mc.setAttribute('content', b.primary);
   if (APP_CONFIG.siteTitle) document.title = APP_CONFIG.siteTitle;
+  var at = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+  if (at) at.setAttribute('content', appText('shortName'));
 }
+
+// ---- what the site says ---------------------------------------------------
+// One resolver so every caller degrades the same way: the specific field, then
+// the team, then the product name. Nothing should ever render an empty string.
+function appText(key) {
+  var c = APP_CONFIG || {};
+  return (c[key] || '').trim() || c.teamName || c.appName || '';
+}
+function appTeamName() { return APP_CONFIG.teamName || APP_CONFIG.appName || ''; }
+
+// Match format for a brand-new game, before a season or tournament overrides it.
+function appGameDefaults() {
+  var g = (APP_CONFIG && APP_CONFIG.game) || {};
+  return {
+    num_periods: g.periods || 2,
+    period_duration_minutes: g.periodMinutes || 35,
+    players_per_side: g.playersPerSide || 11
+  };
+}
+
+// Paint the deployment's wording over the markup's defaults. The HTML ships
+// F6AD's text so the page reads correctly before JS runs; every element that
+// names the team carries data-app="<config key>" and gets rewritten here.
+function applyAppIdentity() {
+  var nodes = document.querySelectorAll('[data-app]');
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i], v = appText(n.getAttribute('data-app'));
+    if (v) n.textContent = v; else n.style.display = 'none';
+  }
+}
+
+// The PWA manifest is a static file, so an installed shortcut would carry the
+// wrong team's name. Rebuild it from config and swap the link to a blob.
+function applyAppManifest() {
+  var link = document.querySelector('link[rel="manifest"]');
+  if (!link || typeof Blob === 'undefined' || !window.URL || !URL.createObjectURL) return;
+  var name = appText('shortName');
+  var m = {
+    name: name + ' GameTracker', short_name: name,
+    start_url: '/', scope: '/', display: 'standalone', orientation: 'portrait',
+    background_color: (APP_CONFIG.brand && APP_CONFIG.brand.dark) || '#0a0a23',
+    theme_color: (APP_CONFIG.brand && APP_CONFIG.brand.primary) || '#5A3FD6',
+    icons: [
+      { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+      { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+    ]
+  };
+  try {
+    link.setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(m)], { type: 'application/manifest+json' })));
+  } catch (e) { /* keep the static manifest */ }
+}
+
 applyAppBrand();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function(){ applyAppIdentity(); applyAppManifest(); });
+} else { applyAppIdentity(); applyAppManifest(); }
 
 // Is a module switched on for this deployment? Unknown keys default to on, so
 // adding a module doesn't silently disable it everywhere.

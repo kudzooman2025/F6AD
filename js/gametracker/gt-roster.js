@@ -126,7 +126,7 @@ function gtOpenRosterForm(rid) {
   var r = rid ? gtRoster(rid) : null;
   gtOpenModal(
     '<h3>' + (r ? '✏️ Edit Roster' : '➕ Create Roster') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<label>Roster Name</label><input type="text" id="gt-rf-name" value="' + gtAttr(r ? r.name : '') + '" placeholder="FC Delco F6AD 2026-27"/>' +
+    '<label>Roster Name</label><input type="text" id="gt-rf-name" value="' + gtAttr(r ? r.name : '') + '" placeholder="' + gtAttr(appTeamName() + ' 2026-27') + '"/>' +
     '<label>Season Label</label><input type="text" id="gt-rf-season" value="' + gtAttr(r ? r.season : '') + '" placeholder="2026-27"/>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveRoster(' + (r ? '\'' + r.id + '\'' : 'null') + ')">Save</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
@@ -318,7 +318,7 @@ function gtEmailAllParents(rid) {
     });
   });
   if (!emails.length) { showToast('No parent emails on this roster yet.'); return; }
-  var subject = (gtRoster(rid) ? gtRoster(rid).name : 'F6AD') + ' — Team Update';
+  var subject = (gtRoster(rid) ? gtRoster(rid).name : appTeamName()) + ' — Team Update';
   window.location.href = 'mailto:?bcc=' + emails.join(',') + '&subject=' + encodeURIComponent(subject);
   showToast('Opening email to ' + emails.length + ' parent' + (emails.length === 1 ? '' : 's') + '…');
 }

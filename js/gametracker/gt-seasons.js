@@ -57,7 +57,7 @@ function gtOpenSeasonForm(sid) {
   var se = sid ? gtSeason(sid) : null;
   var rosters = GT.rosters.filter(function(r){ return !r.archived; });
   var defRid = se ? se.base_roster_id : (gtActiveRoster() ? gtActiveRoster().id : (rosters[0] ? rosters[0].id : ''));
-  var defName = se ? (se.team_name || '') : (gtRoster(defRid) ? gtRoster(defRid).name : 'F6AD');
+  var defName = se ? (se.team_name || '') : (gtRoster(defRid) ? gtRoster(defRid).name : appTeamName());
   gtOpenModal(
     '<h3>' + (se ? '✏️ Edit Season' : '➕ Create Season') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<label>Season Name</label><input type="text" id="gt-sf-name" value="' + gtAttr(se ? se.name : '') + '" placeholder="MLS Next 2026-27"/>' +
@@ -68,7 +68,9 @@ function gtOpenSeasonForm(sid) {
       rosters.map(function(r){ return '<option value="' + r.id + '"' + (defRid === r.id ? ' selected' : '') + '>' + gtEsc(r.name) + '</option>'; }).join('') + '</select>') +
     '<div class="gm-row"><div><label>Start Date</label><input type="date" id="gt-sf-start" value="' + gtAttr(se ? se.start_date : '') + '"/></div>' +
     '<div><label>End Date</label><input type="date" id="gt-sf-end" value="' + gtAttr(se ? se.end_date : '') + '"/></div></div>' +
-    '<label>Players per side</label><input type="number" id="gt-sf-side" min="1" max="11" value="' + (se && se.players_per_side ? se.players_per_side : 11) + '"/>' +
+    '<div class="gm-row"><div><label>Players per side</label><input type="number" id="gt-sf-side" min="1" max="11" value="' + (se && se.players_per_side ? se.players_per_side : appGameDefaults().players_per_side) + '"/></div>' +
+    '<div><label>Periods</label><input type="number" id="gt-sf-periods" min="1" max="4" value="' + (se && se.num_periods ? se.num_periods : appGameDefaults().num_periods) + '"/></div>' +
+    '<div><label>Minutes / period</label><input type="number" id="gt-sf-permin" min="1" max="60" value="' + (se && se.period_duration_minutes ? se.period_duration_minutes : appGameDefaults().period_duration_minutes) + '"/></div></div>' +
     '<label>Default Venue (auto-fills new games; editable per game)</label><input type="text" id="gt-sf-venue" list="venue-datalist" onchange="gtFillVenueFields(\'gt-sf-venue\',\'gt-sf-vaddr\',\'gt-sf-vcity\',\'gt-sf-vstate\',\'gt-sf-vzip\')" value="' + gtAttr(se && se.venue ? se.venue : '') + '" placeholder="Kohler Field, Blue Bell"/>' +
     '<label>Address</label><input type="text" id="gt-sf-vaddr" value="' + gtAttr(se && se.venue_address ? se.venue_address : '') + '"/>' +
     '<div class="gm-row"><div><label>City</label><input type="text" id="gt-sf-vcity" value="' + gtAttr(se && se.venue_city ? se.venue_city : '') + '"/></div>' +
@@ -89,6 +91,8 @@ function gtSaveSeason(sid) {
     start_date: document.getElementById('gt-sf-start').value || '',
     end_date: document.getElementById('gt-sf-end').value || '',
     players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-sf-side').value, 10) || 11)),
+    num_periods: Math.max(1, Math.min(4, parseInt((document.getElementById('gt-sf-periods') || {}).value, 10) || 2)),
+    period_duration_minutes: Math.max(1, Math.min(60, parseInt((document.getElementById('gt-sf-permin') || {}).value, 10) || 35)),
     venue: (document.getElementById('gt-sf-venue') || {}).value || '',
     venue_address: (document.getElementById('gt-sf-vaddr') || {}).value || '',
     venue_city: (document.getElementById('gt-sf-vcity') || {}).value || '',
@@ -156,13 +160,13 @@ function gtStartSeasonGame(sid) {
   var ros = gtRoster(se.base_roster_id);
   GT.setup = {
     step: 1,
-    home_team: se.team_name || (ros ? ros.name : 'F6AD'),
+    home_team: se.team_name || (ros ? ros.name : appTeamName()),
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: se.venue || '', venue_address: se.venue_address || '', venue_city: se.venue_city || '', venue_state: se.venue_state || '', venue_zip: se.venue_zip || '', field: se.field || '',
-    num_periods: 2, period_duration_minutes: 35, players_per_side: se.players_per_side || 11,
+    num_periods: se.num_periods || appGameDefaults().num_periods, period_duration_minutes: se.period_duration_minutes || appGameDefaults().period_duration_minutes, players_per_side: se.players_per_side || appGameDefaults().players_per_side,
     roster_id: se.base_roster_id,
     avail: {}, notes: {}, guests: [], guestIds: {}, kickoff_time: '', game_date: gtTodayStr(),
     tournament_id: null, season_id: sid,
-    started: {}, startPos: {}, team_name: se.team_name || (ros ? ros.name : 'F6AD')
+    started: {}, startPos: {}, team_name: se.team_name || (ros ? ros.name : appTeamName())
   };
   gtGo('/gametracker/new');
 }

@@ -50,7 +50,7 @@ function renderVoteTally() {
   container.innerHTML=html||'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No votes yet.</td></tr>';
 }
 function exportVoteTally() {
-  var text='F6AD TOURNAMENT CREDIT TALLY\n'+Array(61).join('=')+'\n';
+  var text=appText('shortName')+' TOURNAMENT CREDIT TALLY\n'+Array(61).join('=')+'\n';
   ['fall','winter','spring'].forEach(function(season){
     var label={fall:'FALL 2026',winter:'WINTER 2026',spring:'SPRING 2027'}[season];
     text+='\n-- '+label+' --\n';
@@ -1626,7 +1626,7 @@ function renderSiteFlags() {
 
 
 // ===== Manual TeamSnap sync (admin) =====
-var GH_REPO = 'kudzooman2025/F6AD';
+var GH_REPO = (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.githubRepo) || 'kudzooman2025/F6AD';
 function renderTeamsnapSync() {
   var box = document.getElementById('teamsnap-sync-box');
   if (!box) return;

@@ -2,11 +2,12 @@
 function gtStartSetup() {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }
   var act = gtActiveRoster();
+  var gd = appGameDefaults();
   GT.setup = {
     step: 1,
-    home_team: act ? act.name : 'F6AD',
+    home_team: act ? act.name : appTeamName(),
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: '', venue_address: '', venue_city: '', venue_state: '', venue_zip: '', field: '', kickoff_time: '', game_date: gtTodayStr(),
-    num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
+    num_periods: gd.num_periods, period_duration_minutes: gd.period_duration_minutes, players_per_side: gd.players_per_side,
     roster_id: act ? act.id : '',
     avail: {}, notes: {}, guests: [], guestIds: {}, tournament_id: null, season_id: null,
     started: {}, startPos: {}, team_name: '', round: ''
@@ -51,7 +52,7 @@ function gtRenderNew(view) {
       '<datalist id="gt-opp-datalist">' + oppNames.map(function(n){ return '<option value="' + gtEsc(n) + '">'; }).join('') + '</datalist>' +
       '</div></div>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 4px">Team Name (shown in game)</label>' +
-      '<input type="text" id="gt-su-teamname" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.team_name || '') + '" placeholder="' + (gtRoster(s.roster_id) ? gtAttr(gtRoster(s.roster_id).name) : 'F6AD') + '" onchange="gtSetupCapture()"/>' +
+      '<input type="text" id="gt-su-teamname" style="width:100%;border:2px solid var(--border);border-radius:7px;padding:9px 11px;font-family:inherit" value="' + gtAttr(s.team_name || '') + '" placeholder="' + (gtRoster(s.roster_id) ? gtAttr(gtRoster(s.roster_id).name) : gtAttr(appTeamName())) + '" onchange="gtSetupCapture()"/>' +
       '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin:14px 0 6px">We are playing</label>' +
       '<div class="gt-avail-toggle"><button class="' + (s.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="gtSetupField(\'f6ad_side\',\'home\');gtSetupCapture();gtRerender(true)">🏠 Home</button>' +
       '<button class="' + (s.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="gtSetupField(\'f6ad_side\',\'away\');gtSetupCapture();gtRerender(true)">✈️ Away</button></div>' +
@@ -547,7 +548,7 @@ function gtOpenGameEdit(gid) {
   var dateVal = (d && !isNaN(d.getTime())) ? (d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2)) : '';
   gtOpenModal(
     '<h3>✏️ Edit Game<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<label>Our Team Name</label><input type="text" id="gt-ge-us" value="' + gtAttr(gtOurName(g)) + '" placeholder="F6AD"/>' +
+    '<label>Our Team Name</label><input type="text" id="gt-ge-us" value="' + gtAttr(gtOurName(g)) + '" placeholder="' + gtAttr(appTeamName()) + '"/>' +
     '<label>Opponent</label><input type="text" id="gt-ge-opp" value="' + gtAttr(opp) + '"/>' +
     '<label>We are playing</label><div class="gt-avail-toggle"><button type="button" id="gt-ge-home" class="' + (g.f6ad_side === 'home' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-away\').classList.remove(\'on-yes\')">🏠 Home</button><button type="button" id="gt-ge-away" class="' + (g.f6ad_side === 'away' ? 'on-yes' : '') + '" onclick="this.classList.add(\'on-yes\');document.getElementById(\'gt-ge-home\').classList.remove(\'on-yes\')">✈️ Away</button></div>' +
     (GT.seasons && GT.seasons.length ? '<label>Season</label><select id="gt-ge-season"><option value="">\u2014 None \u2014</option>' + GT.seasons.slice().sort(function(a, b){ return gtTsMillis(b.start_date || b.created_at) - gtTsMillis(a.start_date || a.created_at); }).map(function(se){ return '<option value="' + se.id + '"' + ((g.season_id || '') === se.id ? ' selected' : '') + '>' + gtEsc(se.name) + '</option>'; }).join('') + '</select>' : '') +
