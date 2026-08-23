@@ -93,11 +93,11 @@ function pdCard(period, target) {
 // ---------- coach controls + evaluation (admin) ----------
 function pdSetPeriod(v) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) return;
-  db.collection('pd_config').doc('main').set({ active_period: v || null }, { merge: true }).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('pd_config').doc('main').set({ active_period: v || null }, { merge: true }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function pdSetOpen(v) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) return;
-  db.collection('pd_config').doc('main').set({ open: !!v }, { merge: true }).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('pd_config').doc('main').set({ open: !!v }, { merge: true }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function pdSelectPlayer(pid) { pdSelectedPid = pid || null; renderAdminDevCards(); }
 function pdSaveCoachEval(pid) {
@@ -110,7 +110,7 @@ function pdSaveCoachEval(pid) {
     if (v !== '') { var n = pdClamp(v); if (!isNaN(n)) { ratings[a.id] = n; any = true; } }
   });
   if (!any) { showToast('Rate at least one attribute.'); return; }
-  db.collection('pd_evals').doc(period + '_coach_' + pid).set({
+  tdb('pd_evals').doc(period + '_coach_' + pid).set({
     period: period, rater_type: 'coach', rater_id: 'coach', target_player_id: pid,
     ratings: ratings, updated_at: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true }).then(function(){ showToast('Coach evaluation saved ✓'); })
@@ -201,11 +201,11 @@ function renderAdminDevCards() {
 function attachDevCardsListener() {
   if (typeof _lazyOn === 'undefined') { window._lazyOn = window._lazyOn || {}; }
   if (_lazyOn.pd) return; _lazyOn.pd = true;
-  db.collection('pd_evals').onSnapshot(function(snap) {
+  tdb('pd_evals').onSnapshot(function(snap) {
     pdEvals = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     if (typeof renderAdminDevCards === 'function' && document.getElementById('admin-devcards-list')) renderAdminDevCards();
   }, function(){});
-  db.collection('pd_player_links').onSnapshot(function(snap) {
+  tdb('pd_player_links').onSnapshot(function(snap) {
     pdPlayerLinks = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     if (typeof renderAdminDevCards === 'function' && document.getElementById('admin-devcards-list')) renderAdminDevCards();
     if (typeof renderPlayerDevPanel === 'function') renderPlayerDevPanel();
@@ -220,7 +220,7 @@ function pdPublishCards(period) {
   var batch = db.batch();
   players.forEach(function(p) {
     var card = pdCard(period, p.id);
-    batch.set(db.collection('pd_cards').doc(p.id + '_' + period), {
+    batch.set(tdb('pd_cards').doc(p.id + '_' + period), {
       player_id: p.id, period: period,
       attrs: card.attrs.map(function(a){ return { id: a.id, coach: a.coach, peer: a.peer, peerCount: a.peerCount, agreement: a.agreement || null, family: (a.family != null ? a.family : null), familyCount: a.familyCount || 0 }; }),
       published_at: firebase.firestore.FieldValue.serverTimestamp()
@@ -231,11 +231,11 @@ function pdPublishCards(period) {
 }
 function pdApprovePlayerLink(id) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) return;
-  db.collection('pd_player_links').doc(id).set({ status: 'approved' }, { merge: true })
+  tdb('pd_player_links').doc(id).set({ status: 'approved' }, { merge: true })
     .then(function(){ showToast('Player approved ✓'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function pdDenyPlayerLink(id) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) return;
   if (!confirm('Remove this player sign-in?')) return;
-  db.collection('pd_player_links').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('pd_player_links').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
 }

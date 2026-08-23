@@ -4,7 +4,10 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "node_modules/**"
+      "node_modules/**",
+      "montco/**",
+      "**/*roster-export*",
+      "**/*contact-export*"
     ],
     "rewrites": [
       {
@@ -16,19 +19,28 @@
       {
         "source": "**",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache" }
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
         ]
       },
       {
         "source": "**/*.@(png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf)",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=86400" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          }
         ]
       },
       {
         "source": "**/*.@(js|css)",
         "headers": [
-          { "key": "Cache-Control", "value": "public, max-age=120" }
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=120"
+          }
         ]
       }
     ]

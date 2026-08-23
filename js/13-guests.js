@@ -13,7 +13,7 @@ function guestAppsListen() {
   if (guestAppsListening) return;
   if (typeof gtCanEdit !== 'function' || !gtCanEdit()) return;
   guestAppsListening = true;
-  db.collection('gt_guest_apps').onSnapshot(function(snap) {
+  tdb('gt_guest_apps').onSnapshot(function(snap) {
     guestApps = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     if (typeof renderGtReviewAlert === 'function') renderGtReviewAlert();
     if (typeof gtRerender === 'function') gtRerender();
@@ -74,7 +74,7 @@ function submitGuestSignup() {
   var player = val('ga-player'), parent = val('ga-parent'), phone = val('ga-phone'), email = val('ga-email');
   if (!player || !parent || !phone || !email) { showToast('Player name, parent name, phone and email are all required.'); return; }
   if (email.indexOf('@') < 0) { showToast('That email address does not look right.'); return; }
-  db.collection('gt_guest_apps').add({
+  tdb('gt_guest_apps').add({
     player_name: player, parent_name: parent, phone: phone, email: email,
     position: val('ga-position'), current_team: val('ga-team'), location: val('ga-location'),
     referred_by: val('ga-referred'), notes: val('ga-notes'),
@@ -120,7 +120,7 @@ function approveGuestApp(id) {
   var first = parts.shift() || a.player_name || 'Guest';
   var last = parts.join(' ');
   var ts = firebase.firestore.FieldValue.serverTimestamp();
-  var pref = db.collection('gt_players').doc();
+  var pref = tdb('gt_players').doc();
   var batch = db.batch();
   batch.set(pref, {
     roster_id: '__guests__', first_name: first, last_name: last, jersey_number: null,
@@ -128,7 +128,7 @@ function approveGuestApp(id) {
     parent_email: a.email || '', whatsapp_opt_in: false, is_guest: true,
     guest_app_id: id, created_at: ts
   });
-  batch.set(db.collection('gt_guest_apps').doc(id), {
+  batch.set(tdb('gt_guest_apps').doc(id), {
     status: 'approved', player_id: pref.id,
     decided_by: (typeof gtParentName === 'function' ? (gtParentName() || 'Coach') : 'Coach'), decided_at: ts
   }, { merge: true });
@@ -139,7 +139,7 @@ function approveGuestApp(id) {
 function declineGuestApp(id) {
   if (typeof gtCanEdit === 'function' && !gtCanEdit()) { showToast('Coach login required.'); return; }
   if (!confirm('Decline this guest player application? It stays on file but leaves your queue.')) return;
-  db.collection('gt_guest_apps').doc(id).set({
+  tdb('gt_guest_apps').doc(id).set({
     status: 'declined',
     decided_by: (typeof gtParentName === 'function' ? (gtParentName() || 'Coach') : 'Coach'),
     decided_at: firebase.firestore.FieldValue.serverTimestamp()
@@ -152,7 +152,7 @@ function declineGuestApp(id) {
 function toggleGuestSignup() {
   if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
   var val = !guestSignupOn();
-  db.collection('site_flags').doc('main').set({ guest_signup_on: val }, { merge: true })
+  tdb('site_flags').doc('main').set({ guest_signup_on: val }, { merge: true })
     .then(function(){ showToast(val ? 'Guest sign-up banner is live.' : 'Guest sign-up banner hidden.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }

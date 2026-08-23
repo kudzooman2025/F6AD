@@ -118,7 +118,7 @@ function gtImportTeamSnapTournament(schedId) {
   var roster = (typeof gtActiveRoster === 'function' && gtActiveRoster()) || (GT.rosters && GT.rosters[0]);
   if (!roster) { showToast('Create a roster in the Roster Manager first.'); return; }
   var ts = firebase.firestore.FieldValue.serverTimestamp();
-  var ref = db.collection('gt_tournaments').doc();
+  var ref = tdb('gt_tournaments').doc();
   var lineup = {};
   gtRosterPlayers(roster.id).filter(function(p){ return !p.is_guest; }).forEach(function(p){ lineup[p.id] = { available: true, paid: false, note: '' }; });
   var data = {
@@ -130,7 +130,7 @@ function gtImportTeamSnapTournament(schedId) {
   };
   var batch = db.batch();
   batch.set(ref, data);
-  batch.set(db.collection('schedule').doc(schedId), { gt_tournament_id: ref.id, manual_override: true, updated_at: ts }, { merge: true });
+  batch.set(tdb('schedule').doc(schedId), { gt_tournament_id: ref.id, manual_override: true, updated_at: ts }, { merge: true });
   batch.commit().then(function(){ showToast('Tournament set up in GameTracker \u2713'); gtGo('/gametracker/tournament/' + ref.id); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -190,7 +190,7 @@ function gtSaveTournament(tid) {
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (tid) {
-    db.collection('gt_tournaments').doc(tid).set(data, { merge: true })
+    tdb('gt_tournaments').doc(tid).set(data, { merge: true })
       .then(function(){ showToast('Tournament saved ✓'); gtCloseModal(); })
       .catch(function(e){ showToast('Error: ' + e.message); });
     return;
@@ -205,7 +205,7 @@ function gtSaveTournament(tid) {
   });
   data.lineup = lineup;
   data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-  db.collection('gt_tournaments').add(data)
+  tdb('gt_tournaments').add(data)
     .then(function(ref){ showToast('Tournament created ✓'); gtCloseModal(); gtGo('/gametracker/tournament/' + ref.id); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -256,7 +256,7 @@ function gtRenderTournament(view, tid) {
     shownEntries.forEach(function(x) {
       var p = x.p, e = x.e;
       html += '<tr>' +
-        '<td class="num" style="font-weight:900;color:var(--purple)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
+        '<td class="num" style="font-weight:900;color:var(--brand)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
         '<td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' + (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + '</td>' +
         '<td class="num">' + (canEdit
           ? '<span class="gt-avail-toggle"><button class="' + (e.available ? 'on-yes' : '') + '" onclick="gtTournSetAvail(\'' + t.id + '\',\'' + p.id + '\',true)">In</button><button class="' + (!e.available ? 'on-no' : '') + '" onclick="gtTournSetAvail(\'' + t.id + '\',\'' + p.id + '\',false)">Out</button></span>'
@@ -281,18 +281,18 @@ function gtRenderTournament(view, tid) {
 function gtTournSetAvail(tid, pid, val) {
   if (!gtCanEdit()) return;
   var u = {}; u['lineup.' + pid + '.available'] = val;
-  db.collection('gt_tournaments').doc(tid).update(u).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('gt_tournaments').doc(tid).update(u).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtTournSetPaid(tid, pid, val) {
   if (!gtCanEdit()) return;
   var u = {}; u['lineup.' + pid + '.paid'] = val;
-  db.collection('gt_tournaments').doc(tid).update(u).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('gt_tournaments').doc(tid).update(u).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtTournRemove(tid, pid) {
   if (!gtCanEdit()) return;
   if (!confirm('Remove ' + gtPlayerName(pid) + ' from this tournament roster?')) return;
   var u = {}; u['lineup.' + pid] = firebase.firestore.FieldValue.delete();
-  db.collection('gt_tournaments').doc(tid).update(u).then(function(){ showToast('Removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('gt_tournaments').doc(tid).update(u).then(function(){ showToast('Removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtTournToggleRoster() {
   GT.tournRosterCollapsed = !GT.tournRosterCollapsed;
@@ -308,7 +308,7 @@ function gtTournAddPlayerPrompt(tid) {
     '<h3>➕ Add Player<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<p style="font-size:.85rem;color:var(--muted)">Add squad players to this tournament roster.</p>' +
     '<div>' + players.map(function(p) {
-      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--purple);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + '</span>' +
+      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--brand);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + '</span>' +
         '<button class="gt-minibtn" onclick="gtTournAddGuest(\'' + tid + '\',\'' + p.id + '\')">Add</button></div>';
     }).join('') + '</div>' +
     '<div class="gm-actions"><button class="gt-minibtn" onclick="gtCloseModal()">Done</button></div>'
@@ -324,7 +324,7 @@ function gtTournAddGuestPrompt(tid) {
     '<h3>➕ Add Guest<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<p style="font-size:.85rem;color:var(--muted)">Add guest players from your pool to this tournament roster.</p>' +
     '<div>' + pool.map(function(p) {
-      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--purple);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + ' <span class="gt-guest-badge">Guest</span></span>' +
+      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--brand);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + ' <span class="gt-guest-badge">Guest</span></span>' +
         '<button class="gt-minibtn" onclick="gtTournAddGuest(\'' + tid + '\',\'' + p.id + '\')">Add</button></div>';
     }).join('') + '</div>' +
     '<div class="gm-actions"><button class="gt-minibtn" onclick="gtCloseModal()">Done</button></div>'
@@ -333,7 +333,7 @@ function gtTournAddGuestPrompt(tid) {
 function gtTournAddGuest(tid, pid) {
   if (!gtCanEdit()) return;
   var u = {}; u['lineup.' + pid] = { available: true, paid: false, note: '' };
-  db.collection('gt_tournaments').doc(tid).update(u).then(function(){ showToast(gtPlayerName(pid) + ' added ✓'); gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('gt_tournaments').doc(tid).update(u).then(function(){ showToast(gtPlayerName(pid) + ' added ✓'); gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtDeleteTournament(tid) {
   if (!gtCanEdit()) return;
@@ -342,8 +342,8 @@ function gtDeleteTournament(tid) {
     ? 'Delete this tournament AND its ' + gms.length + ' game' + (gms.length === 1 ? '' : 's') + ' (with all their stats)? This cannot be undone.'
     : 'Delete this tournament? This cannot be undone.';
   if (!confirm(msg)) return;
-  var ops = gms.map(function(g){ return (typeof gtDeleteGameDocs === 'function') ? gtDeleteGameDocs(g.id) : db.collection('gt_games').doc(g.id).delete(); });
-  Promise.all(ops).then(function(){ return db.collection('gt_tournaments').doc(tid).delete(); })
+  var ops = gms.map(function(g){ return (typeof gtDeleteGameDocs === 'function') ? gtDeleteGameDocs(g.id) : tdb('gt_games').doc(g.id).delete(); });
+  Promise.all(ops).then(function(){ return tdb('gt_tournaments').doc(tid).delete(); })
     .then(function(){ showToast('Tournament and its games deleted.'); gtGo('/gametracker/tournaments'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }

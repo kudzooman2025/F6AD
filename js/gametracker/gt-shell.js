@@ -1,7 +1,7 @@
 // ---------- listeners ----------
 function gtAttachListeners(defs) {
   defs.forEach(function(def) {
-    db.collection(def[0]).onSnapshot(function(snap) {
+    tdb(def[0]).onSnapshot(function(snap) {
       GT[def[1]] = snap.docs.map(function(d) {
         var o = d.data({ serverTimestamps: 'estimate' }); o.id = d.id; return o;
       });

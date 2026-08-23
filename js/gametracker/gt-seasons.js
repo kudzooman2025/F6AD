@@ -98,7 +98,7 @@ function gtSaveSeason(sid) {
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (sid) {
-    db.collection('gt_seasons').doc(sid).set(data, { merge: true })
+    tdb('gt_seasons').doc(sid).set(data, { merge: true })
       .then(function(){ showToast('Season saved ✓'); gtCloseModal(); })
       .catch(function(e){ showToast('Error: ' + e.message); });
     return;
@@ -107,7 +107,7 @@ function gtSaveSeason(sid) {
   if (!rid) { showToast('Create a roster first in the Roster Manager.'); return; }
   data.base_roster_id = rid;
   data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-  db.collection('gt_seasons').add(data)
+  tdb('gt_seasons').add(data)
     .then(function(ref){ showToast('Season created ✓'); gtCloseModal(); gtGo('/gametracker/seasons/' + ref.id); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -169,5 +169,5 @@ function gtStartSeasonGame(sid) {
 function gtDeleteSeason(sid) {
   if (!gtCanEdit()) return;
   if (!confirm('Delete this season? Its games are kept but unlinked from the season.')) return;
-  db.collection('gt_seasons').doc(sid).delete().then(function(){ showToast('Season deleted.'); gtGo('/gametracker/seasons'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('gt_seasons').doc(sid).delete().then(function(){ showToast('Season deleted.'); gtGo('/gametracker/seasons'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }

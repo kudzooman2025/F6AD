@@ -83,7 +83,7 @@ function gtSyncServerClock(force) {
   if (!force && (now - _gtLastClockSync) < 120000) return;
   _gtLastClockSync = now;
   try {
-    var ref = db.collection('_serverclock').doc('ping');
+    var ref = tdb('_serverclock').doc('ping');
     var t0 = Date.now();
     ref.set({ t: firebase.firestore.FieldValue.serverTimestamp() })
       .then(function(){ return ref.get({ source: 'server' }); })
@@ -177,7 +177,7 @@ function gtSendChat(gid) {
   var _g = gtGame(gid);
   var _chat = { game_id: gid, name: name, text: text, created_at: firebase.firestore.FieldValue.serverTimestamp() };
   if (_g) { _chat.game_period = _g.current_period || 1; _chat.game_clock_seconds = (typeof gtClockSeconds === 'function') ? gtClockSeconds(_g) : 0; }
-  db.collection('gt_chat').add(_chat)
+  tdb('gt_chat').add(_chat)
     .then(function(){ GT.chatDraft = ''; var i = document.getElementById('gt-chat-input'); if (i) { i.value = ''; i.focus(); } })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -185,7 +185,7 @@ function gtDeleteChat(id) {
   // Staff/admin only (enforced in UI and firestore.rules). Posting stays open to all.
   if (!gtCanEdit()) return;
   if (!confirm('Delete this chat message?')) return;
-  db.collection('gt_chat').doc(id).delete()
+  tdb('gt_chat').doc(id).delete()
     .then(function(){ showToast('Message deleted.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -683,7 +683,7 @@ function gtSetRsvp(gid, pid, status, note) {
     game_id: gid, player_id: pid, status: status, note: note || '',
     updated_by: gtPlayerName(pid), updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
-  return db.collection('gt_rsvp').doc(id).set(data, { merge: true })
+  return tdb('gt_rsvp').doc(id).set(data, { merge: true })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 // Which players this device manages (chosen from the roster, stored locally)

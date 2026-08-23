@@ -44,7 +44,7 @@ function renderCondNameRow() {
   }
 }
 function startCondListeners() {
-  db.collection('conditioning').onSnapshot(snap => {
+  tdb('conditioning').onSnapshot(snap => {
     condData = {};
     snap.forEach(doc => { condData[doc.id] = doc.data().attendees || []; });
     renderCondGrid();
@@ -274,7 +274,7 @@ function makeCondCard(s, myName, isPast) {
 
 function condJoin(sessionId, name) {
   if(!name){showToast('Set your name first.'); return;}
-  db.collection('conditioning').doc(sessionId).set(
+  tdb('conditioning').doc(sessionId).set(
     {attendees: firebase.firestore.FieldValue.arrayUnion(name)},
     {merge: true}
   ).then(function(){showToast('Signed up for '+sessionId.slice(5)+' ✓');})
@@ -282,7 +282,7 @@ function condJoin(sessionId, name) {
 }
 function condLeave(sessionId, name) {
   if(!name) return;
-  db.collection('conditioning').doc(sessionId).set(
+  tdb('conditioning').doc(sessionId).set(
     {attendees: firebase.firestore.FieldValue.arrayRemove(name)},
     {merge: true}
   ).then(function(){showToast('Removed from '+sessionId.slice(5));})

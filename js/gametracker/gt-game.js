@@ -93,7 +93,7 @@ function gtRenderNew(view) {
       else {
         html += '<div style="margin-top:14px">' + players.map(function(p) {
           var av = s.avail[p.id] !== false; // default available
-          return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--purple);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + '</span>' +
+          return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--brand);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + '</span>' +
             '<span class="gt-avail-toggle"><button class="' + (av ? 'on-yes' : '') + '" onclick="GT.setup.avail[\'' + p.id + '\']=true;gtRerender(true)">Available</button>' +
             '<button class="' + (!av ? 'on-no' : '') + '" onclick="GT.setup.avail[\'' + p.id + '\']=false;gtRerender(true)">Out</button></span>' +
             (av ? '<label style="display:inline-flex;align-items:center;gap:5px;font-size:.78rem;text-transform:none;margin:0 0 0 4px"><input type="checkbox"' + (s.started[p.id] ? ' checked' : '') + ' onchange="GT.setup.started[\'' + p.id + '\']=this.checked;gtRerender(true)"/> Started</label>' +
@@ -110,14 +110,14 @@ function gtRenderNew(view) {
       html += '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Guest Pool</label>';
       html += '<div style="margin-bottom:16px">' + pool.map(function(p) {
         var on = !!s.guestIds[p.id];
-        return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--purple);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + ' <span class="gt-guest-badge">Guest</span></span>' +
+        return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<span style="color:var(--brand);font-weight:900">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(p.id)) + ' <span class="gt-guest-badge">Guest</span></span>' +
           '<span class="gt-avail-toggle"><button class="' + (on ? 'on-yes' : '') + '" onclick="GT.setup.guestIds[\'' + p.id + '\']=true;gtRerender(true)">In</button>' +
           '<button class="' + (!on ? 'on-no' : '') + '" onclick="delete GT.setup.guestIds[\'' + p.id + '\'];gtRerender(true)">Out</button></span></div>';
       }).join('') + '</div>';
     }
     html += '<label style="display:block;font-size:.74rem;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Add a new guest</label>';
     html += s.guests.map(function(g, i) {
-      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (g.jersey_number != null && g.jersey_number !== '' ? '<span style="color:var(--purple);font-weight:900">#' + gtEsc(g.jersey_number) + '</span> ' : '') +
+      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (g.jersey_number != null && g.jersey_number !== '' ? '<span style="color:var(--brand);font-weight:900">#' + gtEsc(g.jersey_number) + '</span> ' : '') +
         gtEsc(g.first_name + ' ' + g.last_name) + ' <span class="gt-guest-badge">Guest</span></span>' +
         '<button class="gt-minibtn danger" onclick="GT.setup.guests.splice(' + i + ',1);gtRerender(true)">Remove</button></div>';
     }).join('');
@@ -204,7 +204,7 @@ function gtCreateGame() {
   if (!s.roster_id) { showToast('Select a roster first.'); return; }
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var batch = db.batch();
-  var gameRef = db.collection('gt_games').doc();
+  var gameRef = tdb('gt_games').doc();
   batch.set(gameRef, {
     roster_id: s.roster_id, tournament_id: s.tournament_id || null, season_id: s.season_id || null, home_team: s.home_team, away_team: s.away_team, f6ad_side: s.f6ad_side,
     game_type: s.game_type, round: s.round || '', venue: s.venue, venue_address: s.venue_address || '', venue_city: s.venue_city || '', venue_state: s.venue_state || '', venue_zip: s.venue_zip || '', num_periods: s.num_periods,
@@ -215,7 +215,7 @@ function gtCreateGame() {
   });
   var guestRefs = [];
   s.guests.forEach(function(g) {
-    var ref = db.collection('gt_players').doc();
+    var ref = tdb('gt_players').doc();
     guestRefs.push(ref);
     batch.set(ref, {
       roster_id: '__guests__', first_name: g.first_name, last_name: g.last_name,
@@ -225,7 +225,7 @@ function gtCreateGame() {
     });
   });
   gtRosterPlayers(s.roster_id).filter(function(p){ return !p.is_guest; }).forEach(function(p) {
-    var ref = db.collection('gt_availability').doc();
+    var ref = tdb('gt_availability').doc();
     batch.set(ref, {
       game_id: gameRef.id, player_id: p.id,
       available: s.avail[p.id] !== false,
@@ -235,11 +235,11 @@ function gtCreateGame() {
     });
   });
   guestRefs.forEach(function(ref) {
-    var aref = db.collection('gt_availability').doc();
+    var aref = tdb('gt_availability').doc();
     batch.set(aref, { game_id: gameRef.id, player_id: ref.id, available: true, notes: 'Guest player', created_at: ts });
   });
   Object.keys(s.guestIds || {}).forEach(function(pid) {
-    var aref = db.collection('gt_availability').doc();
+    var aref = tdb('gt_availability').doc();
     batch.set(aref, { game_id: gameRef.id, player_id: pid, available: true, notes: 'Guest player', created_at: ts });
   });
   batch.commit().then(function() {
@@ -449,7 +449,7 @@ function gtToggleFeedItem(id) {
 // ---------- clock writes ----------
 function gtGameUpdate(gid, data) {
   data.updated_at = firebase.firestore.FieldValue.serverTimestamp();
-  return db.collection('gt_games').doc(gid).update(data)
+  return tdb('gt_games').doc(gid).update(data)
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtClockStart(gid) {
@@ -500,13 +500,13 @@ function gtRestartGame(gid) {
   var g = gtGame(gid); if (!g) return;
   if (!window.confirm('Restart this game?\n\nThis returns it to setup and clears the clock, score, substitutions, and any stats logged so far. Your roster and starters are kept.')) return;
   Promise.all([
-    db.collection('gt_events').where('game_id', '==', gid).get(),
-    db.collection('gt_subs').where('game_id', '==', gid).get(),
-    db.collection('gt_parent_events').where('game_id', '==', gid).get()
+    tdb('gt_events').where('game_id', '==', gid).get(),
+    tdb('gt_subs').where('game_id', '==', gid).get(),
+    tdb('gt_parent_events').where('game_id', '==', gid).get()
   ]).then(function(snaps) {
     var batch = db.batch();
     snaps.forEach(function(snap){ snap.forEach(function(d){ batch.delete(d.ref); }); });
-    batch.set(db.collection('gt_games').doc(gid), {
+    batch.set(tdb('gt_games').doc(gid), {
       status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
       period_elapsed: {}, home_score: 0, away_score: 0,
       phase: firebase.firestore.FieldValue.delete(),
@@ -531,9 +531,9 @@ function gtStartPeriodWithStarters(gid) {
   for (var i = 0; i < n; i++) {
     var inPid = bringOn[i], outPid = takeOff[i];
     var pos = (gtGameAvailEntry(gid, inPid) || {}).start_position || (gtP(inPid) || {}).default_position || '';
-    batch.set(db.collection('gt_subs').doc(), { game_id: gid, player_out_id: outPid, player_in_id: inPid, position: pos, game_clock_seconds: 0, period: period, created_at: ts });
+    batch.set(tdb('gt_subs').doc(), { game_id: gid, player_out_id: outPid, player_in_id: inPid, position: pos, game_clock_seconds: 0, period: period, created_at: ts });
   }
-  batch.set(db.collection('gt_games').doc(gid), { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: ts, updated_at: ts }, { merge: true });
+  batch.set(tdb('gt_games').doc(gid), { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: ts, updated_at: ts }, { merge: true });
   batch.commit().then(function(){ showToast(n ? ('Starting XI restored \u00b7 ' + n + ' change' + (n === 1 ? '' : 's') + ' \ud83d\udd04') : 'Starting XI already on \u00b7 started'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtStartNextPeriod(gid) {
@@ -601,7 +601,7 @@ function gtSaveGameEdit(gid) {
   data.away_score = side === 'home' ? themScore : usScore;
   var dateStr = document.getElementById('gt-ge-date').value;
   if (dateStr) data.played_at = firebase.firestore.Timestamp.fromDate(new Date(dateStr + 'T12:00:00'));
-  db.collection('gt_games').doc(gid).set(data, { merge: true })
+  tdb('gt_games').doc(gid).set(data, { merge: true })
     .then(function(){ showToast('Game updated ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -609,12 +609,12 @@ function gtDeleteGameDocs(gid) {
   // Delete a game + all its events/subs/availability via direct queries, so it works
   // even from pages where the heavy collections aren't loaded locally.
   return Promise.all([
-    db.collection('gt_events').where('game_id', '==', gid).get(),
-    db.collection('gt_subs').where('game_id', '==', gid).get(),
-    db.collection('gt_availability').where('game_id', '==', gid).get()
+    tdb('gt_events').where('game_id', '==', gid).get(),
+    tdb('gt_subs').where('game_id', '==', gid).get(),
+    tdb('gt_availability').where('game_id', '==', gid).get()
   ]).then(function(snaps) {
     var batch = db.batch();
-    batch.delete(db.collection('gt_games').doc(gid));
+    batch.delete(tdb('gt_games').doc(gid));
     snaps.forEach(function(snap){ snap.forEach(function(d){ batch.delete(d.ref); }); });
     return batch.commit();
   });
@@ -625,10 +625,10 @@ function gtDeleteGame(gid) {
   var n = GT.events.filter(function(e){ return e.game_id === gid; }).length;
   if (!confirm('Delete ' + gtHomeName(g) + ' vs ' + gtAwayName(g) + ' and its ' + n + ' logged event(s)? This cannot be undone.')) return;
   var batch = db.batch();
-  batch.delete(db.collection('gt_games').doc(gid));
-  GT.events.filter(function(e){ return e.game_id === gid; }).forEach(function(e){ batch.delete(db.collection('gt_events').doc(e.id)); });
-  GT.subs.filter(function(s){ return s.game_id === gid; }).forEach(function(s){ batch.delete(db.collection('gt_subs').doc(s.id)); });
-  GT.avail.filter(function(a){ return a.game_id === gid; }).forEach(function(a){ batch.delete(db.collection('gt_availability').doc(a.id)); });
+  batch.delete(tdb('gt_games').doc(gid));
+  GT.events.filter(function(e){ return e.game_id === gid; }).forEach(function(e){ batch.delete(tdb('gt_events').doc(e.id)); });
+  GT.subs.filter(function(s){ return s.game_id === gid; }).forEach(function(s){ batch.delete(tdb('gt_subs').doc(s.id)); });
+  GT.avail.filter(function(a){ return a.game_id === gid; }).forEach(function(a){ batch.delete(tdb('gt_availability').doc(a.id)); });
   batch.commit().then(function() {
     showToast('Game deleted.');
     gtGo('/gametracker');
@@ -689,7 +689,7 @@ function gtBumpScore(g, side, delta) {
   var theirField = g.f6ad_side === 'away' ? 'home_score' : 'away_score';
   var u = {};
   u[side === 'us' ? ourField : theirField] = firebase.firestore.FieldValue.increment(delta);
-  return db.collection('gt_games').doc(g.id).update(u);
+  return tdb('gt_games').doc(g.id).update(u);
 }
 function gtOpenEventPopup(gid, pid) {
   if (!gtCanEdit()) return;
@@ -775,12 +775,12 @@ function gtSaveLiveEvent() {
     notes: notes, youtube_url: '',
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
-  db.collection('gt_events').add(evData).then(function() {
+  tdb('gt_events').add(evData).then(function() {
     if (pe.type === 'goal' && g) gtBumpScore(g, 'us', 1);
     else if (pe.type === 'own_goal' && g) gtBumpScore(g, 'them', 1);
     var ops = [];
     if (pe.type === 'goal' && assistPid) {
-      ops.push(db.collection('gt_events').add({
+      ops.push(tdb('gt_events').add({
         game_id: pe.gameId, player_id: assistPid, event_type: 'assist',
         game_clock_seconds: clock, period: pe.period,
         notes: '', youtube_url: '',
@@ -800,7 +800,7 @@ function gtLogOpponentGoal(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
   if (!confirm('Log a goal for ' + gtTheirName(g) + '?')) return;
-  db.collection('gt_events').add({
+  tdb('gt_events').add({
     game_id: gid, player_id: null, event_type: 'opponent_goal',
     game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
     notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
@@ -812,7 +812,7 @@ function gtLogOwnGoalForUs(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
   if (!confirm('Log an own goal by ' + gtTheirName(g) + ' (counts for us)?')) return;
-  db.collection('gt_events').add({
+  tdb('gt_events').add({
     game_id: gid, player_id: null, event_type: 'opponent_own_goal',
     game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
     notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
@@ -825,7 +825,7 @@ function gtDeleteEvent(eid) {
   if (!e) return;
   if (!confirm('Delete this ' + gtEventType(e.event_type).label + ' event?')) return;
   var g = gtGame(e.game_id);
-  db.collection('gt_events').doc(eid).delete().then(function() {
+  tdb('gt_events').doc(eid).delete().then(function() {
     if (g && e.event_type === 'goal') gtBumpScore(g, 'us', -1);
     if (g && e.event_type === 'opponent_goal') gtBumpScore(g, 'them', -1);
     if (g && e.event_type === 'own_goal') gtBumpScore(g, 'them', -1);
@@ -861,7 +861,7 @@ function gtSaveAddEvent(gid) {
   var pid = isOpp ? '' : ((document.getElementById('gt-add-player') || {}).value || '');
   if (!isOpp && !pid) { showToast('Pick a player.'); return; }
   var notes = document.getElementById('gt-add-notes').value.trim();
-  db.collection('gt_events').add({ game_id: gid, player_id: pid, event_type: type, game_clock_seconds: ps.sec, period: ps.period, notes: notes, youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp() })
+  tdb('gt_events').add({ game_id: gid, player_id: pid, event_type: type, game_clock_seconds: ps.sec, period: ps.period, notes: notes, youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp() })
     .then(function(){
       if (type === 'goal') return gtBumpScore(g, 'us', 1);
       if (type === 'own_goal' || type === 'opponent_goal') return gtBumpScore(g, 'them', 1);
@@ -915,7 +915,7 @@ function gtSaveEditEvent(eid) {
     upd.event_type = newType;
     upd.player_id = document.getElementById('gt-edit-player').value || e.player_id;
   }
-  db.collection('gt_events').doc(eid).update(upd).then(function() {
+  tdb('gt_events').doc(eid).update(upd).then(function() {
     if (!isOpp && g) {
       var wasGoal = e.event_type === 'goal', isGoal = newType === 'goal';
       if (isGoal && !wasGoal) return gtBumpScore(g, 'us', 1);
@@ -934,7 +934,7 @@ function gtLinkYoutube(eid) {
   if (v === null) return;
   v = v.trim();
   if (v && !gtYtId(v)) { showToast("That doesn't look like a YouTube URL."); return; }
-  db.collection('gt_events').doc(eid).update({ youtube_url: v })
+  tdb('gt_events').doc(eid).update({ youtube_url: v })
     .then(function(){ showToast(v ? 'Highlight linked 🎥' : 'Highlight removed.'); })
     .catch(function(err){ showToast('Error: ' + err.message); });
 }
@@ -975,7 +975,7 @@ function gtSaveSub(gid, outPid, clock, period) {
   if (!inPid) { showToast('Select the player coming in.'); return; }
   var position = document.getElementById('gt-sub-pos').value;
   if (!position) { showToast('Pick the position for the player coming in.'); return; }
-  db.collection('gt_subs').add({
+  tdb('gt_subs').add({
     game_id: gid, player_out_id: outPid, player_in_id: inPid,
     position: position,
     game_clock_seconds: clock, period: period,
@@ -1024,7 +1024,7 @@ function gtSaveMassSub(gid, clock, period) {
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var batch = db.batch();
   for (var i = 0; i < ons.length; i++) {
-    var ref = db.collection('gt_subs').doc();
+    var ref = tdb('gt_subs').doc();
     batch.set(ref, { game_id: gid, player_out_id: offs[i], player_in_id: ons[i], position: posByPid[ons[i]] || '', game_clock_seconds: clock, period: period, created_at: ts });
   }
   batch.commit().then(function(){ showToast(ons.length + ' substitution' + (ons.length === 1 ? '' : 's') + ' applied 🔄'); gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
@@ -1055,7 +1055,7 @@ function gtSaveSubEdit(sid) {
   var upd = { game_clock_seconds: ps.sec, period: ps.period };
   var posEl = document.getElementById('gt-subpos-edit');
   if (posEl) upd.position = posEl.value;
-  db.collection('gt_subs').doc(sid).update(upd)
+  tdb('gt_subs').doc(sid).update(upd)
     .then(function(){ showToast('Substitution updated ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1077,14 +1077,14 @@ function gtDeleteSub(sid) {
   var sb = GT.subs.find(function(x){ return x.id === sid; });
   if (!sb) return;
   if (!confirm('Delete this substitution (' + gtSubDesc(sb) + ')?\n\nOn-field status and minutes will recalculate.')) return;
-  db.collection('gt_subs').doc(sid).delete()
+  tdb('gt_subs').doc(sid).delete()
     .then(function(){ showToast('Substitution deleted ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtSaveSubPosition(sid) {
   if (!gtCanEdit()) return;
   var pos = document.getElementById('gt-subpos-edit').value;
-  db.collection('gt_subs').doc(sid).update({ position: pos })
+  tdb('gt_subs').doc(sid).update({ position: pos })
     .then(function(){ showToast('Sub position updated ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1140,7 +1140,7 @@ function gtParentSaveSubPos(sid) {
   var sb = GT.subs.find(function(x){ return x.id === sid; });
   if (!sb || !gtParentCanEditSub(sb)) return;
   var pos = document.getElementById('gt-psubpos').value;
-  db.collection('gt_subs').doc(sid).update({ position: pos })
+  tdb('gt_subs').doc(sid).update({ position: pos })
     .then(function(){ showToast('Position updated ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1149,11 +1149,11 @@ function gtSetStarter(gid, pid, started, pos) {
   var ae = gtGameAvailEntry(gid, pid);
   var data = { started: !!started, start_position: started ? (pos || '') : '' };
   var op;
-  if (ae) op = db.collection('gt_availability').doc(ae.id).set(data, { merge: true });
+  if (ae) op = tdb('gt_availability').doc(ae.id).set(data, { merge: true });
   else {
     data.game_id = gid; data.player_id = pid; data.available = true; data.notes = '';
     data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-    op = db.collection('gt_availability').add(data);
+    op = tdb('gt_availability').add(data);
   }
   op.catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1163,8 +1163,8 @@ function gtScratchPlayer(gid, pid) {
   if (!gtCanEdit()) return;
   var ae = gtGameAvailEntry(gid, pid);
   var op;
-  if (ae) op = db.collection('gt_availability').doc(ae.id).set({ available: false, started: false, notes: 'Scratched' }, { merge: true });
-  else op = db.collection('gt_availability').add({ game_id: gid, player_id: pid, available: false, started: false, start_position: '', notes: 'Scratched', created_at: firebase.firestore.FieldValue.serverTimestamp() });
+  if (ae) op = tdb('gt_availability').doc(ae.id).set({ available: false, started: false, notes: 'Scratched' }, { merge: true });
+  else op = tdb('gt_availability').add({ game_id: gid, player_id: pid, available: false, started: false, start_position: '', notes: 'Scratched', created_at: firebase.firestore.FieldValue.serverTimestamp() });
   op.then(function(){ showToast('🚫 ' + gtPlayerShort(pid) + ' scratched from the gameday roster.'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1200,8 +1200,8 @@ function gtAddPlayerToGame(gid, pid) {
   if (!gtCanEdit()) return;
   var ae = gtGameAvailEntry(gid, pid);
   var op;
-  if (ae) op = db.collection('gt_availability').doc(ae.id).set({ available: true, started: false, notes: '' }, { merge: true });
-  else op = db.collection('gt_availability').add({ game_id: gid, player_id: pid, available: true, started: false, start_position: '', notes: '', created_at: firebase.firestore.FieldValue.serverTimestamp() });
+  if (ae) op = tdb('gt_availability').doc(ae.id).set({ available: true, started: false, notes: '' }, { merge: true });
+  else op = tdb('gt_availability').add({ game_id: gid, player_id: pid, available: true, started: false, start_position: '', notes: '', created_at: firebase.firestore.FieldValue.serverTimestamp() });
   op.then(function(){ showToast('➕ ' + gtPlayerShort(pid) + ' added to the bench — tap to send on.'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1214,9 +1214,9 @@ function gtAddGuestToGame(gid) {
   var pos = document.getElementById('gt-ag-pos').value;
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var batch = db.batch();
-  var pref = db.collection('gt_players').doc();
+  var pref = tdb('gt_players').doc();
   batch.set(pref, { roster_id: '__guests__', first_name: first, last_name: last, jersey_number: num === '' ? null : parseInt(num, 10), position: pos || '', parent_name: '', parent_phone: '', whatsapp_opt_in: false, is_guest: true, created_at: ts });
-  var aref = db.collection('gt_availability').doc();
+  var aref = tdb('gt_availability').doc();
   batch.set(aref, { game_id: gid, player_id: pref.id, available: true, started: false, start_position: '', notes: 'Guest player', created_at: ts });
   batch.commit().then(function(){ showToast('➕ ' + first + ' added as guest — tap to send on.'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
@@ -1263,7 +1263,7 @@ function gtToggleField(gid, pid) {
     data.player_in_id = pid; data.player_out_id = null;
     data.position = (p && p.default_position) || gtLastPosition(gid, pid) || '';
   }
-  db.collection('gt_subs').add(data)
+  tdb('gt_subs').add(data)
     .then(function(){ showToast(isOn ? ('⬇ ' + gtPlayerShort(pid) + ' off') : ('⬆ ' + gtPlayerShort(pid) + ' on' + (data.position ? ' (' + data.position + ')' : ''))); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1464,7 +1464,7 @@ function gtRecordOppCard(gid, kind) {
 }
 function gtAddOppCardEvent(gid, type, cb) {
   var g = gtGame(gid); if (!g) return;
-  db.collection('gt_events').add({
+  tdb('gt_events').add({
     game_id: gid, player_id: null, event_type: type,
     game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
     notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
@@ -1694,8 +1694,8 @@ function gtApplyRsvpsToGame(gid) {
     var p = gtP(r.player_id); if (!p) return;
     var avail = r.status !== 'out';
     var ae = gtGameAvailEntry(gid, r.player_id);
-    if (ae) batch.set(db.collection('gt_availability').doc(ae.id), { available: avail, scratched: false }, { merge: true });
-    else batch.set(db.collection('gt_availability').doc(), { game_id: gid, player_id: r.player_id, available: avail, started: false, start_position: '', notes: avail ? '' : 'RSVP: out', created_at: firebase.firestore.FieldValue.serverTimestamp() });
+    if (ae) batch.set(tdb('gt_availability').doc(ae.id), { available: avail, scratched: false }, { merge: true });
+    else batch.set(tdb('gt_availability').doc(), { game_id: gid, player_id: r.player_id, available: avail, started: false, start_position: '', notes: avail ? '' : 'RSVP: out', created_at: firebase.firestore.FieldValue.serverTimestamp() });
   });
   batch.commit().then(function(){ showToast('RSVPs applied to availability ✓'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1707,7 +1707,7 @@ function gtRsvpAddToEvent(id, pid) {
 }
 function gtSetRsvpHidden(id, pid, hidden) {
   if (!gtCanEdit()) { showToast('Coach sign-in required.'); return; }
-  db.collection('gt_rsvp').doc(id + '_' + pid).set({ game_id: id, player_id: pid, hidden: !!hidden, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('gt_rsvp').doc(id + '_' + pid).set({ game_id: id, player_id: pid, hidden: !!hidden, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 
@@ -1739,7 +1739,7 @@ function gtSetRsvpHiddenAll(ids, pid, hidden) {
   if (!gtCanEdit()) { showToast('Coach sign-in required.'); return; }
   var batch = db.batch();
   ids.forEach(function(eid){
-    batch.set(db.collection('gt_rsvp').doc(eid + '_' + pid),
+    batch.set(tdb('gt_rsvp').doc(eid + '_' + pid),
       { game_id: eid, player_id: pid, hidden: !!hidden, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
   });
   batch.commit().then(function(){ showToast(hidden ? 'Removed from all events ✓' : 'Added back to all events ✓'); })

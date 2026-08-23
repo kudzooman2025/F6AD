@@ -98,7 +98,7 @@ function gtParentToggleClaim(gid, pid, type) {
     var others = gtParentOtherClaims(gid, pid)[type];
     if (others && others.length) showToast('Heads up: ' + others.join(' & ') + ' is already tracking ' + gtParentType(type).label + ' for ' + gtPlayerShort(pid) + " — you'll both log these.");
   }
-  db.collection('gt_parent_claims').doc(gtParentClaimId(gid, pid, tok)).set({
+  tdb('gt_parent_claims').doc(gtParentClaimId(gid, pid, tok)).set({
     game_id: gid, player_id: pid, author_token: tok, author_name: name, types: cur,
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true }).catch(function(e){ showToast('Error: ' + e.message); });
@@ -115,7 +115,7 @@ function gtParentLog(gid, pid, type) {
     text: '', visibility: 'private', created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   if (type === 'in_play') _doc.outcome = 'U';
-  db.collection('gt_parent_events').add(_doc)
+  tdb('gt_parent_events').add(_doc)
     .then(function(){ showToast(gtParentType(type).emoji + ' ' + gtParentType(type).label + ' logged (private)'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -124,7 +124,7 @@ function gtParentNote(gid, pid) {
   var inp = document.getElementById('gt-pnote-input'); var text = (inp ? inp.value : '').trim(); if (!text) return;
   var g = gtGame(gid); if (!g) return;
   var _t = gtParentEventTime(g);
-  db.collection('gt_parent_events').add({
+  tdb('gt_parent_events').add({
     game_id: gid, player_id: pid, author_token: gtParentToken(), author_name: gtParentName(),
     type: 'note', game_clock_seconds: _t.sec, period: _t.period, mode: _t.mode,
     text: text, visibility: 'private', created_at: firebase.firestore.FieldValue.serverTimestamp()
@@ -132,17 +132,17 @@ function gtParentNote(gid, pid) {
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtParentDelete(id) {
-  db.collection('gt_parent_events').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('gt_parent_events').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtParentSetVisibility(id, vis) {
-  db.collection('gt_parent_events').doc(id).set({ visibility: vis, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('gt_parent_events').doc(id).set({ visibility: vis, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtParentPublishAll(gid, pid, includeNotes) {
   var items = gtMyParentEvents(gid, pid).filter(function(e){ return e.visibility !== 'public' && (includeNotes || e.type !== 'note'); });
   if (!items.length) { showToast('Nothing new to share.'); return; }
   var batch = db.batch();
-  items.forEach(function(e){ batch.set(db.collection('gt_parent_events').doc(e.id), { visibility: 'public', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
+  items.forEach(function(e){ batch.set(tdb('gt_parent_events').doc(e.id), { visibility: 'public', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
   batch.commit().then(function(){ showToast('Shared ' + items.length + ' item' + (items.length === 1 ? '' : 's') + ' to the team ✓'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -150,7 +150,7 @@ function gtParentPublishAll(gid, pid, includeNotes) {
 // ---- live panel ----
 // Set the S / NS / U outcome on an "In Play" moment.
 function gtParentSetOutcome(id, outcome) {
-  db.collection('gt_parent_events').doc(id).set({ outcome: outcome, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('gt_parent_events').doc(id).set({ outcome: outcome, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 // Edit the game-clock time of one of my logged moments (for film review).
@@ -166,7 +166,7 @@ function gtParentEditTime(id) {
   var dur = (g.period_duration_minutes || 0) * 60;
   var period = dur > 0 ? Math.min((g.num_periods || 2), Math.floor(mmss / dur) + 1) : 1;
   var sec = dur > 0 ? (mmss - (period - 1) * dur) : mmss;
-  db.collection('gt_parent_events').doc(id).set({ game_clock_seconds: sec, period: period, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('gt_parent_events').doc(id).set({ game_clock_seconds: sec, period: period, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .catch(function(err){ showToast('Error: ' + err.message); });
 }
 // Share my tracked items for a player with the COACH only (for reconciliation) —
@@ -175,7 +175,7 @@ function gtParentPublishCoach(gid, pid) {
   var items = gtMyParentEvents(gid, pid).filter(function(e){ return e.visibility !== 'public' && e.visibility !== 'coach'; });
   if (!items.length) { showToast('Nothing new to send to the coach.'); return; }
   var batch = db.batch();
-  items.forEach(function(e){ batch.set(db.collection('gt_parent_events').doc(e.id), { visibility: 'coach', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
+  items.forEach(function(e){ batch.set(tdb('gt_parent_events').doc(e.id), { visibility: 'coach', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
   batch.commit().then(function(){ showToast('Sent ' + items.length + ' item' + (items.length === 1 ? '' : 's') + ' to the coach for review \ud83d\udc41\ufe0f'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -398,7 +398,7 @@ function gtParentCoachReviewHtml(g) {
 // Confirm a family-submitted stat into the official team totals (makes it public).
 function gtCoachConfirmStat(id) {
   if (!gtCanEdit()) return;
-  db.collection('gt_parent_events').doc(id).set({ visibility: 'public', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('gt_parent_events').doc(id).set({ visibility: 'public', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .then(function(){ showToast('Added to official stats \u2713'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 // Reject a single submitted item, with an optional note back to the family.
@@ -406,7 +406,7 @@ function gtCoachDismissItem(id) {
   if (!gtCanEdit()) return;
   var reason = window.prompt('Reject this item.\n\nOptional message to the family (why it was rejected):', '');
   if (reason === null) return;
-  db.collection('gt_parent_events').doc(id).set({ visibility: 'rejected', coach_note: reason || '', coach_name: (gtParentName() || 'Coach'), updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('gt_parent_events').doc(id).set({ visibility: 'rejected', coach_note: reason || '', coach_name: (gtParentName() || 'Coach'), updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .then(function(){ showToast('Rejected' + (reason ? ' with note to family' : '')); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 // Reject a family's submitted on-field time, with an optional note back.
@@ -417,7 +417,7 @@ function gtCoachRejectOnfield(gid, pid, tok) {
   var evs = gtParentEventsFor(gid, pid).filter(function(e){ return e.author_token === tok && e.visibility === 'coach' && (e.type === 'sub_on' || e.type === 'sub_off' || e.type === 'started'); });
   if (!evs.length) return;
   var b = db.batch();
-  evs.forEach(function(e){ b.set(db.collection('gt_parent_events').doc(e.id), { visibility: 'rejected', coach_note: reason || '', coach_name: (gtParentName() || 'Coach'), updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
+  evs.forEach(function(e){ b.set(tdb('gt_parent_events').doc(e.id), { visibility: 'rejected', coach_note: reason || '', coach_name: (gtParentName() || 'Coach'), updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); });
   b.commit().then(function(){ showToast('On-field time rejected' + (reason ? ' with note' : '')); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 // Family-facing: coach feedback on items they submitted (rejections + notes).
@@ -448,10 +448,10 @@ function gtCoachApplyReviewMinutes(gid, pid, tok, mins) {
   var ae = gtGameAvailEntry(gid, pid);
   var data = { minutes_override: mins };
   var op;
-  if (ae) op = db.collection('gt_availability').doc(ae.id).set(data, { merge: true });
-  else { data.game_id = gid; data.player_id = pid; data.available = true; data.notes = ''; data.created_at = firebase.firestore.FieldValue.serverTimestamp(); op = db.collection('gt_availability').add(data); }
+  if (ae) op = tdb('gt_availability').doc(ae.id).set(data, { merge: true });
+  else { data.game_id = gid; data.player_id = pid; data.available = true; data.notes = ''; data.created_at = firebase.firestore.FieldValue.serverTimestamp(); op = tdb('gt_availability').add(data); }
   var subEvs = gtParentEventsFor(gid, pid).filter(function(e){ return e.author_token === tok && e.visibility === 'coach' && (e.type === 'sub_on' || e.type === 'sub_off' || e.type === 'started'); });
-  op.then(function(){ var b = db.batch(); subEvs.forEach(function(e){ b.delete(db.collection('gt_parent_events').doc(e.id)); }); return b.commit(); })
+  op.then(function(){ var b = db.batch(); subEvs.forEach(function(e){ b.delete(tdb('gt_parent_events').doc(e.id)); }); return b.commit(); })
     .then(function(){ showToast('Minutes set to ' + mins + ' \u2713'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 // Clear all review items a family sent for one player.
@@ -459,7 +459,7 @@ function gtCoachClearReview(gid, pid) {
   if (!gtCanEdit()) return;
   if (!window.confirm('Clear all review items submitted for ' + gtPlayerShort(pid) + '?')) return;
   var items = gtParentEventsFor(gid, pid).filter(function(e){ return e.visibility === 'coach'; });
-  var b = db.batch(); items.forEach(function(e){ b.delete(db.collection('gt_parent_events').doc(e.id)); });
+  var b = db.batch(); items.forEach(function(e){ b.delete(tdb('gt_parent_events').doc(e.id)); });
   b.commit().then(function(){ showToast('Review cleared'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 

@@ -12,7 +12,7 @@ function gtRenderReview(view, gameId) {
     '<div class="gt-card" style="text-align:center">' +
     '<div style="font-size:.74rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">' + gtEsc(g.game_type || 'game') + (g.round ? ' · ' + gtRoundLabel(g.round) : '') + ' · ' + gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.players_per_side ? ' · ' + g.players_per_side + 'v' + g.players_per_side : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '') + '</div>' +
     ([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).length ? '<div style="font-size:.72rem;color:var(--muted);margin-top:2px">📍 ' + gtEsc([g.venue_address, g.venue_city, g.venue_state, g.venue_zip].filter(Boolean).join(', ')) + '</div>' : '') +
-    '<div style="font-size:1.25rem;font-weight:900;margin-top:8px">' + gtEsc(gtHomeName(g)) + ' <span style="font-size:1.6rem;color:var(--purple)">' + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span> ' + gtEsc(gtAwayName(g)) + '</div>' +
+    '<div style="font-size:1.25rem;font-weight:900;margin-top:8px">' + gtEsc(gtHomeName(g)) + ' <span style="font-size:1.6rem;color:var(--brand)">' + (g.home_score || 0) + ' – ' + (g.away_score || 0) + '</span> ' + gtEsc(gtAwayName(g)) + '</div>' +
     (g.pk_winner ? '<div style="font-size:.85rem;color:var(--muted);margin-top:2px">🥅 Penalties: ' + gtEsc(gtOurName(g)) + ' ' + gtPkScore(g).us + '–' + gtPkScore(g).them + ' ' + gtEsc(gtTheirName(g)) + '</div>' : '') +
     (res ? '<div style="margin-top:6px"><span class="gt-result-' + res.toLowerCase() + '" style="font-size:1rem">' + (res === 'W' ? '✅ Win' : res === 'L' ? '❌ Loss' : '➖ Draw') + '</span></div>' : '<div style="margin-top:6px">' + gtStatusPill(g) + (canEdit ? ' <a href="#/gametracker/live/' + g.id + '" style="font-size:.8rem;font-weight:700">Open live view →</a>' : '') + '</div>') +
     (g.end_reason ? '<div class="gt-endreason-badge">⛔ Ended before full time — ' + gtEsc(g.end_reason) + (canEdit ? ' <a onclick="gtOpenEndReason(\'' + g.id + '\',true)" style="font-weight:700">edit</a>' : '') + '</div>' : (canEdit && g.status === 'complete' ? '<div style="margin-top:6px"><a class="gt-minibtn" style="padding:2px 10px;font-size:.72rem" onclick="gtOpenEndReason(\'' + g.id + '\',true)">⛔ Tag early end</a></div>' : '')) +
@@ -88,7 +88,7 @@ function gtRenderReview(view, gameId) {
         html += '<tr><td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' + (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (canEdit ? ' <button class="gt-minibtn danger" style="padding:1px 6px;font-size:.65rem" title="Remove from this game" onclick="gtRemovePlayerFromGame(\'' + g.id + '\',\'' + p.id + '\')">✕</button>' : '') + '</td>' +
           '<td class="num">' + (st.goal || '') + '</td><td class="num">' + (st.assist || '') + '</td><td class="num">' + (st.shot_on_target || '') + '</td><td class="num">' + (st.shot || '') + '</td>' +
           '<td class="num">' + (st.yellow_card || '') + '</td><td class="num">' + (st.red_card || '') + '</td><td class="num">' + (st.save || '') + '</td><td class="num">' + (st.tackle || '') + '</td>' +
-          '<td class="num">' + Math.round((mins[p.id] || 0) / 60) + (gtMinutesOverridden(g.id, p.id) ? '<span title="Manually adjusted" style="color:var(--purple)">*</span>' : '') + (canEdit ? ' <button class="gt-minibtn" style="padding:1px 6px;font-size:.66rem" title="Edit minutes" onclick="gtEditMinutes(\'' + g.id + '\',\'' + p.id + '\')">✏️</button>' : '') + '</td></tr>';
+          '<td class="num">' + Math.round((mins[p.id] || 0) / 60) + (gtMinutesOverridden(g.id, p.id) ? '<span title="Manually adjusted" style="color:var(--brand)">*</span>' : '') + (canEdit ? ' <button class="gt-minibtn" style="padding:1px 6px;font-size:.66rem" title="Edit minutes" onclick="gtEditMinutes(\'' + g.id + '\',\'' + p.id + '\')">✏️</button>' : '') + '</td></tr>';
       });
     html += '</tbody></table></div>';
   }
@@ -116,9 +116,9 @@ function gtRemovePlayerFromGame(gid, pid) {
   var subs = GT.subs.filter(function(s){ return s.game_id === gid && (s.player_in_id === pid || s.player_out_id === pid); });
   if (!confirm('Remove ' + gtPlayerName(pid) + ' from this game?\n\nThis deletes their availability, ' + evs.length + ' event(s), and ' + subs.length + ' sub record(s) for THIS game only. Their roster profile and other games are unaffected.')) return;
   var batch = db.batch();
-  gtGameAvail(gid).filter(function(a){ return a.player_id === pid; }).forEach(function(a){ batch.delete(db.collection('gt_availability').doc(a.id)); });
-  evs.forEach(function(e){ batch.delete(db.collection('gt_events').doc(e.id)); });
-  subs.forEach(function(s){ batch.delete(db.collection('gt_subs').doc(s.id)); });
+  gtGameAvail(gid).filter(function(a){ return a.player_id === pid; }).forEach(function(a){ batch.delete(tdb('gt_availability').doc(a.id)); });
+  evs.forEach(function(e){ batch.delete(tdb('gt_events').doc(e.id)); });
+  subs.forEach(function(s){ batch.delete(tdb('gt_subs').doc(s.id)); });
   batch.commit().then(function() {
     if (goalsRemoved) gtBumpScore(g, 'us', -goalsRemoved);
     showToast(gtPlayerShort(pid) + ' removed from this game.');
@@ -411,7 +411,7 @@ function gtRenderPlayerProfile(view, pid) {
     var highlights = events.filter(function(e){ return e.player_id === pid && gtYtId(e.youtube_url); });
     return { g: g, st: st, mins: mins, highlights: highlights };
   });
-  var html = '<div class="gt-title">' + (p.jersey_number != null ? '<span style="color:var(--purple)">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(pid)) +
+  var html = '<div class="gt-title">' + (p.jersey_number != null ? '<span style="color:var(--brand)">#' + p.jersey_number + '</span> ' : '') + gtEsc(gtPlayerName(pid)) +
     (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</div>' +
     '<div class="gt-sub">' + gtEsc(p.position || '') + (gtRoster(p.roster_id) ? (p.position ? ' · ' : '') + gtEsc(gtRoster(p.roster_id).name) : '') + '</div>';
   var pr = (typeof gtProfile === 'function') ? gtProfile(pid) : {};
@@ -523,11 +523,11 @@ function gtEditMinutes(gid, pid) {
   var val = ans === '' ? firebase.firestore.FieldValue.delete() : Math.max(0, parseInt(ans, 10) || 0);
   var data = { minutes_override: val };
   var op;
-  if (ae) op = db.collection('gt_availability').doc(ae.id).set(data, { merge: true });
+  if (ae) op = tdb('gt_availability').doc(ae.id).set(data, { merge: true });
   else {
     data.game_id = gid; data.player_id = pid; data.available = true; data.notes = '';
     data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-    op = db.collection('gt_availability').add(data);
+    op = tdb('gt_availability').add(data);
   }
   op.then(function(){ showToast(ans === '' ? 'Minutes reset to auto.' : 'Minutes updated.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });

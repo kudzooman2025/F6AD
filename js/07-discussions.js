@@ -44,7 +44,7 @@ function discToggleVote(kind, id, coll) {
   var delta = v[key] ? -1 : 1;
   if (v[key]) delete v[key]; else v[key] = 1;
   discSaveVotes(v);
-  db.collection(coll).doc(id).update({ votes: firebase.firestore.FieldValue.increment(delta) })
+  tdb(coll).doc(id).update({ votes: firebase.firestore.FieldValue.increment(delta) })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function voteDiscussion(id) { discToggleVote('p', id, 'discussions'); }
@@ -161,7 +161,7 @@ function createDiscussion() {
   if (!name) { showToast('Add your name first.'); return; }
   if (!title) { showToast('Give your post a title.'); return; }
   setDiscName(name);
-  db.collection('discussions').add({
+  tdb('discussions').add({
     title: title, body: body, author: name, votes: 0,
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ discFormOpen = false; showToast('Posted ✓'); })
@@ -174,7 +174,7 @@ function postDiscComment(pid, parentId) {
   if (!name) { showToast('Add your name first.'); return; }
   if (!text) { showToast('Write something first.'); return; }
   setDiscName(name);
-  db.collection('discussion_comments').add({
+  tdb('discussion_comments').add({
     post_id: pid, parent_id: parentId || null, author: name, text: text, votes: 0,
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ discReplyOpen = null; showToast('Comment posted ✓'); })
@@ -184,9 +184,9 @@ function deleteDiscussion(pid) {
   if (!discStaff()) { showToast('Coach/admin only.'); return; }
   if (!confirm('Delete this post and all of its comments?')) return;
   var batch = db.batch();
-  batch.delete(db.collection('discussions').doc(pid));
+  batch.delete(tdb('discussions').doc(pid));
   discussionComments.filter(function(c){ return c.post_id === pid; })
-    .forEach(function(c){ batch.delete(db.collection('discussion_comments').doc(c.id)); });
+    .forEach(function(c){ batch.delete(tdb('discussion_comments').doc(c.id)); });
   batch.commit().then(function(){ showToast('Post deleted.'); window.location.hash = '#/discussions'; })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -194,9 +194,9 @@ function deleteDiscComment(cid) {
   if (!discStaff()) { showToast('Coach/admin only.'); return; }
   if (!confirm('Delete this comment?')) return;
   var batch = db.batch();
-  batch.delete(db.collection('discussion_comments').doc(cid));
+  batch.delete(tdb('discussion_comments').doc(cid));
   discussionComments.filter(function(r){ return r.parent_id === cid; })
-    .forEach(function(r){ batch.delete(db.collection('discussion_comments').doc(r.id)); });
+    .forEach(function(r){ batch.delete(tdb('discussion_comments').doc(r.id)); });
   batch.commit().then(function(){ showToast('Comment deleted.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }

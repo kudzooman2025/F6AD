@@ -1,5 +1,6 @@
 // ===================== AUTH (Firebase Authentication) =====================
-const OWNER_EMAILS = ['kudzooman@gmail.com', 'kudzooman@proton.me'];
+// Bootstrap admins for THIS deployment — see js/00-config.js.
+const OWNER_EMAILS = APP_CONFIG.ownerEmails || [];
 var authUser = null, authRole = null, authStaffName = '';
 var coachName = '';  // set from staff record after Firebase sign-in
 var staffData = {}, staffUnsub = null;
@@ -63,7 +64,7 @@ function subscribeStaff() {
   if (staffUnsub) { staffUnsub(); staffUnsub = null; }
   staffData = {};
   if (authRole !== 'admin') return;
-  staffUnsub = db.collection('staff').onSnapshot(function(snap) {
+  staffUnsub = tdb('staff').onSnapshot(function(snap) {
     staffData = {};
     snap.forEach(function(d){ staffData[d.id] = d.data(); });
     var adminPanel = document.getElementById('admin-panel');
@@ -76,20 +77,20 @@ function subscribeStaff() {
 firebase.auth().onAuthStateChanged(function(u) {
   authUser = u;
   if (u && u.email) {
-    db.collection('user_directory').doc(u.uid).set({ email: u.email, name: u.displayName || '', last_seen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(function(){});
+    tdb('user_directory').doc(u.uid).set({ email: u.email, name: u.displayName || '', last_seen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(function(){});
   }
   if (!u) {
     authRole = null; authStaffName = ''; coachName = '';
     subscribeStaff(); authRefreshUI();
     return;
   }
-  db.collection('staff').doc(u.uid).get().then(function(doc) {
+  tdb('staff').doc(u.uid).get().then(function(doc) {
     if (doc.exists) {
       authRole = doc.data().role === 'admin' ? 'admin' : 'coach';
       authStaffName = doc.data().name || u.email;
     } else if (authIsOwner(u)) {
       authRole = 'admin'; authStaffName = 'Chris';
-      db.collection('staff').doc(u.uid).set({
+      tdb('staff').doc(u.uid).set({
         name: 'Chris', email: u.email, role: 'admin',
         created_at: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).catch(function(e){ showToast('Heads up: could not save your staff record (' + e.message + ')'); });

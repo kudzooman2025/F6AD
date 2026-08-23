@@ -242,7 +242,7 @@ function renderSeasonGrid(season) {
     var myNote=voterName?((allNotes[voterName]||{})[t.id]||''):'';
     var notes=pubNotes[t.id]||[];
     var liveHtml=tc.credits>0
-      ?'<span style="color:var(--purple);font-weight:700">'+tc.credits+' credits</span> &middot; <span style="font-size:.7rem;color:var(--muted)">'+tc.voterCount+' voter'+(tc.voterCount!==1?'s':'')+'</span>'
+      ?'<span style="color:var(--brand);font-weight:700">'+tc.credits+' credits</span> &middot; <span style="font-size:.7rem;color:var(--muted)">'+tc.voterCount+' voter'+(tc.voterCount!==1?'s':'')+'</span>'
       :'<span style="font-size:.72rem;color:var(--muted)">No credits yet</span>';
     var canAdd=remaining>0&&myCredits<MAX_PER_TOURNAMENT;
     var allocHtml=voterName
@@ -401,7 +401,7 @@ function saveCreditAllocation(season, tournId) {
   var lc=getSeasonCredits(season);
   var myVotes=Object.assign({},(getSeasonVotes(season)[name]||{}));
   myVotes[tournId]=lc[tournId]||0;
-  db.collection(getSeasonCollection(season)).doc(name).set({name:name,votes:myVotes,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+  tdb(getSeasonCollection(season)).doc(name).set({name:name,votes:myVotes,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
     .then(function(){pendingCreditSaves.delete(key);})
     .catch(function(e){showToast('Error saving: '+e.message);});
 }
@@ -413,7 +413,7 @@ function saveNote(season, tournId) {
   var note=el.value.trim();
   var myNotes=Object.assign({},(getSeasonNotes(season)[name]||{}));
   myNotes[tournId]=note;
-  db.collection(getSeasonCollection(season)).doc(name).set({notes:myNotes},{merge:true})
+  tdb(getSeasonCollection(season)).doc(name).set({notes:myNotes},{merge:true})
     .then(function(){ var s=document.getElementById('ns-'+season+'-'+tournId); if(s){s.style.display='inline';setTimeout(function(){s.style.display='none';},2200);} })
     .catch(function(e){showToast('Error: '+e.message);});
 }

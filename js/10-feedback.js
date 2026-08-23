@@ -10,7 +10,7 @@ function submitFeedback() {
   var type = (document.getElementById('fb-type') || {}).value || 'other';
   var name = (document.getElementById('fb-name') || {}).value.trim();
   var email = (document.getElementById('fb-email') || {}).value.trim();
-  db.collection('feedback').add({
+  tdb('feedback').add({
     type: type, text: text, name: name || 'Anonymous', email: email || '', page: window.location.hash || '',
     status: 'open', created_at: fbTs()
   }).then(function(){
@@ -50,10 +50,10 @@ function renderAdminFeedback() {
 }
 function fbSetStatus(id, status) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Staff only.'); return; }
-  db.collection('feedback').doc(id).set({ status: status }, { merge: true }).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('feedback').doc(id).set({ status: status }, { merge: true }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function fbDelete(id) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Staff only.'); return; }
   if (!confirm('Delete this feedback?')) return;
-  db.collection('feedback').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('feedback').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
 }

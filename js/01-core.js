@@ -1,14 +1,7 @@
 
 // ===================== FIREBASE =====================
-const firebaseConfig = {
-  apiKey: "AIzaSyBrvvXKGZwKX1VOU-C6WZvB98r1KO9I5HI",
-  authDomain: "f6ad-2913b.firebaseapp.com",
-  projectId: "f6ad-2913b",
-  storageBucket: "f6ad-2913b.firebasestorage.app",
-  messagingSenderId: "1000483275960",
-  appId: "1:1000483275960:web:f9f9974965854a5cbfa04d",
-  measurementId: "G-B9H05C9HYM"
-};
+// Which Firebase project this deployment talks to — see js/00-config.js.
+const firebaseConfig = APP_CONFIG.firebase;
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -203,7 +196,7 @@ function setTheme(t) {
   var btns = document.querySelectorAll('.theme-switch button');
   btns.forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-theme-val') === t); });
   var mc = document.querySelector('meta[name="theme-color"]');
-  if (mc) mc.setAttribute('content', t === 'dark' ? '#15141b' : '#5A3FD6');
+  if (mc) mc.setAttribute('content', t === 'dark' ? '#15141b' : ((APP_CONFIG.brand && APP_CONFIG.brand.primary) || '#5A3FD6'));
 }
 function initTheme() {
   var t = 'light';
@@ -234,7 +227,7 @@ function f6adLogVisit() {
       visits: firebase.firestore.FieldValue.increment(1)
     };
     if (created) data.first_seen = firebase.firestore.FieldValue.serverTimestamp();
-    db.collection('site_visits').doc(tok).set(data, { merge: true }).catch(function(){});
+    tdb('site_visits').doc(tok).set(data, { merge: true }).catch(function(){});
   } catch (e) {}
 }
 if (typeof window !== 'undefined') {

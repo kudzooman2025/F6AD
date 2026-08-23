@@ -12,7 +12,7 @@ function pdRated(period, pid) { try { return localStorage.getItem('pd_rated_' + 
 var _pdLinksListening = false;
 function pdAttachPlayerLinksListener() {
   if (_pdLinksListening) return; _pdLinksListening = true;
-  db.collection('pd_player_links').onSnapshot(function(snap){
+  tdb('pd_player_links').onSnapshot(function(snap){
     pdPlayerLinks = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     renderPlayerDevPanel(); pdPlayerListen();
   }, function(){});
@@ -33,7 +33,7 @@ function pdPlayerRequestLink() {
   var u = pdMyUid(); if (!u) { showToast('Sign in first.'); return; }
   var sel = document.getElementById('pd-whoami'); var pid = sel ? sel.value : '';
   if (!pid) { showToast('Pick your name.'); return; }
-  db.collection('pd_player_links').doc(u + '_' + pid).set({
+  tdb('pd_player_links').doc(u + '_' + pid).set({
     uid: u, player_id: pid, player_name: gtPlayerName(pid), status: 'pending',
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ showToast('Sent — your coach will approve it.'); }).catch(function(e){ showToast('Error: ' + e.message); });
@@ -46,7 +46,7 @@ function pdPlayerListen() {
   PD_PERIODS.forEach(function(pp) {
     var key = pid + '_' + pp[0];
     if (_pdPlayerListening[key]) return; _pdPlayerListening[key] = true;
-    db.collection('pd_cards').doc(key).onSnapshot(function(doc){
+    tdb('pd_cards').doc(key).onSnapshot(function(doc){
       pdMyCards[pp[0]] = doc.exists ? doc.data() : null;
       renderPlayerDevPanel();
     }, function(){});
@@ -70,7 +70,7 @@ function pdSavePeerEval(targetPid) {
   var ratings = {}, any = false;
   PD_ATTRS.forEach(function(a) { var el = document.getElementById('pd-pe-' + targetPid + '-' + a.id); var v = el ? el.value : ''; if (v !== '') { var n = pdClamp(v); if (!isNaN(n)) { ratings[a.id] = n; any = true; } } });
   if (!any) { showToast('Rate at least one attribute.'); return; }
-  db.collection('pd_evals').doc(period + '_peer_' + myPid + '_' + targetPid).set({
+  tdb('pd_evals').doc(period + '_peer_' + myPid + '_' + targetPid).set({
     period: period, rater_type: 'peer', rater_id: myPid, target_player_id: targetPid,
     ratings: ratings, updated_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ try { localStorage.setItem('pd_rated_' + period + '_' + targetPid, '1'); } catch (e) {} showToast('Rating saved ✓'); renderPlayerDevPanel(); })
@@ -118,12 +118,12 @@ function renderPlayerDevPanel() {
       '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><select id="pd-whoami" class="rsvp-idselect" style="max-width:260px"><option value="">Choose your name…</option>' +
       players.map(function(p){ return '<option value="' + p.id + '">' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(p.id)) + '</option>'; }).join('') + '</select>' +
       '<button class="btn-primary" onclick="pdPlayerRequestLink()">Request access</button></div>' +
-      '<p style="font-size:.75rem;color:var(--muted);margin-top:10px"><a onclick="pdPlayerSignOut()" style="cursor:pointer;color:#5A3FD6">Sign out</a></p>';
+      '<p style="font-size:.75rem;color:var(--muted);margin-top:10px"><a onclick="pdPlayerSignOut()" style="cursor:pointer;color:var(--brand)">Sign out</a></p>';
     return;
   }
   if (link.status !== 'approved') {
     box.innerHTML = '<p style="font-size:.9rem">Waiting for your coach to approve you as <strong>' + gtEsc(gtPlayerName(link.player_id)) + '</strong> ⏳</p>' +
-      '<p style="font-size:.75rem;color:var(--muted);margin-top:10px"><a onclick="pdPlayerSignOut()" style="cursor:pointer;color:#5A3FD6">Sign out</a></p>';
+      '<p style="font-size:.75rem;color:var(--muted);margin-top:10px"><a onclick="pdPlayerSignOut()" style="cursor:pointer;color:var(--brand)">Sign out</a></p>';
     return;
   }
   var myPid = link.player_id;
@@ -180,7 +180,7 @@ function pdSaveFamilyEval(pid) {
   var ratings = {}, any = false;
   PD_ATTRS.forEach(function(a) { var el = document.getElementById('pd-fe-' + a.id); var v = el ? el.value : ''; if (v !== '') { var n = pdClamp(v); if (!isNaN(n)) { ratings[a.id] = n; any = true; } } });
   if (!any) { showToast('Rate at least one attribute.'); return; }
-  db.collection('pd_evals').doc(period + '_family_' + authUser.uid + '_' + pid).set({
+  tdb('pd_evals').doc(period + '_family_' + authUser.uid + '_' + pid).set({
     period: period, rater_type: 'family', rater_id: authUser.uid, relationship: rel, target_player_id: pid,
     ratings: ratings, updated_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ showToast('Family evaluation saved ✓'); }).catch(function(e){ showToast('Error: ' + e.message); });

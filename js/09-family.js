@@ -102,7 +102,7 @@ function familyCreateAccount() {
   if (pw.length < 8) { famErr('Password must be at least 8 characters.'); return; }
   firebase.auth().createUserWithEmailAndPassword(email, pw)
     .then(function(cred){
-      db.collection('families').doc(cred.user.uid).set({ name: name || '', email: email, created_at: famTs() }, { merge: true }).catch(function(){});
+      tdb('families').doc(cred.user.uid).set({ name: name || '', email: email, created_at: famTs() }, { merge: true }).catch(function(){});
       famErr(''); showToast('Family account created ✓'); renderFamilyPanel();
     })
     .catch(function(e){ famErr(authErrMsg(e)); });
@@ -117,7 +117,7 @@ function familyClaimPlayer() {
   if (familyLinkFor(pid)) { showToast('You already requested this player.'); return; }
   var uids = {}; (familyLinks || []).forEach(function(l){ if (l.player_id === pid) uids[l.uid] = 1; });
   if (!uids[authUser.uid] && Object.keys(uids).length >= 5) { showToast('This player already has the maximum of 5 linked family members.'); return; }
-  db.collection('family_links').doc(authUser.uid + '_' + pid).set({
+  tdb('family_links').doc(authUser.uid + '_' + pid).set({
     uid: authUser.uid, player_id: pid, family_name: familyName(), email: authUser.email,
     status: 'pending', created_at: famTs()
   }).then(function(){ showToast('Requested — a coach will approve it.'); })
@@ -126,7 +126,7 @@ function familyClaimPlayer() {
 function familyUnclaim(pid) {
   if (!authUser) return;
   if (!confirm('Remove ' + gtPlayerName(pid) + ' from your family?')) return;
-  db.collection('family_links').doc(authUser.uid + '_' + pid).delete()
+  tdb('family_links').doc(authUser.uid + '_' + pid).delete()
     .then(function(){ showToast('Removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 
@@ -152,13 +152,13 @@ function renderAdminFamilies() {
 }
 function familyApprove(id) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Staff only.'); return; }
-  db.collection('family_links').doc(id).set({ status: 'approved' }, { merge: true })
+  tdb('family_links').doc(id).set({ status: 'approved' }, { merge: true })
     .then(function(){ showToast('Approved ✓'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function familyDeny(id) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Staff only.'); return; }
   if (!confirm('Remove this family link?')) return;
-  db.collection('family_links').doc(id).delete()
+  tdb('family_links').doc(id).delete()
     .then(function(){ showToast('Removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 
@@ -184,7 +184,7 @@ function openProfileEdit(pid) {
 function saveProfileEdit(pid) {
   if (!canEditProfile(pid)) return;
   var hl = ((document.getElementById('pf-highlights') || {}).value || '').split(/\n+/).map(function(x){ return x.trim(); }).filter(Boolean);
-  db.collection('player_profiles').doc(pid).set({
+  tdb('player_profiles').doc(pid).set({
     photo_url: (document.getElementById('pf-photo') || {}).value.trim(),
     class_year: (document.getElementById('pf-class') || {}).value.trim(),
     bio: (document.getElementById('pf-bio') || {}).value.trim(),

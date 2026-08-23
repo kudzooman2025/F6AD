@@ -63,7 +63,7 @@ function exportVoteTally() {
 }
 function clearAllVotes() {
   if(!confirm('Delete ALL votes (all seasons) from the database? This cannot be undone.')) return;
-  var del=function(col){return db.collection(col).get().then(function(snap){var b=db.batch();snap.forEach(function(d){b.delete(d.ref);});return b.commit();});};
+  var del=function(col){return tdb(col).get().then(function(snap){var b=db.batch();snap.forEach(function(d){b.delete(d.ref);});return b.commit();});};
   Promise.all(['votes_fall','votes_winter','votes_spring'].map(del))
     .then(function(){showToast('All votes cleared.');}).catch(function(e){showToast('Error: '+e.message);});
 }
@@ -273,7 +273,7 @@ function saveVenue() {
   var name = document.getElementById('vn-name').value.trim();
   if (!name) { showToast('Venue name is required.'); return; }
   var data = { name:name, address:document.getElementById('vn-address').value.trim(), city:document.getElementById('vn-city').value.trim(), state:document.getElementById('vn-state').value.trim(), zip:document.getElementById('vn-zip').value.trim() };
-  var p = editingVenueId ? db.collection('venues').doc(editingVenueId).set(data) : db.collection('venues').add(data);
+  var p = editingVenueId ? tdb('venues').doc(editingVenueId).set(data) : tdb('venues').add(data);
   p.then(function(){ cancelVenueEdit(); showToast('✅ Venue saved!'); }).catch(function(e){ showToast('Error: '+e.message); });
 }
 function editVenue(id) {
@@ -296,7 +296,7 @@ function cancelVenueEdit() {
 }
 function deleteVenue(id) {
   if (!confirm('Delete this venue?')) return;
-  db.collection('venues').doc(id).delete().then(function(){ showToast('Venue deleted.'); }).catch(function(e){ showToast('Error: '+e.message); });
+  tdb('venues').doc(id).delete().then(function(){ showToast('Venue deleted.'); }).catch(function(e){ showToast('Error: '+e.message); });
 }
 function saveEvent() {
   const name = document.getElementById('ev-name').value.trim();
@@ -324,7 +324,7 @@ function saveEvent() {
       if (g.f6ad_side === 'away') { upd.away_team = ours; upd.home_team = theirs; }
       else { upd.home_team = ours; upd.away_team = theirs; }
     }
-    db.collection('gt_games').doc(gid).set(upd, { merge: true })
+    tdb('gt_games').doc(gid).set(upd, { merge: true })
       .then(() => { cancelEventEdit(); showToast('✅ GameTracker game updated!'); })
       .catch(e => showToast('Error: ' + e.message));
     return;
@@ -334,8 +334,8 @@ function saveEvent() {
   // TeamSnap sync will not overwrite your changes on its next run.
   if (editingEventId) data.manual_override = true;
   const p = editingEventId
-    ? db.collection('schedule').doc(editingEventId).set(data, { merge: true })
-    : db.collection('schedule').add(data);
+    ? tdb('schedule').doc(editingEventId).set(data, { merge: true })
+    : tdb('schedule').add(data);
   p.then(() => { cancelEventEdit(); showToast('✅ Event saved!'); })
    .catch(e => showToast('Error: ' + e.message));
 }
@@ -372,7 +372,7 @@ function cancelEventEdit() {
 
 function deleteEvent(id) {
   if (!confirm('Delete this event?')) return;
-  db.collection('schedule').doc(id).delete()
+  tdb('schedule').doc(id).delete()
     .then(() => showToast('Event deleted.'))
     .catch(e => showToast('Error: ' + e.message));
 }
@@ -460,7 +460,7 @@ function postAnnComment(annId) {
   if (!name) { showToast('Add your name first.'); return; }
   if (!text) { showToast('Write a comment first.'); return; }
   setAnnCommentName(name);
-  db.collection('ann_comments').add({
+  tdb('ann_comments').add({
     ann_id: annId, name: name, text: text,
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   }).then(function(){ if (textEl) textEl.value = ''; showToast('Comment posted ✓'); })
@@ -469,7 +469,7 @@ function postAnnComment(annId) {
 function deleteAnnComment(id) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Coach/admin only.'); return; }
   if (!confirm('Delete this comment?')) return;
-  db.collection('ann_comments').doc(id).delete()
+  tdb('ann_comments').doc(id).delete()
     .then(function(){ showToast('Comment deleted.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -492,7 +492,7 @@ function renderAdminAnnouncements() {
     </div>`).join('');
 }
 function toggleArchiveAnn(id, isArchived) {
-  db.collection('announcements').doc(id).update({ archived: !isArchived })
+  tdb('announcements').doc(id).update({ archived: !isArchived })
     .then(() => showToast(isArchived ? 'Announcement restored.' : 'Announcement archived.'))
     .catch(e => showToast('Error: ' + e.message));
 }
@@ -503,8 +503,8 @@ function saveAnnouncement() {
   if (!title || !body) { showToast('Title and message are required.'); return; }
   const now = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   const p = editingAnnId
-    ? db.collection('announcements').doc(editingAnnId).update({title, body})
-    : db.collection('announcements').add({title, body, date: now, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
+    ? tdb('announcements').doc(editingAnnId).update({title, body})
+    : tdb('announcements').add({title, body, date: now, createdAt: firebase.firestore.FieldValue.serverTimestamp()});
   p.then(() => { cancelAnnEdit(); showToast('✅ Announcement posted!'); })
    .catch(e => showToast('Error: ' + e.message));
 }
@@ -529,7 +529,7 @@ function cancelAnnEdit() {
 
 function deleteAnn(id) {
   if (!confirm('Delete this announcement?')) return;
-  db.collection('announcements').doc(id).delete()
+  tdb('announcements').doc(id).delete()
     .then(() => showToast('Announcement deleted.'))
     .catch(e => showToast('Error: ' + e.message));
 }
@@ -570,7 +570,7 @@ function adminCampEditStart(btn) {
   row.innerHTML = '';
   var inp = document.createElement('input');
   inp.type = 'text'; inp.value = oldName;
-  inp.style.cssText = 'flex:1;border:1.5px solid var(--purple);border-radius:6px;padding:4px 8px;font-size:.85rem';
+  inp.style.cssText = 'flex:1;border:1.5px solid var(--brand);border-radius:6px;padding:4px 8px;font-size:.85rem';
   var saveBtn = document.createElement('button');
   saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Save';
   saveBtn.style.cssText = 'padding:3px 10px;font-size:.75rem';
@@ -581,7 +581,7 @@ function adminCampEditStart(btn) {
     var newName = inp.value.trim();
     if(!newName) { showToast('Name cannot be empty.'); return; }
     if(newName === oldName) { renderCampAdminList(campId, elId); return; }
-    var ref = db.collection('conditioning').doc(campId);
+    var ref = tdb('conditioning').doc(campId);
     ref.set({ attendees: firebase.firestore.FieldValue.arrayRemove(oldName) }, { merge: true })
       .then(function() {
         return ref.set({ attendees: firebase.firestore.FieldValue.arrayUnion(newName) }, { merge: true });
@@ -601,7 +601,7 @@ function adminCampAdd(campId, inputId) {
   var input = document.getElementById(inputId);
   var name = input ? input.value.trim() : '';
   if(!name) { showToast('Enter a name first.'); return; }
-  db.collection('conditioning').doc(campId).set(
+  tdb('conditioning').doc(campId).set(
     { attendees: firebase.firestore.FieldValue.arrayUnion(name) },
     { merge: true }
   ).then(function() {
@@ -612,7 +612,7 @@ function adminCampAdd(campId, inputId) {
 function adminCampRemove(btn) {
   var campId = btn.getAttribute('data-cid');
   var name   = btn.getAttribute('data-n');
-  db.collection('conditioning').doc(campId).set(
+  tdb('conditioning').doc(campId).set(
     { attendees: firebase.firestore.FieldValue.arrayRemove(name) },
     { merge: true }
   ).then(function() { showToast(name + ' removed'); })
@@ -623,14 +623,14 @@ function adminAddToCamp(campId) {
   var input = document.getElementById('camp-add-'+campId);
   var name = input ? input.value.trim() : '';
   if(!name){showToast('Enter a player name.'); return;}
-  db.collection('conditioning').doc(campId).set(
+  tdb('conditioning').doc(campId).set(
     {attendees: firebase.firestore.FieldValue.arrayUnion(name)},
     {merge: true}
   ).then(function(){ input.value=''; showToast(name+' added ✓'); })
   .catch(function(e){showToast('Error: '+e.message);});
 }
 function adminRemoveFromCamp(campId, name) {
-  db.collection('conditioning').doc(campId).set(
+  tdb('conditioning').doc(campId).set(
     {attendees: firebase.firestore.FieldValue.arrayRemove(name)},
     {merge: true}
   ).then(function(){showToast(name+' removed');})
@@ -912,7 +912,7 @@ function savePlayerGroup(playerName, newGroup) {
   pMem.group = newGroup;
 
   var data = {group: newGroup};
-  db.collection('players').doc(playerName).set(data, {merge: true})
+  tdb('players').doc(playerName).set(data, {merge: true})
     .then(function() {
       var label = newGroup ? 'Group ' + newGroup + (newGroup===1?' ⚡':'') : 'Untested';
       showToast(playerName + ' → ' + label + ' ✓');
@@ -931,7 +931,7 @@ function openPlayerEdit(playerName, row) {
   var editRow = document.createElement('tr');
   editRow.id = 'player-edit-row';
   var editTd = document.createElement('td'); editTd.colSpan = 7;
-  editTd.style.cssText = 'background:var(--purple-light);padding:14px;';
+  editTd.style.cssText = 'background:var(--brand-soft);padding:14px;';
 
   var editDiv = document.createElement('div');
   editDiv.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end';
@@ -943,7 +943,7 @@ function openPlayerEdit(playerName, row) {
   var timeInp = document.createElement('input'); timeInp.type = 'text';
   timeInp.id = 'pe-time'; timeInp.placeholder = '6:15';
   timeInp.value = p.testTime || '';
-  timeInp.style.cssText = 'border:2px solid var(--purple);border-radius:6px;padding:6px 10px;font-size:.85rem;font-family:inherit;width:90px';
+  timeInp.style.cssText = 'border:2px solid var(--brand);border-radius:6px;padding:6px 10px;font-size:.85rem;font-family:inherit;width:90px';
   timeDiv.appendChild(timeLbl); timeDiv.appendChild(timeInp);
   editDiv.appendChild(timeDiv);
 
@@ -998,7 +998,7 @@ function savePlayerEdit(playerName) {
     return;
   }
 
-  db.collection('players').doc(playerName).set(data, {merge: true})
+  tdb('players').doc(playerName).set(data, {merge: true})
     .then(function() {
       showToast(playerName + ' time updated ✓');
       var er = document.getElementById('player-edit-row'); if(er) er.remove();
@@ -1073,7 +1073,7 @@ function buildAdminSessionDetail(container, sessionId, log) {
     var d = document.createElement('div'); d.className = 'log-field'; d.style.flex = '1';
     var l = document.createElement('label'); l.textContent = lbl;
     var inp = document.createElement('input'); inp.type = 'number';
-    inp.id = id; inp.min = min; inp.max = max; inp.value = val || ''; inp.style.borderColor = 'var(--purple)';
+    inp.id = id; inp.min = min; inp.max = max; inp.value = val || ''; inp.style.borderColor = 'var(--brand)';
     d.appendChild(l); d.appendChild(inp);
     return d;
   }
@@ -1112,7 +1112,7 @@ function buildAdminSessionDetail(container, sessionId, log) {
       cl.textContent = 'Block ' + (i+1);
       cl.style.cssText = 'font-size:.68rem;color:var(--muted);margin-bottom:2px';
       var ci = document.createElement('input'); ci.type = 'number'; ci.min = '0'; ci.max = '50';
-      ci.className = 'block-rep-inp'; ci.style.cssText = 'width:100%;text-align:center;border-color:var(--purple)';
+      ci.className = 'block-rep-inp'; ci.style.cssText = 'width:100%;text-align:center;border-color:var(--brand)';
       var val = (cur[i] !== undefined && cur[i] !== '') ? cur[i] : (existing[i] !== undefined ? existing[i] : '');
       ci.value = val;
       ci.addEventListener('input', recalc);
@@ -1128,7 +1128,7 @@ function buildAdminSessionDetail(container, sessionId, log) {
   var notesD = document.createElement('div'); notesD.className = 'log-field'; notesD.style.marginBottom = '12px';
   var notesL = document.createElement('label'); notesL.textContent = 'Notes';
   var notesTA = document.createElement('textarea'); notesTA.id = 'sadmin-notes-'+sessionId;
-  notesTA.value = log2.notes || ''; notesTA.style.borderColor = 'var(--purple)';
+  notesTA.value = log2.notes || ''; notesTA.style.borderColor = 'var(--brand)';
   notesD.appendChild(notesL); notesD.appendChild(notesTA);
   container.appendChild(notesD);
 
@@ -1207,7 +1207,7 @@ function buildAdminSessionDetail(container, sessionId, log) {
     if(blockReps.length){ data.block_reps = blockReps; data.reps_per_block = firebase.firestore.FieldValue.delete(); }
     if(total) data.total_reps = total;
     if(notes) data.notes = notes;
-    db.collection('session_log').doc(sid).set(data, {merge:true})
+    tdb('session_log').doc(sid).set(data, {merge:true})
       .then(function(){ showToast('Session saved ✓'); })
       .catch(function(e){ showToast('Error: '+e.message); });
   });
@@ -1247,7 +1247,7 @@ function renderAdminCoaches() {
     delBtn.addEventListener('click', function() {
       if(authUser && c.id === authUser.uid) { showToast("You can't remove your own staff access."); return; }
       if(!confirm('Remove staff access for ' + (c.name || c.email) + '? Their sign-in will remain but they will lose all permissions.')) return;
-      db.collection('staff').doc(c.id).delete()
+      tdb('staff').doc(c.id).delete()
         .then(function(){ showToast('Staff access removed.'); })
         .catch(function(e){ showToast('Error: '+e.message); });
     });
@@ -1274,7 +1274,7 @@ function adminAddCoach() {
   catch(e) { sec = firebase.initializeApp(firebaseConfig, 'Secondary'); }
   sec.auth().createUserWithEmailAndPassword(email, pw)
     .then(function(cred) {
-      return db.collection('staff').doc(cred.user.uid).set({
+      return tdb('staff').doc(cred.user.uid).set({
         name: name, email: email, role: role,
         created_at: firebase.firestore.FieldValue.serverTimestamp()
       }).then(function(){ return sec.auth().signOut(); });
@@ -1301,10 +1301,10 @@ function showToast(msg) {
 function cancelEvent(cancelId, on) {
   if (!(isAdminUnlocked() || isCoachLoggedIn())) { showToast('Coach/admin sign-in required.'); return; }
   if (on) {
-    db.collection('cancellations').doc(cancelId).set({ canceled: true, by: (isAdminUnlocked() ? 'Admin' : (coachName || 'Coach')), at: firebase.firestore.FieldValue.serverTimestamp() })
+    tdb('cancellations').doc(cancelId).set({ canceled: true, by: (isAdminUnlocked() ? 'Admin' : (coachName || 'Coach')), at: firebase.firestore.FieldValue.serverTimestamp() })
       .then(function(){ showToast('Event marked canceled.'); }).catch(function(e){ showToast('Error: ' + e.message); });
   } else {
-    db.collection('cancellations').doc(cancelId).delete()
+    tdb('cancellations').doc(cancelId).delete()
       .then(function(){ showToast('Cancellation removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
   }
 }
@@ -1318,7 +1318,7 @@ function schedDeleteEvent(cancelId) {
   var kind = cancelId.slice(0, us), rest = cancelId.slice(us + 1);
   if (kind === 'game') {
     if (!confirm('Delete this game and all its stats? This cannot be undone.')) return;
-    var op = (typeof gtDeleteGameDocs === 'function') ? gtDeleteGameDocs(rest) : db.collection('gt_games').doc(rest).delete();
+    var op = (typeof gtDeleteGameDocs === 'function') ? gtDeleteGameDocs(rest) : tdb('gt_games').doc(rest).delete();
     op.then(function(){ showToast('Game deleted.'); }).catch(function(e){ showToast('Error: ' + e.message); });
     return;
   }
@@ -1326,12 +1326,12 @@ function schedDeleteEvent(cancelId) {
     var _ev = (typeof scheduleItems !== 'undefined') ? scheduleItems.find(function(e){ return e.id === rest; }) : null;
     if (_ev && _ev.source === 'teamsnap') {
       if (!confirm('Remove this TeamSnap event from the schedule?\n\nIt stays hidden and the daily TeamSnap sync will NOT bring it back — use this when you\'ve added your own games in its place.')) return;
-      db.collection('schedule').doc(rest).set({ suppressed: true, manual_override: true, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+      tdb('schedule').doc(rest).set({ suppressed: true, manual_override: true, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
         .then(function(){ showToast('TeamSnap event removed — it won\'t sync back.'); }).catch(function(e){ showToast('Error: ' + e.message); });
       return;
     }
     if (!confirm('Delete this schedule event? This cannot be undone.')) return;
-    db.collection('schedule').doc(rest).delete().then(function(){ showToast('Event deleted.'); }).catch(function(e){ showToast('Error: ' + e.message); });
+    tdb('schedule').doc(rest).delete().then(function(){ showToast('Event deleted.'); }).catch(function(e){ showToast('Error: ' + e.message); });
     return;
   }
   showToast('Conditioning and camp entries are auto-generated \u2014 use Mark canceled instead.');
@@ -1491,7 +1491,7 @@ function schedPromoteToGame(schedId) {
   var gtype = ev.type === 'tournament' ? 'tournament' : ev.type === 'friendly' ? 'friendly' : 'league';
   var parts = String(ev.location || '').split(' \u00b7 ');
   var ts = firebase.firestore.FieldValue.serverTimestamp();
-  var gameRef = db.collection('gt_games').doc();
+  var gameRef = tdb('gt_games').doc();
   var data = {
     roster_id: roster.id, tournament_id: null,
     season_id: (typeof gtCurrentSeason === 'function' && gtCurrentSeason()) ? gtCurrentSeason().id : null,
@@ -1511,7 +1511,7 @@ function schedPromoteToGame(schedId) {
   var batch = db.batch();
   batch.set(gameRef, data);
   // Pin + hide the original schedule row so it won't duplicate or get overwritten by future TeamSnap syncs.
-  batch.set(db.collection('schedule').doc(schedId), { promoted: true, gt_game_id: gameRef.id, manual_override: true, updated_at: ts }, { merge: true });
+  batch.set(tdb('schedule').doc(schedId), { promoted: true, gt_game_id: gameRef.id, manual_override: true, updated_at: ts }, { merge: true });
   batch.commit().then(function(){
     if (typeof showToast === 'function') showToast('Converted to a full game \u2713 Fill in the details.');
     if (typeof gtOpenGameEdit === 'function') gtOpenGameEdit(gameRef.id);
@@ -1533,7 +1533,12 @@ var SITE_SECTIONS = [
 function applySiteFlags() {
   SITE_SECTIONS.forEach(function(sec){
     var link = document.querySelector(sec.sel);
-    if (link) link.style.display = (siteFlags && siteFlags['hide_' + sec.key]) ? 'none' : '';
+    if (!link) return;
+    // Two independent switches: the deployment either ships this module at all
+    // (js/00-config.js), and the admin can hide a shipped one day to day.
+    var shipped = (typeof appModuleOn !== 'function') || appModuleOn(sec.key);
+    var hidden  = !!(siteFlags && siteFlags['hide_' + sec.key]);
+    link.style.display = (shipped && !hidden) ? '' : 'none';
   });
   if (typeof renderGuestBanner === 'function') renderGuestBanner();
 }
@@ -1541,7 +1546,7 @@ function toggleSiteFlag(key) {
   if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
   var val = !(siteFlags && siteFlags[key]);
   var data = {}; data[key] = val;
-  db.collection('site_flags').doc('main').set(data, { merge: true })
+  tdb('site_flags').doc('main').set(data, { merge: true })
     .then(function(){ showToast(val ? 'Hidden from the menu.' : 'Shown in the menu.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1579,7 +1584,7 @@ function setGtTimelineType(typeId, val) {
   if (typeof isAdminUnlocked === 'function' && !isAdminUnlocked()) { showToast('Admin only.'); return; }
   val = !!val;
   var data = {}; data['gt_tl_' + typeId] = val;
-  db.collection('site_flags').doc('main').set(data, { merge: true })
+  tdb('site_flags').doc('main').set(data, { merge: true })
     .then(function(){ showToast(val ? 'Now shown in the timeline.' : 'Moved to Parent-Reported.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -1634,13 +1639,13 @@ function setSyncToken() {
   if (!isAdminUnlocked()) { showToast('Admin only.'); return; }
   var tok = window.prompt('Paste a GitHub fine-grained token with "Actions: Read and write" on ' + GH_REPO + ' (stored privately, admin-only). Leave blank to clear.');
   if (tok === null) return;
-  db.collection('site_secrets').doc('main').set({ gh_token: tok.trim() }, { merge: true })
+  tdb('site_secrets').doc('main').set({ gh_token: tok.trim() }, { merge: true })
     .then(function(){ showToast(tok.trim() ? 'Sync token saved ✓' : 'Sync token cleared.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function teamsnapSyncNow() {
   if (!isAdminUnlocked()) { showToast('Admin only.'); return; }
-  db.collection('site_secrets').doc('main').get().then(function(doc) {
+  tdb('site_secrets').doc('main').get().then(function(doc) {
     var tok = (doc.exists && doc.data().gh_token) ? doc.data().gh_token : '';
     if (!tok) { showToast('Add a GitHub sync token first (🔑 Set token).'); return; }
     showToast('Starting TeamSnap sync…');
@@ -1677,7 +1682,7 @@ function renderAdminVisitors() {
   var box = document.getElementById('admin-visitors-list');
   if (!box) return;
   box.innerHTML = '<p style="font-size:.85rem;color:var(--muted)">Loading…</p>';
-  db.collection('site_visits').orderBy('last_seen', 'desc').limit(500).get().then(function(snap) {
+  tdb('site_visits').orderBy('last_seen', 'desc').limit(500).get().then(function(snap) {
     var rows = []; snap.forEach(function(d){ rows.push(d.data() || {}); });
     var now = Date.now();
     var day = rows.filter(function(r){ return r.last_seen && (now - r.last_seen.toMillis()) < 864e5; }).length;
@@ -1700,7 +1705,7 @@ function renderAdminAccounts() {
   var box = document.getElementById('admin-accounts-list');
   if (!box) return;
   box.innerHTML = '<p style="font-size:.82rem;color:var(--muted)">Loading…</p>';
-  db.collection('user_directory').get().then(function(snap) {
+  tdb('user_directory').get().then(function(snap) {
     var rows = []; snap.forEach(function(d){ rows.push(Object.assign({ uid: d.id }, d.data() || {})); });
     rows.sort(function(a, b){ return (b.last_seen && b.last_seen.toMillis ? b.last_seen.toMillis() : 0) - (a.last_seen && a.last_seen.toMillis ? a.last_seen.toMillis() : 0); });
     if (!rows.length) { box.innerHTML = '<p style="font-size:.82rem;color:var(--muted)">No sign-ins recorded yet. Accounts appear here once they sign in (after this update).</p>'; return; }
@@ -1716,14 +1721,14 @@ function renderAdminAccounts() {
   }).catch(function(e){ box.innerHTML = '<p style="color:#b91c1c;font-size:.82rem">' + gtEsc(e.message) + '</p>'; });
 }
 function adminMakeStaff(uid, email, role) {
-  db.collection('staff').doc(uid).set({ name: email || uid, email: email || '', role: (role === 'admin' ? 'admin' : 'coach'), created_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('staff').doc(uid).set({ name: email || uid, email: email || '', role: (role === 'admin' ? 'admin' : 'coach'), created_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .then(function(){ showToast('Granted ' + (role === 'admin' ? 'admin' : 'coach') + ' access ✓'); renderAdminAccounts(); })
     .catch(function(e){ showToast('Error: ' + authErrMsg(e)); });
 }
 function adminRemoveStaff(uid) {
   if (authUser && uid === authUser.uid) { showToast("You can't remove your own access."); return; }
   if (!confirm('Remove staff access for this account?')) return;
-  db.collection('staff').doc(uid).delete().then(function(){ showToast('Staff access removed.'); renderAdminAccounts(); }).catch(function(e){ showToast('Error: ' + e.message); });
+  tdb('staff').doc(uid).delete().then(function(){ showToast('Staff access removed.'); renderAdminAccounts(); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function adminPromoteExisting() {
   var name = document.getElementById('promo-name').value.trim();
@@ -1731,7 +1736,7 @@ function adminPromoteExisting() {
   var uid = document.getElementById('promo-uid').value.trim();
   var role = document.getElementById('promo-role').value;
   if (!uid) { showToast('Enter the person\'s Firebase User UID (from the console).'); return; }
-  db.collection('staff').doc(uid).set({ name: name || email || uid, email: email, role: (role === 'admin' ? 'admin' : 'coach'), created_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('staff').doc(uid).set({ name: name || email || uid, email: email, role: (role === 'admin' ? 'admin' : 'coach'), created_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .then(function(){ document.getElementById('promo-name').value = ''; document.getElementById('promo-email').value = ''; document.getElementById('promo-uid').value = ''; showToast((name || email || 'Account') + ' granted ' + role + ' access ✓'); renderAdminAccounts(); })
     .catch(function(e){ showToast('Error: ' + authErrMsg(e)); });
 }

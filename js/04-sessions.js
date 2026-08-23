@@ -66,7 +66,7 @@ function renderSessionModalContent(sessionId) {
     var tr = document.createElement('tr');
     var label = 'Group ' + g + (g === 1 ? ' ⚡' : '');
     tr.innerHTML = '<td><span class="group-badge' + (g===1?' g1':'') + '">' + label + '</span></td>'
-      + '<td style="font-weight:700;color:var(--purple)">' + yds + ' yd</td>'
+      + '<td style="font-weight:700;color:var(--brand)">' + yds + ' yd</td>'
       + '<td style="font-size:.78rem;color:var(--muted)">' + members.map(function(p){return p.name;}).join(', ') + '</td>';
     tbody.appendChild(tr);
   });
@@ -352,7 +352,7 @@ function saveSessionLog(sessionId) {
   if(total !== null) data.total_reps = total;
   if(notes) data.notes = notes;
 
-  db.collection('session_log').doc(sessionId).set(data, {merge:true})
+  tdb('session_log').doc(sessionId).set(data, {merge:true})
     .then(function() {
       showToast('Session log saved ✓');
       renderSessionModalContent(sessionId);
@@ -583,29 +583,29 @@ function renderSummerOverview() {
 
 // ===================== LISTENERS =====================
 function startListeners() {
-  db.collection('family_links').onSnapshot(function(snap){
+  tdb('family_links').onSnapshot(function(snap){
     familyLinks = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     if (typeof renderFamilyPanel === 'function') renderFamilyPanel();
     if (typeof renderAdminFamilies === 'function' && document.getElementById('admin-families-list')) renderAdminFamilies();
   }, function(){});
-  db.collection('player_profiles').onSnapshot(function(snap){
+  tdb('player_profiles').onSnapshot(function(snap){
     playerProfiles = {}; snap.forEach(function(d){ playerProfiles[d.id] = d.data() || {}; });
     if (typeof gtRerender === 'function') gtRerender();
   }, function(){});
-  db.collection('families').onSnapshot(function(snap){
+  tdb('families').onSnapshot(function(snap){
     familyData = {}; snap.forEach(function(d){ familyData[d.id] = d.data() || {}; });
   }, function(){});
-  db.collection('pd_config').doc('main').onSnapshot(function(doc){
+  tdb('pd_config').doc('main').onSnapshot(function(doc){
     pdConfigData = (doc && doc.exists) ? (doc.data() || {}) : {};
     if (typeof renderAdminDevCards === 'function' && document.getElementById('admin-devcards-list')) renderAdminDevCards();
     if (typeof renderPlayerDevPanel === 'function') renderPlayerDevPanel();
   }, function(){});
-  db.collection('site_flags').doc('main').onSnapshot(function(doc){
+  tdb('site_flags').doc('main').onSnapshot(function(doc){
     siteFlags = (doc && doc.exists) ? (doc.data() || {}) : {};
     if (typeof applySiteFlags === 'function') applySiteFlags();
     if (typeof renderSiteFlags === 'function') renderSiteFlags();
   }, function(){});
-  db.collection('cancellations').onSnapshot(snap => {
+  tdb('cancellations').onSnapshot(snap => {
     canceledEvents = {};
     snap.forEach(d => { canceledEvents[d.id] = true; });
     if (typeof renderSchedule === 'function') renderSchedule();
@@ -614,21 +614,21 @@ function startListeners() {
     if (typeof renderCamps === 'function') renderCamps();
     if (typeof gtRerender === 'function') gtRerender();
   });
-  db.collection('schedule').onSnapshot(snap => {
+  tdb('schedule').onSnapshot(snap => {
     scheduleItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderSchedule();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminSchedule();
   });
-  db.collection('venues').onSnapshot(snap => {
+  tdb('venues').onSnapshot(snap => {
     venueItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(typeof renderVenueDatalist==='function') renderVenueDatalist();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderVenuesAdmin();
   });
-  db.collection('ann_comments').onSnapshot(snap => {
+  tdb('ann_comments').onSnapshot(snap => {
     annComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (typeof renderAnnouncements === 'function') renderAnnouncements();
   });
-  db.collection('announcements').onSnapshot(snap => {
+  tdb('announcements').onSnapshot(snap => {
     announcementItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderAnnouncements();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminAnnouncements();
@@ -640,7 +640,7 @@ var _lazyOn = {};
 function attachVotesListeners() {
   if (_lazyOn.votes) return; _lazyOn.votes = true;
   ['fall','winter','spring','summer27'].forEach(season => {
-    db.collection(getSeasonCollection(season)).onSnapshot(snap => {
+    tdb(getSeasonCollection(season)).onSnapshot(snap => {
       const v={}, n={};
       snap.forEach(doc=>{ v[doc.id]=doc.data().votes||{}; n[doc.id]=doc.data().notes||{}; });
       if(season==='fall'){allVotesFall=v;allNotesFall=n;}
@@ -655,18 +655,18 @@ function attachVotesListeners() {
 }
 function attachDiscussionsListeners() {
   if (_lazyOn.disc) return; _lazyOn.disc = true;
-  db.collection('discussions').onSnapshot(snap => {
+  tdb('discussions').onSnapshot(snap => {
     discussionItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (typeof renderDiscussions === 'function') renderDiscussions();
   });
-  db.collection('discussion_comments').onSnapshot(snap => {
+  tdb('discussion_comments').onSnapshot(snap => {
     discussionComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (typeof renderDiscussions === 'function') renderDiscussions();
   });
 }
 function attachConditioningListeners() {
   if (_lazyOn.cond) return; _lazyOn.cond = true;
-  db.collection('session_log').onSnapshot(function(snap) {
+  tdb('session_log').onSnapshot(function(snap) {
     sessionLogData = {};
     snap.forEach(function(doc) { sessionLogData[doc.id] = doc.data(); });
     renderSummerOverview();
@@ -678,7 +678,7 @@ function attachConditioningListeners() {
       if(tabSessions && tabSessions.classList.contains('active')) renderAdminSessions();
     }
   });
-  db.collection('players').onSnapshot(function(snap) {
+  tdb('players').onSnapshot(function(snap) {
     snap.forEach(function(doc) {
       var p = PLAYERS.find(function(x){ return x.name === doc.id; });
       if(p) Object.assign(p, doc.data());
@@ -693,7 +693,7 @@ function attachConditioningListeners() {
 }
 function attachFeedbackListener() {
   if (_lazyOn.fb) return; _lazyOn.fb = true;
-  db.collection('feedback').onSnapshot(function(snap){
+  tdb('feedback').onSnapshot(function(snap){
     feedbackItems = snap.docs.map(function(d){ var o = d.data() || {}; o.id = d.id; return o; });
     if (typeof renderAdminFeedback === 'function' && document.getElementById('admin-feedback-list')) renderAdminFeedback();
   }, function(){});

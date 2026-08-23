@@ -49,7 +49,7 @@ function gtRenderRoster(view) {
     else {
       html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th><th>Parents</th><th>Phones</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
       players.forEach(function(p) {
-        html += '<tr><td class="num" style="font-weight:900;color:var(--purple)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
+        html += '<tr><td class="num" style="font-weight:900;color:var(--brand)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
           '<td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span>' +
           (p.is_guest ? '<span class="gt-guest-badge">Guest</span>' : '') + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</td>' +
           '<td>' + gtEsc(p.position || '—') + '</td>' +
@@ -72,7 +72,7 @@ function gtRenderRoster(view) {
   else {
     html += '<div class="gt-table-wrap"><table class="gt-table"><thead><tr><th>#</th><th>Player</th><th>Pos</th>' + (canEdit ? '<th></th>' : '') + '</tr></thead><tbody>';
     guests.forEach(function(p) {
-      html += '<tr><td class="num" style="font-weight:900;color:var(--purple)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
+      html += '<tr><td class="num" style="font-weight:900;color:var(--brand)">' + (p.jersey_number != null ? p.jersey_number : '—') + '</td>' +
         '<td><span class="gt-plink" onclick="gtGo(\'/gametracker/player/' + p.id + '\')">' + gtEsc(gtPlayerName(p.id)) + '</span> <span class="gt-guest-badge">Guest</span>' + (gtIsGK(p) ? '<span class="gt-gk-badge">GK</span>' : '') + '</td>' +
         '<td>' + gtEsc(p.position || '—') + '</td>' +
         (canEdit ? '<td style="white-space:nowrap"><button class="gt-minibtn" onclick="gtOpenGuestForm(\'' + p.id + '\')">Edit</button> ' +
@@ -112,11 +112,11 @@ function gtSaveGuest(pid) {
     is_guest: true, updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   var op;
-  if (pid) op = db.collection('gt_players').doc(pid).set(data, { merge: true });
+  if (pid) op = tdb('gt_players').doc(pid).set(data, { merge: true });
   else {
     data.parent_name = ''; data.parent_phone = '';
     data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-    op = db.collection('gt_players').add(data);
+    op = tdb('gt_players').add(data);
   }
   op.then(function(){ showToast('Guest saved ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
@@ -138,12 +138,12 @@ function gtSaveRoster(rid) {
   if (!name) { showToast('Roster name is required.'); return; }
   var data = { name: name, season: season, updated_at: firebase.firestore.FieldValue.serverTimestamp() };
   var op;
-  if (rid) op = db.collection('gt_rosters').doc(rid).set(data, { merge: true });
+  if (rid) op = tdb('gt_rosters').doc(rid).set(data, { merge: true });
   else {
     data.is_active = !GT.rosters.some(function(r){ return r.is_active; });
     data.archived = false;
     data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-    op = db.collection('gt_rosters').add(data);
+    op = tdb('gt_rosters').add(data);
   }
   op.then(function(){ showToast('Roster saved ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
@@ -152,14 +152,14 @@ function gtSetActiveRoster(rid) {
   if (!gtCanEdit()) return;
   var batch = db.batch();
   GT.rosters.forEach(function(r) {
-    batch.set(db.collection('gt_rosters').doc(r.id), { is_active: r.id === rid }, { merge: true });
+    batch.set(tdb('gt_rosters').doc(r.id), { is_active: r.id === rid }, { merge: true });
   });
   batch.commit().then(function(){ showToast('Active roster updated ✓'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtArchiveRoster(rid, val) {
   if (!gtCanEdit()) return;
-  db.collection('gt_rosters').doc(rid).set({ archived: val, is_active: false }, { merge: true })
+  tdb('gt_rosters').doc(rid).set({ archived: val, is_active: false }, { merge: true })
     .then(function(){ showToast(val ? 'Roster archived.' : 'Roster restored.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -169,8 +169,8 @@ function gtDeleteRoster(rid) {
   var players = gtRosterPlayers(rid);
   if (!confirm('Delete roster "' + (r.name || '') + '"' + (players.length ? ' and its ' + players.length + ' player record(s)' : '') + '?\n\nThis cannot be undone. Any game events already logged for these players will remain but show as "Unknown".')) return;
   var batch = db.batch();
-  players.forEach(function(p){ batch.delete(db.collection('gt_players').doc(p.id)); });
-  batch.delete(db.collection('gt_rosters').doc(rid));
+  players.forEach(function(p){ batch.delete(tdb('gt_players').doc(p.id)); });
+  batch.delete(tdb('gt_rosters').doc(rid));
   batch.commit().then(function() {
     if (GT.rosterSel === rid) GT.rosterSel = null;
     showToast('Roster deleted.');
@@ -299,11 +299,11 @@ function gtSavePlayer(rid, pid) {
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   };
   var op;
-  if (pid) op = db.collection('gt_players').doc(pid).set(data, { merge: true });
+  if (pid) op = tdb('gt_players').doc(pid).set(data, { merge: true });
   else {
     data.is_guest = false;
     data.created_at = firebase.firestore.FieldValue.serverTimestamp();
-    op = db.collection('gt_players').add(data);
+    op = tdb('gt_players').add(data);
   }
   op.then(function(){ showToast('Player saved ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
@@ -329,7 +329,7 @@ function gtPromoteGuest(pid, rid) {
   if (!gtCanEdit()) return;
   var r = gtRoster(rid);
   if (!r) { showToast('Pick a roster to move them onto.'); return; }
-  db.collection('gt_players').doc(pid).set({
+  tdb('gt_players').doc(pid).set({
     is_guest: false, roster_id: rid,
     updated_at: firebase.firestore.FieldValue.serverTimestamp()
   }, { merge: true })
@@ -365,14 +365,14 @@ function gtConvertGuest(pid) {
 function gtMakeGuest(pid) {
   if (!gtCanEdit()) return;
   if (!confirm('Move ' + gtPlayerName(pid) + ' into the Guest Players pool? Their info, stats and game history are kept.')) return;
-  db.collection('gt_players').doc(pid).set({ is_guest: true, roster_id: '__guests__', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+  tdb('gt_players').doc(pid).set({ is_guest: true, roster_id: '__guests__', updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .then(function(){ showToast(gtPlayerName(pid) + ' moved to guest pool ✓'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtDeletePlayer(pid) {
   if (!gtCanEdit()) return;
   if (!confirm('Remove ' + gtPlayerName(pid) + ' from the roster? Their logged game events will remain.')) return;
-  db.collection('gt_players').doc(pid).delete()
+  tdb('gt_players').doc(pid).delete()
     .then(function(){ showToast('Player removed.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
