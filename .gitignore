@@ -2,3 +2,12 @@
 Thumbs.db
 node_modules/
 .firebase/
+
+# ---- personal data -------------------------------------------------------
+# THIS REPOSITORY IS PUBLIC. Never commit rosters, contact exports, or
+# screenshots holding player or parent details — names, emails, phone numbers.
+# Keep them in an ignored folder and import them through the admin UI or a
+# secret, never through git.
+/montco/
+*roster-export*
+*contact-export*
