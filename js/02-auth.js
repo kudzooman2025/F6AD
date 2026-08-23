@@ -58,6 +58,12 @@ function authRefreshUI() {
   if (typeof renderFamilyPanel === 'function') renderFamilyPanel();
   if (typeof renderAdminFamilies === 'function' && document.getElementById('admin-families-list')) renderAdminFamilies();
   if (typeof renderPlayerDevPanel === 'function') renderPlayerDevPanel();
+  // The schedule's Edit / Cancel / Delete buttons are gated on staff status, but
+  // the schedule renders as soon as its snapshot lands — usually before the
+  // staff lookup has come back. Without a redraw here it sits in its signed-out
+  // state until something else happens to re-render it, which looks exactly
+  // like "admin can't edit events".
+  if (typeof renderSchedule === 'function') renderSchedule();
   if (typeof gtRerender === 'function') gtRerender(true);
 }
 function subscribeStaff() {
