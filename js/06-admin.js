@@ -168,7 +168,7 @@ function renderSchedule() {
     return `<div class="event-item${isPast?' past':''}${canceled?' canceled':''}${ev._cancelId?' editable':''}"${ev._cancelId?` onclick="schedShowDetails('${ev._cancelId}')" title="Click for details"`:''}>
       <div class="event-date"><div class="month">${month}</div><div class="day">${day}</div></div>
       <div class="event-info">
-        <div class="event-name"><span class="evn-text">${ev.name}</span>${ev._round?` <span class="round-badge">${ev._round}</span>`:''}${_seasonName?` <span class="season-badge">📅 ${_seasonName}</span>`:''}${ev.source==='teamsnap'?' <span class="ts-badge">FC Delco</span>':''}${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
+        <div class="event-name"><span class="evn-text">${ev.name}</span>${ev._round?` <span class="round-badge">${ev._round}</span>`:''}${_seasonName?` <span class="season-badge">📅 ${_seasonName}</span>`:''}${ev.source==='teamsnap'?` <span class="ts-badge">${APP_CONFIG.clubName||'TeamSnap'}</span>`:''}${canceled?' <span class="cancel-badge">Canceled</span>':''}</div>
         <div class="event-detail">${ev.location}${time?' · '+time:''}</div>
         <span class="event-type type-${ev.type}">${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</span>
         ${(!isPast && !canceled && ev._rsvpId) ? `<a class="sched-rsvp" href="#/gametracker/rsvp/${ev._rsvpId}" onclick="event.stopPropagation()">📋 RSVP / availability</a>` : ''}

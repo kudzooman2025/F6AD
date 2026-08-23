@@ -68,7 +68,6 @@ function classify(summary) {
       location: String(ev.location || ''),
       type: classify(ev.summary),
       source: 'teamsnap',
-      club: 'FC Delco',
       updated_at: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     added++;
