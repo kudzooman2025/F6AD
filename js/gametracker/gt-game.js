@@ -563,7 +563,7 @@ function gtOpenGameEdit(gid) {
     '<div><label>State</label><input type="text" id="gt-ge-vstate" value="' + gtAttr(g.venue_state || '') + '"/></div>' +
     '<div><label>Zip</label><input type="text" id="gt-ge-vzip" value="' + gtAttr(g.venue_zip || '') + '"/></div></div>' +
     '<div class="gm-row"><div><label>Periods</label><select id="gt-ge-periods">' + [1, 2, 3, 4].map(function(n){ return '<option value="' + n + '"' + ((g.num_periods || 2) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select></div>' +
-    '<div><label>Minutes per period</label><input type="number" id="gt-ge-dur" min="1" max="60" value="' + (g.period_duration_minutes || 35) + '"/></div></div>' +
+    '<div><label>Minutes per period</label><input type="number" id="gt-ge-dur" min="1" max="60" value="' + (g.period_duration_minutes || appGameDefaults().period_duration_minutes) + '"/></div></div>' +
     '<label>Players per side</label><input type="number" id="gt-ge-side" min="1" max="11" value="' + (g.players_per_side || 11) + '"/>' +
     '<div class="gm-row"><div><label>Our Score</label><input type="number" id="gt-ge-usscore" min="0" value="' + gtOurScore(g) + '"/></div>' +
     '<div><label>Opponent Score</label><input type="number" id="gt-ge-themscore" min="0" value="' + gtTheirScore(g) + '"/></div></div>' +
@@ -590,7 +590,7 @@ function gtSaveGameEdit(gid) {
     venue_state: document.getElementById('gt-ge-vstate').value.trim(),
     venue_zip: document.getElementById('gt-ge-vzip').value.trim(),
     num_periods: parseInt(document.getElementById('gt-ge-periods').value, 10) || 2,
-    period_duration_minutes: Math.max(1, parseInt(document.getElementById('gt-ge-dur').value, 10) || 35),
+    period_duration_minutes: Math.max(1, parseInt(document.getElementById('gt-ge-dur').value, 10) || appGameDefaults().period_duration_minutes),
     players_per_side: Math.max(1, Math.min(11, parseInt(document.getElementById('gt-ge-side').value, 10) || 11)),
     kickoff_time: document.getElementById('gt-ge-time').value || '',
     field: document.getElementById('gt-ge-field').value.trim(),

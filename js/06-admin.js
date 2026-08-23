@@ -1489,18 +1489,25 @@ function schedPromoteToGame(schedId) {
   if (!roster) { if (typeof showToast === 'function') showToast('Create a roster in GameTracker first, then try again.'); return; }
   var m = schedParseMatchup(ev.name);
   var gtype = ev.type === 'tournament' ? 'tournament' : ev.type === 'friendly' ? 'friendly' : 'league';
+  // Match format: the season wins if it sets one, otherwise the deployment's
+  // defaults. Hardcoding 11v11 / 35s here silently mis-set every promoted game
+  // and quietly corrupted minutes-played, since the clock runs off these.
+  var se = (typeof gtCurrentSeason === 'function' && gtCurrentSeason()) || null;
+  var gd = appGameDefaults();
   var parts = String(ev.location || '').split(' \u00b7 ');
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var gameRef = tdb('gt_games').doc();
   var data = {
     roster_id: roster.id, tournament_id: null,
-    season_id: (typeof gtCurrentSeason === 'function' && gtCurrentSeason()) ? gtCurrentSeason().id : null,
+    season_id: se ? se.id : null,
     home_team: m.side === 'away' ? m.opp : m.ours,
     away_team: m.side === 'away' ? m.ours : m.opp,
     f6ad_side: m.side,
     game_type: gtype, round: '',
     venue: (parts[0] || '').trim(), venue_address: '', venue_city: '', venue_state: '', venue_zip: '',
-    num_periods: 2, period_duration_minutes: 35, players_per_side: 11,
+    num_periods: (se && se.num_periods) || gd.num_periods,
+    period_duration_minutes: (se && se.period_duration_minutes) || gd.period_duration_minutes,
+    players_per_side: (se && se.players_per_side) || gd.players_per_side,
     kickoff_time: ev.time || '', field: parts.length > 1 ? parts.slice(1).join(' \u00b7 ').trim() : '',
     status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
     period_elapsed: {}, home_score: 0, away_score: 0,
