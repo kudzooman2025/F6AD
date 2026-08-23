@@ -1,39 +1,48 @@
-name: Admin password reset
+name: Deploy Montco to Firebase Hosting
+
+# Same code, different team: swap in the FC Montco config, then deploy to the
+# FC Montco Firebase project. Separate projects mean the two teams' data can
+# never meet — there is no shared database to query across.
+#
+# No-ops harmlessly until GCP_SA_KEY_MONTCO exists, so this can live on main
+# before the Montco project is created.
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      team:
-        description: 'Which team'
-        required: true
-        default: 'F6AD'
-        type: choice
-        options:
-          - F6AD
-          - Montco
-      email:
-        description: 'Account email'
-        required: true
-        default: 'kudzooman@gmail.com'
-      new_password:
-        description: 'New password (min 6 characters)'
-        required: true
 
 jobs:
-  reset:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install Admin SDK
-        run: npm install firebase-admin@12
-      - name: Set the password
+      - name: Is Montco configured yet?
+        id: gate
         env:
-          GCP_SA_KEY: ${{ inputs.team == 'Montco' && secrets.GCP_SA_KEY_MONTCO || secrets.GCP_SA_KEY }}
-          TARGET_EMAIL: ${{ inputs.email }}
-          NEW_PW: ${{ inputs.new_password }}
+          KEY: ${{ secrets.GCP_SA_KEY_MONTCO }}
         run: |
-          echo "Target team: ${{ inputs.team }}"
-          node scripts/admin-reset.js
+          if [ -z "$KEY" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GCP_SA_KEY_MONTCO is not set — skipping the Montco deploy."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.configured == 'true'
+
+      - name: Build with the FC Montco config
+        if: steps.gate.outputs.configured == 'true'
+        run: |
+          cp js/00-config.montco.js js/00-config.js
+          rm -f js/00-config.montco.js
+          echo "Deploying as: $(grep -m1 '^  teamName' js/00-config.js)"
+
+      - name: Deploy
+        if: steps.gate.outputs.configured == 'true'
+        uses: w9jds/firebase-action@master
+        with:
+          args: deploy --only hosting,firestore --project f6ad-montco
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY_MONTCO }}
+          PROJECT_ID: f6ad-montco
