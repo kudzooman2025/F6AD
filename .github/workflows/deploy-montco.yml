@@ -1,36 +1,39 @@
-name: Deploy Montco to Firebase Hosting
+name: Admin password reset
+
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      team:
+        description: 'Which team'
+        required: true
+        default: 'F6AD'
+        type: choice
+        options:
+          - F6AD
+          - Montco
+      email:
+        description: 'Account email'
+        required: true
+        default: 'kudzooman@gmail.com'
+      new_password:
+        description: 'New password (min 6 characters)'
+        required: true
+
 jobs:
-  deploy:
+  reset:
     runs-on: ubuntu-latest
     steps:
-      - name: Is Montco configured yet?
-        id: gate
-        env:
-          KEY: ${{ secrets.GCP_SA_KEY_MONTCO }}
-        run: |
-          if [ -z "$KEY" ]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::GCP_SA_KEY_MONTCO is not set — skipping the Montco deploy."
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/checkout@v4
-        if: steps.gate.outputs.configured == 'true'
-      - name: Build with the FC Montco config
-        if: steps.gate.outputs.configured == 'true'
-        run: |
-          cp js/00-config.montco.js js/00-config.js
-          rm -f js/00-config.montco.js
-          echo "Deploying as: $(grep -m1 teamName js/00-config.js)"
-      - name: Deploy
-        if: steps.gate.outputs.configured == 'true'
-        uses: w9jds/firebase-action@master
+      - uses: actions/setup-node@v4
         with:
-          args: deploy --only hosting,firestore --project f6ad-montco
+          node-version: '20'
+      - name: Install Admin SDK
+        run: npm install firebase-admin@12
+      - name: Set the password
         env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY_MONTCO }}
-          PROJECT_ID: f6ad-montco
+          GCP_SA_KEY: ${{ inputs.team == 'Montco' && secrets.GCP_SA_KEY_MONTCO || secrets.GCP_SA_KEY }}
+          TARGET_EMAIL: ${{ inputs.email }}
+          NEW_PW: ${{ inputs.new_password }}
+        run: |
+          echo "Target team: ${{ inputs.team }}"
+          node scripts/admin-reset.js
