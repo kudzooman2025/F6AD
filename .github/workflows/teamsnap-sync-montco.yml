@@ -1,0 +1,26 @@
+name: Sync TeamSnap Schedule (Montco)
+# Same script as the F6AD sync, pointed at the FC Montco project. Kept as its
+# own file rather than a second job in teamsnap-sync.yml so a change here can
+# never take the F6AD sync down with it.
+on:
+  schedule:
+    - cron: '20 11 * * *'    # once daily (~7:20am ET), staggered off the F6AD run
+  workflow_dispatch:         # and on-demand from the Actions tab
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      TZ: America/New_York   # so event dates/times land in Eastern, not UTC
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install firebase-admin node-ical --no-save
+      # teamsnap-sync.js exits 0 with a note when TEAMSNAP_ICS_URL_MONTCO is
+      # unset, so this is green (not red) until the secret is added.
+      - name: Sync TeamSnap -> Firestore schedule (f6ad-montco)
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY_MONTCO }}
+          TEAMSNAP_ICS_URL: ${{ secrets.TEAMSNAP_ICS_URL_MONTCO }}
+        run: node scripts/teamsnap-sync.js
