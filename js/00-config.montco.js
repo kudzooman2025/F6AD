@@ -26,13 +26,13 @@ var APP_CONFIG = {
   // One project per team keeps data isolation structural rather than a rule we
   // have to get right. Swapping this block repoints the whole app.
   firebase: {
-    apiKey: "AIzaSyBrvvXKGZwKX1VOU-C6WZvB98r1KO9I5HI",
-    authDomain: "f6ad-2913b.firebaseapp.com",
-    projectId: "f6ad-2913b",
-    storageBucket: "f6ad-2913b.firebasestorage.app",
-    messagingSenderId: "1000483275960",
-    appId: "1:1000483275960:web:f9f9974965854a5cbfa04d",
-    measurementId: "G-B9H05C9HYM"
+    apiKey: "AIzaSyAS9DApZhKf78YACE2oXro5xSezIZ4Ppz4",
+    authDomain: "f6ad-montco.firebaseapp.com",
+    projectId: "f6ad-montco",
+    storageBucket: "f6ad-montco.firebasestorage.app",
+    messagingSenderId: "1010237177830",
+    appId: "1:1010237177830:web:7252c0d35c11ae0b166027"
+    // no measurementId — Google Analytics is deliberately off for this team
   },
 
   // ---- modules ------------------------------------------------------------

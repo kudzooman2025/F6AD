@@ -11,3 +11,10 @@ node_modules/
 /montco/
 *roster-export*
 *contact-export*
+
+# ---- credentials ---------------------------------------------------------
+# Firebase service-account keys grant full admin and bypass every security
+# rule. One committed to a public repo compromises the whole project.
+*firebase-adminsdk*.json
+*service-account*.json
+*serviceaccount*.json
