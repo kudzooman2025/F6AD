@@ -36,6 +36,10 @@ jobs:
         run: |
           cp js/00-config.montco.js js/00-config.js
           rm -f js/00-config.montco.js
+          # Stamp the static <head> too. Link-preview crawlers (iMessage, SMS,
+          # Slack) never run JS, so without this a shared Montco link previews
+          # with F6AD's title.
+          node scripts/apply-brand.js
           echo "Deploying as: $(grep -m1 '^  teamName' js/00-config.js)"
 
       - name: Deploy
