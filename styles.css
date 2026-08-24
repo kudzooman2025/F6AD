@@ -565,7 +565,22 @@ footer strong{color:#fff}
 .gt-avail-toggle button.on-no{border-color:#dc2626;background:#fee2e2;color:#991b1b}
 .gt-avail-note{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.8rem;font-family:inherit}
 /* clock bar */
-.gt-clockbar{background:var(--black);color:#fff;border-radius:14px;padding:18px 16px 16px;margin-bottom:18px;text-align:center;position:sticky;top:calc(var(--hdr-h,62px) + 4px);z-index:250;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.gt-clockbar{background:var(--black);color:#fff;border-radius:14px;padding:18px 48px 16px;margin-bottom:18px;text-align:center;position:sticky;top:calc(var(--hdr-h,62px) + 4px);z-index:250;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+/* collapse control — sits in the bar's top-right, hence the symmetric side padding above */
+.gt-clock-toggle{position:absolute;top:9px;right:10px;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.28);color:#fff;font-size:.72rem;line-height:1;display:grid;place-items:center;cursor:pointer;font-family:inherit;padding:0}
+.gt-clock-toggle:hover{background:rgba(255,255,255,.22)}
+.gt-clock-toggle:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.gt-clockbar.collapsed{padding:9px 48px 9px;display:flex;align-items:center;justify-content:center;gap:8px 16px;flex-wrap:wrap}
+.gt-clockbar.collapsed .gt-period{margin-bottom:0;font-size:.68rem;letter-spacing:1.4px}
+.gt-clockbar.collapsed .gt-clock{font-size:1.55rem}
+.gt-clockbar.collapsed .gt-scoreline{margin-top:0;font-size:.86rem;gap:7px}
+.gt-clockbar.collapsed .gt-scoreline .sc-num{font-size:1.15rem}
+.gt-clockbar.collapsed .gt-scoreline .sc-team{max-width:110px}
+.gt-clockbar.collapsed .gt-clock-controls,
+.gt-clockbar.collapsed .gt-mandown-bar,
+.gt-clockbar.collapsed .gt-tourn-link,
+.gt-clockbar.collapsed .gt-clock-hint,
+.gt-clockbar.collapsed .gt-restart-btn{display:none}
 .gt-period{font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:var(--brand-on-dark);margin-bottom:2px}
 .gt-clock{font-size:3.2rem;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.05}
 .gt-scoreline{font-size:1.05rem;font-weight:800;margin-top:4px;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}
@@ -658,7 +673,9 @@ footer strong{color:#fff}
 .gt-stat-box .sb-label{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 .gt-empty{text-align:center;color:var(--muted);padding:30px 16px;font-size:.88rem;background:#fff;border:1px dashed var(--border);border-radius:10px}
 @media(max-width:600px){
-  .gt-clockbar{top:calc(var(--hdr-h,56px) + 4px);border-radius:10px}
+  .gt-clockbar{top:calc(var(--hdr-h,56px) + 4px);border-radius:10px;padding:16px 42px 14px}
+  .gt-clockbar.collapsed{padding:8px 42px}
+  .gt-clockbar.collapsed .gt-scoreline .sc-team{max-width:74px}
   .gt-clock{font-size:2.6rem}
   .gt-pgrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
 }

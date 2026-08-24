@@ -1,3 +1,27 @@
+// ---------- CLOCK BAR COLLAPSE ----------
+// The clock bar is sticky, so on a phone it can cover the half of the screen you
+// are trying to tap events into. Collapsed it keeps period, clock and score on
+// one line and drops the controls. The choice is remembered per device, and the
+// toggle flips a class rather than re-rendering so the clock never stutters.
+function gtClockCollapsed() {
+  try { return localStorage.getItem('gt_clock_collapsed') === '1'; } catch (e) { return false; }
+}
+function gtToggleClockbar() {
+  var next = !gtClockCollapsed();
+  try { localStorage.setItem('gt_clock_collapsed', next ? '1' : '0'); } catch (e) {}
+  var bar = document.querySelector('.gt-clockbar');
+  if (!bar) return;
+  bar.classList.toggle('collapsed', next);
+  var btn = bar.querySelector('.gt-clock-toggle');
+  if (btn) {
+    btn.textContent = next ? '▾' : '▴';
+    btn.setAttribute('aria-expanded', next ? 'false' : 'true');
+    var lbl = next ? 'Expand clock' : 'Collapse clock';
+    btn.setAttribute('title', lbl);
+    btn.setAttribute('aria-label', lbl);
+  }
+}
+
 // ---------- GAME SETUP FLOW ----------
 function gtStartSetup() {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }
@@ -263,8 +287,13 @@ function gtRenderLive(view, gameId) {
   var canEdit = gtCanEdit();
   var inPK = gtIsPK(g), inOT = gtIsOT(g);
   var html = gtLockBanner() + (gtGameCanceled(g) ? '<div class="gt-cancel-banner">🚫 This game has been canceled.</div>' : '');
-  // clock bar
-  html += '<div class="gt-clockbar">' +
+  // clock bar — collapsible, because it is sticky and on a phone it can eat most
+  // of the screen you are trying to tap events into.
+  var _col = gtClockCollapsed();
+  html += '<div class="gt-clockbar' + (_col ? ' collapsed' : '') + '">' +
+    '<button class="gt-clock-toggle" type="button" aria-expanded="' + (_col ? 'false' : 'true') +
+      '" title="' + (_col ? 'Expand clock' : 'Collapse clock') + '" aria-label="' +
+      (_col ? 'Expand clock' : 'Collapse clock') + '" onclick="gtToggleClockbar()">' + (_col ? '▾' : '▴') + '</button>' +
     '<div class="gt-period" id="gt-period-label">' + gtEsc(gtPeriodLabel(g)) + '</div>' +
     '<div class="gt-clock" id="gt-clock-display">' + gtFmtDisplayClock(g) + '</div>' +
     '<div class="gt-scoreline">' +
