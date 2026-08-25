@@ -1517,6 +1517,18 @@ function schedPromoteToGame(schedId) {
   };
   var batch = db.batch();
   batch.set(gameRef, data);
+  // Carry the roster over, everyone available. The wizard writes these rows and
+  // the promote path did not, which is why a promoted game opened with an empty
+  // squad. Guests are left out on purpose — they are picked per game, not
+  // inherited. Mark anyone who can't make it unavailable from the game page.
+  if (typeof gtRosterPlayers === 'function') {
+    gtRosterPlayers(roster.id).filter(function(p){ return !p.is_guest; }).forEach(function(p) {
+      batch.set(tdb('gt_availability').doc(), {
+        game_id: gameRef.id, player_id: p.id,
+        available: true, started: false, start_position: '', notes: '', created_at: ts
+      });
+    });
+  }
   // Pin + hide the original schedule row so it won't duplicate or get overwritten by future TeamSnap syncs.
   batch.set(tdb('schedule').doc(schedId), { promoted: true, gt_game_id: gameRef.id, manual_override: true, updated_at: ts }, { merge: true });
   batch.commit().then(function(){

@@ -66,6 +66,23 @@ service cloud.firestore {
     match /site_flags/{doc}     { allow read: if true; allow write: if isAdmin(); }
     match /site_secrets/{doc}   { allow read, write: if isAdmin(); }
     match /feedback/{doc}       { allow create: if true; allow read, update, delete: if isStaff() || isAdmin(); }
+    // ---- Outside games (a player guesting for another club, school, indoor) ----
+    // Their own collections, never gt_games: nothing that reads team games can
+    // see them by accident, so they can't reach team or season totals.
+    // owner_uid is denormalised onto the events so a write authorises without a join.
+    match /gt_ext_games/{doc} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.owner_uid == request.auth.uid;
+      allow update, delete: if signedIn()
+        && (resource.data.owner_uid == request.auth.uid || isStaff() || isAdmin());
+    }
+    match /gt_ext_events/{doc} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.owner_uid == request.auth.uid;
+      allow update, delete: if signedIn()
+        && (resource.data.owner_uid == request.auth.uid || isStaff() || isAdmin());
+    }
+
     // Guest-player applications: the public may submit, only staff may read or act.
     match /gt_guest_apps/{doc}  { allow create: if true; allow read, update, delete: if isStaff() || isAdmin(); }
     match /pd_config/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }

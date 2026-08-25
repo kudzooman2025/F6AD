@@ -116,10 +116,15 @@ function gtRoute() {
   if (hero) hero.style.display = 'none';
   gtListen();
   gtListenHeavy();
+  // Outside games are only read on a player's profile and their own screen,
+  // so nobody else pays reads for them.
+  if (h.indexOf('/player/') > 0 || h.indexOf('/outside') > 0) {
+    if (typeof gtExtListen === 'function') gtExtListen();
+  }
   var parts = h.replace(/^#\//, '').split('/');
   var page = parts[1] || 'home';
   GT.route = { page: page, arg: parts[2] || null };
-  if (page !== 'live' && GT.clockTimer) { clearInterval(GT.clockTimer); GT.clockTimer = null; }
+  if (page !== 'live' && page !== 'outside' && GT.clockTimer) { clearInterval(GT.clockTimer); GT.clockTimer = null; }
   if (page !== 'review' && GT.filmTimer) { clearInterval(GT.filmTimer); GT.filmTimer = null; if (GT.film) GT.film.on = false; }
   window.scrollTo(0, 0);
   gtRenderNav();
@@ -145,6 +150,7 @@ function gtRerender(force) {
   else if (page === 'rsvp') gtRenderRsvp(view, GT.route.arg);
   else if (page === 'roster') gtRenderRoster(view);
   else if (page === 'player') gtRenderPlayerProfile(view, GT.route.arg);
+  else if (page === 'outside') gtRenderOutside(view, GT.route.arg);
   else if (page === 'card') gtRenderPlayerCard(view, GT.route.arg);
   else if (page === 'profiles') gtRenderProfiles(view);
   else gtRenderHome(view);

@@ -496,6 +496,27 @@ function gtRenderPlayerProfile(view, pid) {
     });
     html += '</tbody></table></div>';
   }
+  // Outside games — separate block, and a combined line that says so. Never
+  // silently summed into the team figures above: nothing here has been through
+  // a coach's review, unlike every other stat on this page.
+  if (typeof gtExtBlockHtml === 'function') {
+    var _extHtml = gtExtBlockHtml(pid);
+    if (_extHtml) {
+      html += _extHtml;
+      var _x = (typeof gtExtTotals === 'function') ? gtExtTotals(pid) : null;
+      if (_x && _x.games) {
+        html += '<div class="gt-ext-combined"><div class="gt-ext-combined-head">Career including outside games' +
+          '<span>team + ' + _x.games + ' outside game' + (_x.games === 1 ? '' : 's') + ' · parent-tracked, not coach-reviewed</span></div>' +
+          '<div class="gt-ext-line">' +
+          [['🎮', 'Games', games.length + _x.games], ['⚽', 'Goals', tot.goals + _x.goals],
+           ['🅰️', 'Assists', tot.assists + _x.assists], ['🎯', 'On Target', tot.sot + _x.sot],
+           ['🧤', 'Saves', tot.saves + _x.saves], ['🛡️', 'Tackles', tot.tackles + _x.tackles],
+           ['⏱', 'Minutes', tot.min + _x.min]].map(function(r) {
+            return '<div class="gt-ext-stat"><span class="s-emoji">' + r[0] + '</span><span class="s-num">' + r[2] + '</span><span class="s-lbl">' + r[1] + '</span></div>';
+          }).join('') + '</div></div>';
+      }
+    }
+  }
   var _feat = pr.featured_highlights || [];
   if (_feat.length) {
     html += '<div class="section-title" style="margin:24px 0 12px">🎬 Highlight Reel</div><div class="pf-reel">' +

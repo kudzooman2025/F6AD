@@ -4,6 +4,8 @@
 
 var GT = {
   rosters: [], players: [], games: [], events: [], subs: [], avail: [], tournaments: [], seasons: [], chat: [], rsvp: [], parentEvents: [], parentClaims: [],
+  // Outside games live apart from games/events on purpose — see gt-outside.js.
+  extGames: [], extEvents: [], listeningExt: false,
   parentTrackPid: null, pnoteDraft: '',
   film: { gameId: null, on: false, running: false, base: 0, startedAt: null }, filmTimer: null,
   loaded: {},
