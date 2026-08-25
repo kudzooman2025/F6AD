@@ -44,6 +44,15 @@ function gtExtListen() {
   gtAttachListeners([['gt_ext_games', 'extGames'], ['gt_ext_events', 'extEvents']]);
 }
 function gtExtGame(id) { return (GT.extGames || []).find(function(g){ return g.id === id; }); }
+// What to call this game. The parent's own label wins; otherwise fall back to
+// the matchup so nothing ever renders as an untitled blank.
+function gtExtTitle(eg) {
+  if (!eg) return '';
+  var n = String(eg.event_name || '').trim();
+  if (n) return n;
+  var them = String(eg.opponent || '').trim();
+  return them ? (String(eg.played_for || 'Outside game') + ' vs ' + them) : (String(eg.played_for || 'Outside game'));
+}
 function gtExtEventsFor(id) {
   return (GT.extEvents || []).filter(function(e){ return e.ext_game_id === id; })
     .sort(function(a, b) {
@@ -122,6 +131,9 @@ function gtOpenExtForm(pid, egId) {
       '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<p class="gt-sub" style="margin:-6px 0 12px">A game ' + gtEsc(gtPlayerName(pid)) +
       ' played for someone else. These stats count toward their own record only — never the team’s.</p>' +
+    '<label>Event name</label><input type="text" id="gt-xf-name" value="' + gtAttr(v('event_name', '')) +
+      '" placeholder="e.g. Ghouls &amp; Goals Tournament — Game 2"/>' +
+    '<div class="gt-sub" style="margin:-8px 0 10px;font-size:.78rem">Optional. Leave blank and it will show as “played for vs opponent”.</div>' +
     '<label>Played for</label><input type="text" id="gt-xf-for" value="' + gtAttr(v('played_for', '')) +
       '" placeholder="e.g. Marple Newtown FC3"/>' +
     '<label>Opponent</label><input type="text" id="gt-xf-opp" value="' + gtAttr(v('opponent', '')) + '" placeholder="e.g. Rose Tree Red Stars"/>' +
@@ -149,6 +161,7 @@ function gtSaveExtGame(pid, egId) {
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var data = {
     player_id: pid,
+    event_name: val('gt-xf-name'),
     played_for: playedFor,
     opponent: val('gt-xf-opp'),
     played_at: val('gt-xf-date') || gtTodayStr(),
@@ -285,7 +298,11 @@ function gtRenderOutside(view, egId) {
 
   var html = '<div class="gt-outside-banner">🎽 <strong>Outside game.</strong> ' +
     gtEsc(gtPlayerName(pid)) + ' playing for ' + gtEsc(eg.played_for || '—') +
-    ' — counts toward their own record only, never team or season stats.</div>';
+    ' — counts toward their own record only, never team or season stats.</div>' +
+    '<div class="gt-ext-head"><div class="gt-title" style="margin:0">' + gtEsc(gtExtTitle(eg)) + '</div>' +
+    '<div class="gt-sub">' +
+      [eg.competition, eg.played_at, eg.venue].filter(Boolean).map(gtEsc).join(' · ') +
+    '</div></div>';
 
   html += '<div class="gt-clockbar' + (col ? ' collapsed' : '') + '">' +
     '<button class="gt-clock-toggle" type="button" aria-expanded="' + (col ? 'false' : 'true') +
@@ -428,7 +445,9 @@ function gtExtBlockHtml(pid) {
     var st = gtStatLine(pid, evs.map(function(e){ return { player_id: pid, event_type: e.event_type }; }));
     var open = g.status !== 'complete';
     html += '<tr><td>' + gtEsc(g.played_at || '') + (open ? ' <span class="gt-guest-badge">In progress</span>' : '') + '</td>' +
-      '<td>' + gtEsc(g.played_for || '') + '</td><td>' + gtEsc(g.opponent || '—') + '</td>' +
+      '<td>' + gtEsc(g.played_for || '') +
+        (g.event_name ? '<div class="gt-ext-evname">' + gtEsc(g.event_name) + '</div>' : '') + '</td>' +
+        '<td>' + gtEsc(g.opponent || '—') + '</td>' +
       '<td class="num">' + st.goal + '</td><td class="num">' + st.assist + '</td><td class="num">' + st.shot_on_target + '</td>' +
       '<td class="num">' + st.save + '</td><td class="num">' + st.tackle + '</td>' +
       '<td class="num">' + Math.round(gtExtMinutes(g, evs) / 60) + '</td>' +
