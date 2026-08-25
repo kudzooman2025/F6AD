@@ -389,7 +389,19 @@ function gtRenderLive(view, gameId) {
     html += _benchPool.length ? '<div class="gt-pgrid">' + _benchPool.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">Bench is empty.</div>';
   }
   if (canEdit && g.status === 'setup') {
+    // With no starters designated at all, gtKickoffOn falls back to "everyone
+    // available started" — so the cards can read BENCH while the minutes maths
+    // counts all of them from kickoff. Say so rather than letting it surprise you.
+    if (!_startersPool.length && players.length) {
+      html += '<div class="gt-starter-warn">⚠️ <strong>No starting lineup set.</strong> ' +
+        'Every available player will be counted as on the field from kickoff. ' +
+        'Tap players to pick your starters, or use the buttons below.</div>';
+    }
     var rsvpT = gtRsvpTally(g.id);
+    html += '<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtSetAllStarters(\'' + g.id + '\',true)">🟢 All available start</button>' +
+      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtSetAllStarters(\'' + g.id + '\',false)">🪑 Everyone starts on the bench</button>' +
+      '</div>';
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center">' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player / Guest</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtApplyRsvpsToGame(\'' + g.id + '\')">📋 Apply RSVPs</button>' +
@@ -1172,6 +1184,24 @@ function gtParentSaveSubPos(sid) {
   var pos = document.getElementById('gt-psubpos').value;
   tdb('gt_subs').doc(sid).update({ position: pos })
     .then(function(){ showToast('Position updated ✓'); gtCloseModal(); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Set every available player's starting status at once. Tapping thirteen cards
+// to build a lineup is the kind of chore that means nobody sets one, which is
+// how a game ends up in the ambiguous no-starters state below.
+function gtSetAllStarters(gid, on) {
+  if (!gtCanEdit()) return;
+  var ids = gtAvailIds(gid);
+  if (!ids.length) { showToast('No available players.'); return; }
+  var batch = db.batch(), n = 0;
+  ids.forEach(function(pid) {
+    var ae = gtGameAvailEntry(gid, pid);
+    var pos = on ? ((ae && ae.start_position) || (gtP(pid) || {}).default_position || '') : '';
+    if (ae) { batch.set(tdb('gt_availability').doc(ae.id), { started: !!on, start_position: pos }, { merge: true }); n++; }
+  });
+  if (!n) { showToast('Nothing to update.'); return; }
+  batch.commit()
+    .then(function(){ showToast(on ? 'All ' + n + ' available players set as starters.' : 'Everyone moved to the bench.'); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtSetStarter(gid, pid, started, pos) {

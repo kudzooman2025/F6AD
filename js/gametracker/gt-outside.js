@@ -247,6 +247,13 @@ function gtExtLog(egId, type) {
     showToast(d.emoji + ' ' + d.label + ' logged');
   }).catch(function(e){ showToast('Error: ' + e.message); });
 }
+// Starting status, settable right up to kickoff. It seeds the minutes clock:
+// started means on from 0:00, otherwise nothing accrues until the first Sub On.
+function gtExtSetStarted(egId, started) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  if (eg.status !== 'setup') { showToast('Use Sub On / Sub Off once the game has started.'); return; }
+  gtExtUpdate(egId, { started: !!started });
+}
 function gtExtDelEvent(id) {
   tdb('gt_ext_events').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -318,15 +325,28 @@ function gtRenderOutside(view, egId) {
   // minutes + on/off — the whole point of sub on/off here
   html += '<div class="gt-card gt-ext-mins">' +
     '<div class="gt-ext-minrow"><div><div class="gt-ext-minnum">' + mins + '<span>min</span></div>' +
-      '<div class="gt-sub">' + (onField ? '🟢 On the field' : '⚪ Off the field') + '</div></div>';
-  if (canEdit && eg.status !== 'setup') {
+      '<div class="gt-sub">' + (eg.status === 'setup'
+        ? (eg.started ? '🟢 Starts on the field' : '🪑 Starts on the bench')
+        : (onField ? '🟢 On the field' : '⚪ Off the field')) + '</div></div>';
+  if (canEdit && eg.status === 'setup') {
+    // Before kickoff there is nothing to sub — what matters is whether they
+    // start on the field or on the bench, which is where the minutes clock begins.
+    html += '<div class="gt-ext-subbtns">' +
+      '<button class="gt-cbtn ' + (eg.started ? 'gt-cbtn-go' : 'gt-cbtn-dark') + '" onclick="gtExtSetStarted(\'' + egId + '\',true)">🟢 Starting on the field</button>' +
+      '<button class="gt-cbtn ' + (eg.started ? 'gt-cbtn-dark' : 'gt-cbtn-warn') + '" onclick="gtExtSetStarted(\'' + egId + '\',false)">🪑 Starting on the bench</button>' +
+      '</div>';
+  } else if (canEdit) {
     html += '<div class="gt-ext-subbtns">' +
       '<button class="gt-cbtn ' + (onField ? 'gt-cbtn-dark' : 'gt-cbtn-go') + '" onclick="gtExtLog(\'' + egId + '\',\'sub_on\')"' + (onField ? ' disabled' : '') + '>🔺 Sub On</button>' +
       '<button class="gt-cbtn ' + (onField ? 'gt-cbtn-warn' : 'gt-cbtn-dark') + '" onclick="gtExtLog(\'' + egId + '\',\'sub_off\')"' + (onField ? '' : ' disabled') + '>🔻 Sub Off</button>' +
       '</div>';
   }
   html += '</div>' +
-    '<div class="gt-sub" style="margin-top:8px">Minutes run from kickoff if they started, then follow every Sub On / Sub Off you tap.</div></div>';
+    '<div class="gt-sub" style="margin-top:8px">' +
+    (eg.status === 'setup'
+      ? 'Set this before kickoff. If they start on the bench the clock only begins when you tap Sub On.'
+      : 'Minutes run from kickoff if they started, then follow every Sub On / Sub Off you tap.') +
+    '</div></div>';
 
   // stat buttons
   if (canEdit && eg.status !== 'setup') {
