@@ -21,7 +21,9 @@ var GT_EXT_STATS = [
   { type: 'pass',           label: 'Pass',      emoji: '➡️' },
   { type: 'pass_comp',      label: 'Pass Comp', emoji: '✅' },
   { type: 'yellow_card',    label: 'Yellow',    emoji: '🟨' },
-  { type: 'red_card',       label: 'Red',       emoji: '🟥' }
+  { type: 'red_card',       label: 'Red',       emoji: '🟥' },
+  // Opens a note box instead of logging straight away — see gtExtHighlight.
+  { type: 'highlight',      label: 'Highlight', emoji: '⭐', prompts: true }
 ];
 // Sub markers aren't stats, but they share the event stream and need labels
 // wherever the timeline renders them.
@@ -267,6 +269,57 @@ function gtExtSetStarted(egId, started) {
   if (eg.status !== 'setup') { showToast('Use Sub On / Sub Off once the game has started.'); return; }
   gtExtUpdate(egId, { started: !!started });
 }
+// A highlight is a moment, not a counter — so it asks what happened. Freezes the
+// clock reading at the moment you tapped, so a slow typist doesn't shift the
+// timestamp; the same reason the team tracker stamps first and asks second.
+function gtExtHighlight(egId, type) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  var stamp = { sec: gtClockSeconds(eg), period: eg.current_period || 1 };
+  var def = gtExtStatDef(type || 'highlight');
+  gtOpenModal(
+    '<h3>' + def.emoji + ' ' + gtEsc(def.label) + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<div class="gt-sub" style="margin:-6px 0 12px">' +
+      gtEsc(gtNominalMinute(eg, stamp.period, stamp.sec)) + "' — " + gtEsc(gtPeriodLabel(eg, stamp.period, 'in_progress')) + '</div>' +
+    '<label>What happened?</label>' +
+    '<textarea id="gt-xh-note" rows="3" placeholder="e.g. Won it back on the halfway line and drove at the back four"></textarea>' +
+    '<label>Video link (optional)</label><input type="text" id="gt-xh-yt" placeholder="YouTube URL"/>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtExtSaveHighlight(\'' + egId + '\',\'' + (type || 'highlight') + '\',' + stamp.sec + ',' + stamp.period + ')">Save</button>' +
+    '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+  setTimeout(function(){ var t = document.getElementById('gt-xh-note'); if (t) t.focus(); }, 60);
+}
+function gtExtSaveHighlight(egId, type, sec, period) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  var note = (document.getElementById('gt-xh-note') || {}).value || '';
+  var yt = (document.getElementById('gt-xh-yt') || {}).value || '';
+  tdb('gt_ext_events').add({
+    ext_game_id: egId, owner_uid: eg.owner_uid, player_id: eg.player_id,
+    event_type: type, game_clock_seconds: sec, period: period,
+    notes: note.trim(), youtube_url: yt.trim(),
+    created_at: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){ gtCloseModal(); showToast('⭐ Highlight saved'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Add or change the note on anything already in the timeline.
+function gtExtEditNote(id) {
+  var e = (GT.extEvents || []).find(function(x){ return x.id === id; });
+  if (!e) return;
+  var eg = gtExtGame(e.ext_game_id); if (!gtExtCanEdit(eg)) return;
+  var def = gtExtStatDef(e.event_type);
+  gtOpenModal(
+    '<h3>' + def.emoji + ' ' + gtEsc(def.label) + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<label>Note</label><textarea id="gt-xh-note" rows="3">' + gtEsc(e.notes || '') + '</textarea>' +
+    '<label>Video link (optional)</label><input type="text" id="gt-xh-yt" value="' + gtAttr(e.youtube_url || '') + '"/>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtExtSaveNote(\'' + id + '\')">Save</button>' +
+    '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtExtSaveNote(id) {
+  var note = (document.getElementById('gt-xh-note') || {}).value || '';
+  var yt = (document.getElementById('gt-xh-yt') || {}).value || '';
+  tdb('gt_ext_events').doc(id).set({ notes: note.trim(), youtube_url: yt.trim() }, { merge: true })
+    .then(function(){ gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
 function gtExtDelEvent(id) {
   tdb('gt_ext_events').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -314,10 +367,21 @@ function gtRenderOutside(view, egId) {
       '<span class="sc-team">' + gtEsc(eg.played_for || 'Them') + '</span><span class="sc-num">' + (eg.our_score || 0) + '</span>' +
       '<span style="color:#666">–</span>' +
       '<span class="sc-num">' + (eg.their_score || 0) + '</span><span class="sc-team">' + gtEsc(eg.opponent || 'Opponent') + '</span>' +
+      '<span class="gt-ext-minchip" title="Minutes played">' + (onField ? '🟢' : '⚪') + ' ' + mins + "'" + '</span>' +
     '</div>';
 
   if (canEdit) {
     html += '<div class="gt-clock-controls">';
+    // Sub on/off lives in the clock bar, not in a card below it: the bar is
+    // sticky at z-index 250, so anything underneath disappears behind it the
+    // moment you scroll — which is exactly when you need these.
+    if (eg.status === 'setup') {
+      html += '<button class="gt-cbtn ' + (eg.started ? 'gt-cbtn-go' : 'gt-cbtn-dark') + '" onclick="gtExtSetStarted(\'' + egId + '\',true)">🟢 Starts on field</button>' +
+        '<button class="gt-cbtn ' + (eg.started ? 'gt-cbtn-dark' : 'gt-cbtn-warn') + '" onclick="gtExtSetStarted(\'' + egId + '\',false)">🪑 Starts on bench</button>';
+    } else if (eg.status !== 'complete') {
+      html += '<button class="gt-cbtn ' + (onField ? 'gt-cbtn-dark' : 'gt-cbtn-go') + '" onclick="gtExtLog(\'' + egId + '\',\'sub_on\')"' + (onField ? ' disabled' : '') + '>🔺 Sub On</button>' +
+        '<button class="gt-cbtn ' + (onField ? 'gt-cbtn-warn' : 'gt-cbtn-dark') + '" onclick="gtExtLog(\'' + egId + '\',\'sub_off\')"' + (onField ? '' : ' disabled') + '>🔻 Sub Off</button>';
+    }
     var last = (eg.current_period || 1) >= (eg.num_periods || 2);
     if (eg.status === 'setup') {
       html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtExtStart(\'' + egId + '\')">▶ Start Game</button>';
@@ -345,31 +409,19 @@ function gtRenderOutside(view, egId) {
       '<div class="gt-sub">' + (eg.status === 'setup'
         ? (eg.started ? '🟢 Starts on the field' : '🪑 Starts on the bench')
         : (onField ? '🟢 On the field' : '⚪ Off the field')) + '</div></div>';
-  if (canEdit && eg.status === 'setup') {
-    // Before kickoff there is nothing to sub — what matters is whether they
-    // start on the field or on the bench, which is where the minutes clock begins.
-    html += '<div class="gt-ext-subbtns">' +
-      '<button class="gt-cbtn ' + (eg.started ? 'gt-cbtn-go' : 'gt-cbtn-dark') + '" onclick="gtExtSetStarted(\'' + egId + '\',true)">🟢 Starting on the field</button>' +
-      '<button class="gt-cbtn ' + (eg.started ? 'gt-cbtn-dark' : 'gt-cbtn-warn') + '" onclick="gtExtSetStarted(\'' + egId + '\',false)">🪑 Starting on the bench</button>' +
-      '</div>';
-  } else if (canEdit) {
-    html += '<div class="gt-ext-subbtns">' +
-      '<button class="gt-cbtn ' + (onField ? 'gt-cbtn-dark' : 'gt-cbtn-go') + '" onclick="gtExtLog(\'' + egId + '\',\'sub_on\')"' + (onField ? ' disabled' : '') + '>🔺 Sub On</button>' +
-      '<button class="gt-cbtn ' + (onField ? 'gt-cbtn-warn' : 'gt-cbtn-dark') + '" onclick="gtExtLog(\'' + egId + '\',\'sub_off\')"' + (onField ? '' : ' disabled') + '>🔻 Sub Off</button>' +
-      '</div>';
-  }
   html += '</div>' +
     '<div class="gt-sub" style="margin-top:8px">' +
     (eg.status === 'setup'
-      ? 'Set this before kickoff. If they start on the bench the clock only begins when you tap Sub On.'
-      : 'Minutes run from kickoff if they started, then follow every Sub On / Sub Off you tap.') +
+      ? 'Set this in the clock bar before kickoff. Starting on the bench means the clock only begins when you tap Sub On.'
+      : 'Sub On and Sub Off are in the clock bar above. Minutes run from kickoff if they started, then follow every sub you tap.') +
     '</div></div>';
 
   // stat buttons
   if (canEdit && eg.status !== 'setup') {
     html += '<div class="gt-card"><div class="gt-title" style="font-size:1rem;margin-bottom:10px">Log a stat</div>' +
       '<div class="gt-ext-stats">' + GT_EXT_STATS.map(function(s) {
-        return '<button class="gt-statbtn" onclick="gtExtLog(\'' + egId + '\',\'' + s.type + '\')">' +
+        var _fn = s.prompts ? 'gtExtHighlight' : 'gtExtLog';
+        return '<button class="gt-statbtn' + (s.prompts ? ' hl' : '') + '" onclick="' + _fn + '(\'' + egId + '\',\'' + s.type + '\')">' +
           '<span class="sb-emoji">' + s.emoji + '</span><span class="sb-label">' + gtEsc(s.label) + '</span></button>';
       }).join('') + '</div>' +
       '<div class="gt-ext-oppscore">Opponent goals: ' +
@@ -397,9 +449,14 @@ function gtRenderOutside(view, egId) {
     html += '<div class="gt-ext-feed">' + evs.map(function(e) {
       var d = gtExtStatDef(e.event_type);
       var mark = gtNominalMinute(eg, e.period || 1, e.game_clock_seconds || 0);
+      var yid = (typeof gtYtId === 'function') ? gtYtId(e.youtube_url) : '';
       return '<div class="gt-ext-item"><span class="ei-min">' + mark + "'" + '</span>' +
-        '<span class="ei-body">' + d.emoji + ' ' + gtEsc(d.label) + '</span>' +
-        (canEdit ? '<button class="ei-del" title="Remove" onclick="gtExtDelEvent(\'' + e.id + '\')">✕</button>' : '') +
+        '<span class="ei-body">' + d.emoji + ' ' + gtEsc(d.label) +
+          (e.notes ? '<span class="ei-note">' + gtEsc(e.notes) + '</span>' : '') +
+          (yid ? '<a class="ei-yt" href="' + gtAttr(e.youtube_url) + '" target="_blank" rel="noopener">▶ Video</a>' : '') +
+        '</span>' +
+        (canEdit ? '<button class="ei-del" title="Add or edit a note" onclick="gtExtEditNote(\'' + e.id + '\')">✎</button>' +
+                   '<button class="ei-del" title="Remove" onclick="gtExtDelEvent(\'' + e.id + '\')">✕</button>' : '') +
         '</div>';
     }).join('') + '</div>';
   }

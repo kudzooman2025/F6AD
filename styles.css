@@ -1428,3 +1428,10 @@ html[data-theme="dark"] .gt-ext-combined .gt-ext-stat{background:#1e1c26}
 html[data-theme="dark"] .gt-starter-warn{background:#2a2113;border-color:#5c4a1e;color:#f5d08a}
 .gt-ext-head{margin-bottom:12px;display:flex;flex-direction:column;gap:2px}
 .gt-ext-evname{font-size:.76rem;color:var(--muted);font-weight:600;margin-top:2px}
+.gt-ext-minchip{font-size:.74rem;font-weight:800;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.24);border-radius:999px;padding:2px 9px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.gt-statbtn.hl{background:#fef3c7;border-color:#fcd34d;color:#8a5a00}
+.gt-statbtn.hl:hover{background:#fde68a}
+html[data-theme="dark"] .gt-statbtn.hl{background:#2a2113;border-color:#5c4a1e;color:#f5d08a}
+.gt-ext-item .ei-body{display:flex;flex-direction:column;gap:2px}
+.gt-ext-item .ei-note{font-weight:500;font-size:.82rem;color:var(--muted);line-height:1.4}
+.gt-ext-item .ei-yt{font-size:.76rem;font-weight:700;color:var(--brand-dark);text-decoration:none}
