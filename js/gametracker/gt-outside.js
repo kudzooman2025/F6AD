@@ -99,7 +99,18 @@ function gtExtMinutes(eg, evs) {
     else if (onAt != null) { secs += Math.max(0, s.t - onAt); onAt = null; }
   });
   if (onAt != null) secs += Math.max(0, total - onAt);
+  // A typed correction beats the tapped record — you can't go back and re-tap a
+  // sub you forgot, and the team side has had the same escape hatch all along.
+  if (eg.minutes_override != null && eg.minutes_override !== '') {
+    return Math.max(0, Number(eg.minutes_override) || 0) * 60;
+  }
   return secs;
+}
+// Whole minutes read as "0" for anything under 60s, which makes a short test
+// look like nothing was recorded. Show seconds until there's a minute to show.
+function gtExtFmtMins(secs) {
+  if (secs > 0 && secs < 60) return secs + 's';
+  return Math.round(secs / 60) + '';
 }
 function gtExtOnField(eg, evs) {
   var stream = (evs || gtExtEventsFor(eg.id))
@@ -320,6 +331,24 @@ function gtExtSaveNote(id) {
   tdb('gt_ext_events').doc(id).set({ notes: note.trim(), youtube_url: yt.trim() }, { merge: true })
     .then(function(){ gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
+function gtExtSetMinutes(egId) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  var cur = (eg.minutes_override != null && eg.minutes_override !== '')
+    ? String(eg.minutes_override) : String(Math.round(gtExtMinutes(eg) / 60));
+  var v = window.prompt('Minutes played in this game:', cur);
+  if (v == null) return;
+  v = String(v).trim();
+  if (v === '') { gtExtClearMinutes(egId); return; }
+  var n = parseInt(v, 10);
+  if (isNaN(n) || n < 0) { showToast('Enter a whole number of minutes.'); return; }
+  gtExtUpdate(egId, { minutes_override: n });
+  showToast('Minutes set to ' + n + '.');
+}
+function gtExtClearMinutes(egId) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  gtExtUpdate(egId, { minutes_override: firebase.firestore.FieldValue.delete() });
+  showToast('Back to counting your Sub On / Sub Off taps.');
+}
 function gtExtDelEvent(id) {
   tdb('gt_ext_events').doc(id).delete().catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -345,7 +374,9 @@ function gtRenderOutside(view, egId) {
   var canEdit = gtExtCanEdit(eg);
   var evs = gtExtEventsFor(egId);
   var pid = eg.player_id;
-  var mins = Math.round(gtExtMinutes(eg, evs) / 60);
+  var secsOn = gtExtMinutes(eg, evs);
+  var mins = Math.round(secsOn / 60);
+  var minsLabel = gtExtFmtMins(secsOn);
   var onField = gtExtOnField(eg, evs);
   var col = (typeof gtClockCollapsed === 'function') ? gtClockCollapsed() : false;
 
@@ -367,7 +398,7 @@ function gtRenderOutside(view, egId) {
       '<span class="sc-team">' + gtEsc(eg.played_for || 'Them') + '</span><span class="sc-num">' + (eg.our_score || 0) + '</span>' +
       '<span style="color:#666">–</span>' +
       '<span class="sc-num">' + (eg.their_score || 0) + '</span><span class="sc-team">' + gtEsc(eg.opponent || 'Opponent') + '</span>' +
-      '<span class="gt-ext-minchip" title="Minutes played">' + (onField ? '🟢' : '⚪') + ' ' + mins + "'" + '</span>' +
+      '<span class="gt-ext-minchip" title="Minutes played">' + (onField ? '🟢' : '⚪') + ' ' + minsLabel + (minsLabel.indexOf('s') < 0 ? "'" : '') + '</span>' +
     '</div>';
 
   if (canEdit) {
@@ -405,10 +436,25 @@ function gtRenderOutside(view, egId) {
 
   // minutes + on/off — the whole point of sub on/off here
   html += '<div class="gt-card gt-ext-mins">' +
-    '<div class="gt-ext-minrow"><div><div class="gt-ext-minnum">' + mins + '<span>min</span></div>' +
+    '<div class="gt-ext-minrow"><div><div class="gt-ext-minnum">' + minsLabel +
+      (minsLabel.indexOf('s') < 0 ? '<span>min</span>' : '<span>on the field</span>') + '</div>' +
       '<div class="gt-sub">' + (eg.status === 'setup'
         ? (eg.started ? '🟢 Starts on the field' : '🪑 Starts on the bench')
         : (onField ? '🟢 On the field' : '⚪ Off the field')) + '</div></div>';
+  if (canEdit) {
+    html += '<div class="gt-ext-override">' +
+      (eg.minutes_override != null && eg.minutes_override !== ''
+        ? '<span class="gt-ext-ovr-on">✏️ Set manually to ' + gtEsc(String(eg.minutes_override)) + ' min</span>' +
+          '<button class="gt-minibtn" onclick="gtExtSetMinutes(\'' + egId + '\')">Change</button>' +
+          '<button class="gt-minibtn" onclick="gtExtClearMinutes(\'' + egId + '\')">Use tapped subs</button>'
+        : '<button class="gt-minibtn" onclick="gtExtSetMinutes(\'' + egId + '\')">✏️ Enter minutes manually</button>') +
+      '</div>';
+  }
+  if (eg.status === 'complete' && secsOn === 0) {
+    html += '<div class="gt-starter-warn" style="margin-top:10px">⚠️ <strong>No minutes recorded.</strong> ' +
+      (eg.started ? 'The clock never ran.' : 'They started on the bench and no Sub On was tapped.') +
+      ' Enter the minutes manually if they did play.</div>';
+  }
   html += '</div>' +
     '<div class="gt-sub" style="margin-top:8px">' +
     (eg.status === 'setup'
@@ -507,7 +553,7 @@ function gtExtBlockHtml(pid) {
         '<td>' + gtEsc(g.opponent || '—') + '</td>' +
       '<td class="num">' + st.goal + '</td><td class="num">' + st.assist + '</td><td class="num">' + st.shot_on_target + '</td>' +
       '<td class="num">' + st.save + '</td><td class="num">' + st.tackle + '</td>' +
-      '<td class="num">' + Math.round(gtExtMinutes(g, evs) / 60) + '</td>' +
+      '<td class="num">' + gtExtFmtMins(gtExtMinutes(g, evs)) + '</td>' +
       '<td><button class="gt-minibtn" onclick="gtGo(\'/gametracker/outside/' + g.id + '\')">Open</button></td></tr>';
   });
   return html + '</tbody></table></div>';
