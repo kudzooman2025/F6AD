@@ -28,8 +28,11 @@ var GT_EXT_STATS = [
 // Sub markers aren't stats, but they share the event stream and need labels
 // wherever the timeline renders them.
 var GT_EXT_MARKS = [
-  { type: 'sub_on',  label: 'Sub On',  emoji: '🔺' },
-  { type: 'sub_off', label: 'Sub Off', emoji: '🔻' }
+  { type: 'sub_on',    label: 'Sub On',        emoji: '🔺' },
+  { type: 'sub_off',   label: 'Sub Off',       emoji: '🔻' },
+  // A goal by somebody else on the team. Not in GT_EXT_STATS, so gtStatLine —
+  // which counts only the types it knows — never credits it to our player.
+  { type: 'team_goal', label: 'Teammate goal', emoji: '👥' }
 ];
 function gtExtStatDef(t) {
   return GT_EXT_STATS.find(function(s){ return s.type === t; }) ||
@@ -331,6 +334,29 @@ function gtExtSaveNote(id) {
   tdb('gt_ext_events').doc(id).set({ notes: note.trim(), youtube_url: yt.trim() }, { merge: true })
     .then(function(){ gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
+// A teammate's goal: bumps the score and lands in the timeline, but is not a
+// stat for the player this game belongs to.
+function gtExtTeamGoal(egId) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  var ts = firebase.firestore.FieldValue.serverTimestamp();
+  tdb('gt_ext_events').add({
+    ext_game_id: egId, owner_uid: eg.owner_uid, player_id: eg.player_id,
+    event_type: 'team_goal',
+    game_clock_seconds: gtClockSeconds(eg), period: eg.current_period || 1,
+    notes: '', youtube_url: '', created_at: ts
+  }).then(function(){ gtExtUpdate(egId, { our_score: (eg.our_score || 0) + 1 }); showToast('👥 Teammate goal'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+// Undo takes the most recent teammate goal back out with the score, so the
+// timeline and the scoreline can't drift apart from a mis-tap.
+function gtExtTeamGoalUndo(egId) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  if ((eg.our_score || 0) <= 0) return;
+  var mine = gtExtEventsFor(egId).filter(function(e){ return e.event_type === 'team_goal'; });
+  var last = mine[mine.length - 1];
+  gtExtUpdate(egId, { our_score: Math.max(0, (eg.our_score || 0) - 1) });
+  if (last) tdb('gt_ext_events').doc(last.id).delete().catch(function(){});
+}
 function gtExtSetMinutes(egId) {
   var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
   var cur = (eg.minutes_override != null && eg.minutes_override !== '')
@@ -470,10 +496,19 @@ function gtRenderOutside(view, egId) {
         return '<button class="gt-statbtn' + (s.prompts ? ' hl' : '') + '" onclick="' + _fn + '(\'' + egId + '\',\'' + s.type + '\')">' +
           '<span class="sb-emoji">' + s.emoji + '</span><span class="sb-label">' + gtEsc(s.label) + '</span></button>';
       }).join('') + '</div>' +
-      '<div class="gt-ext-oppscore">Opponent goals: ' +
-        '<button class="gt-minibtn" onclick="gtExtScore(\'' + egId + '\',\'them\',-1)">−</button>' +
-        '<strong>' + (eg.their_score || 0) + '</strong>' +
-        '<button class="gt-minibtn" onclick="gtExtScore(\'' + egId + '\',\'them\',1)">+</button></div>' +
+      '<div class="gt-ext-scores">' +
+        '<div class="gt-ext-scorerow"><span class="sr-lbl">' + gtEsc(eg.played_for || 'Their team') + ' goals</span>' +
+          '<button class="gt-minibtn" onclick="gtExtTeamGoalUndo(\'' + egId + '\')" aria-label="Undo the last teammate goal">−</button>' +
+          '<strong>' + (eg.our_score || 0) + '</strong>' +
+          '<button class="gt-minibtn" onclick="gtExtTeamGoal(\'' + egId + '\')" aria-label="A teammate scored">+</button></div>' +
+        '<div class="gt-ext-scorerow"><span class="sr-lbl">' + gtEsc(eg.opponent || 'Opponent') + ' goals</span>' +
+          '<button class="gt-minibtn" onclick="gtExtScore(\'' + egId + '\',\'them\',-1)" aria-label="One fewer opponent goal">−</button>' +
+          '<strong>' + (eg.their_score || 0) + '</strong>' +
+          '<button class="gt-minibtn" onclick="gtExtScore(\'' + egId + '\',\'them\',1)">+</button></div>' +
+        '<div class="gt-sub" style="grid-column:1/-1;margin-top:2px">Tap + when a teammate scores — it is timestamped into the timeline. ' +
+          gtEsc(gtPlayerShort ? gtPlayerShort(pid) : gtPlayerName(pid)) +
+          '’s own goals are added here automatically by the Goal button.</div>' +
+      '</div>' +
       '</div>';
   }
 
@@ -496,7 +531,7 @@ function gtRenderOutside(view, egId) {
       var d = gtExtStatDef(e.event_type);
       var mark = gtNominalMinute(eg, e.period || 1, e.game_clock_seconds || 0);
       var yid = (typeof gtYtId === 'function') ? gtYtId(e.youtube_url) : '';
-      return '<div class="gt-ext-item"><span class="ei-min">' + mark + "'" + '</span>' +
+      return '<div class="gt-ext-item' + (e.event_type === 'team_goal' ? ' team-goal' : '') + '"><span class="ei-min">' + mark + "'" + '</span>' +
         '<span class="ei-body">' + d.emoji + ' ' + gtEsc(d.label) +
           (e.notes ? '<span class="ei-note">' + gtEsc(e.notes) + '</span>' : '') +
           (yid ? '<a class="ei-yt" href="' + gtAttr(e.youtube_url) + '" target="_blank" rel="noopener">▶ Video</a>' : '') +

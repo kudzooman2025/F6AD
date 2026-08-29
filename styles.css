@@ -1437,3 +1437,9 @@ html[data-theme="dark"] .gt-statbtn.hl{background:#2a2113;border-color:#5c4a1e;c
 .gt-ext-item .ei-yt{font-size:.76rem;font-weight:700;color:var(--brand-dark);text-decoration:none}
 .gt-ext-override{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .gt-ext-ovr-on{font-size:.8rem;font-weight:700;color:var(--brand-dark);background:var(--brand-tint);border:1px solid var(--brand-line);border-radius:999px;padding:3px 11px}
+.gt-ext-scores{display:grid;grid-template-columns:1fr;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.gt-ext-scorerow{display:flex;align-items:center;gap:8px}
+.gt-ext-scorerow .sr-lbl{flex:1;font-size:.85rem;color:var(--muted);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gt-ext-scorerow strong{font-size:1.15rem;min-width:26px;text-align:center;font-variant-numeric:tabular-nums}
+.gt-ext-scorerow .gt-minibtn{min-width:38px;font-size:1rem;line-height:1}
+.gt-ext-item.team-goal{background:var(--brand-tint);border-color:var(--brand-line)}
