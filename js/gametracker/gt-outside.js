@@ -256,6 +256,24 @@ function gtExtEndGame(egId) {
   gtExtUpdate(egId, { status: 'complete', period_elapsed: pe, clock_started_at: null });
   showToast('Game complete 🏁');
 }
+// Wipe the game back to setup: every logged event, the clock, the score and any
+// manual minutes. Bound to a press-and-hold rather than a confirm dialog — this
+// is the one action here you can't undo.
+function gtExtReset(egId) {
+  var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
+  tdb('gt_ext_events').where('ext_game_id', '==', egId).get().then(function(snap) {
+    var batch = db.batch();
+    snap.forEach(function(d){ batch.delete(d.ref); });
+    batch.set(tdb('gt_ext_games').doc(egId), {
+      status: 'setup', current_period: 1, clock_started_at: null, clock_elapsed_seconds: 0,
+      period_elapsed: {}, our_score: 0, their_score: 0,
+      minutes_override: firebase.firestore.FieldValue.delete(),
+      updated_at: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    return batch.commit();
+  }).then(function(){ showToast('Game reset to setup ✓ Details kept.'); })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
 function gtExtReopen(egId) {
   gtExtUpdate(egId, { status: 'paused' });
 }
@@ -457,6 +475,11 @@ function gtRenderOutside(view, egId) {
       html += '<button class="gt-cbtn gt-cbtn-dark" onclick="gtExtReopen(\'' + egId + '\')">↺ Reopen to edit</button>';
     }
     html += '</div>';
+    if (eg.status !== 'setup') {
+      html += '<button class="gt-restart-btn" onpointerdown="gtHoldStart(event,\'gtExtReset\',\'' + egId + '\')" ' +
+        'onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">' +
+        '↺ Reset game (hold)</button>';
+    }
   }
   html += '</div>';
 

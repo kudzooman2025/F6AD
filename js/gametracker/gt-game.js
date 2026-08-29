@@ -513,6 +513,10 @@ function gtHoldStart(e, action, gid) {
     if (GT_holdBtn) { GT_holdBtn.classList.remove('holding'); GT_holdBtn = null; }
     if (action === 'endPeriod') gtEndPeriod(gid);
     else if (action === 'endGame') gtEndGame(gid);
+    else if (action === 'pause') gtClockPause(gid);
+    // Anything else names a global function, so another module can opt into
+    // hold-to-activate without this file having to know about it.
+    else if (typeof window[action] === 'function') window[action](gid);
     else gtClockPause(gid);
   }, 650);
 }
