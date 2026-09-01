@@ -268,10 +268,44 @@ function gtCreateGame() {
     batch.set(aref, { game_id: gameRef.id, player_id: pid, available: true, notes: 'Guest player', created_at: ts });
   });
   batch.commit().then(function() {
-    GT.setup = null;
-    showToast('Game created ✓ Hit Start when you kick off!');
-    gtGo('/gametracker/live/' + gameRef.id);
+    gtAfterCreateGame(gameRef.id, s, guestRefs);
   }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+// A tournament is several games in a row against different teams. Offer to go
+// straight round again with the squad, venue, format and availability intact —
+// only the opponent changes.
+function gtAfterCreateGame(newId, s, guestRefs) {
+  var ourSide = s.f6ad_side === 'away' ? 'away_team' : 'home_team';
+  var oppSide = s.f6ad_side === 'away' ? 'home_team' : 'away_team';
+  var seed = Object.assign({}, s);
+  seed.step = 1;
+  seed[oppSide] = '';          // the only thing you have to retype
+  seed.kickoff_time = '';
+  // Guests created for that game already exist as players now, so carry them by
+  // id. Copying s.guests would mint a duplicate player record per game.
+  seed.guests = [];
+  seed.guestIds = Object.assign({}, s.guestIds || {});
+  (guestRefs || []).forEach(function(ref){ seed.guestIds[ref.id] = true; });
+  GT.setup = null;
+  var opp = s[oppSide] || 'the opponent';
+  gtOpenModal(
+    '<h3>✅ Game created<button class="gm-close" onclick="gtCloseModal();gtGo(\'/gametracker/live/' + newId + '\')">✕</button></h3>' +
+    '<p class="gt-sub" style="margin:-6px 0 14px">' + gtEsc(s[ourSide] || 'Us') + ' vs ' + gtEsc(opp) + '</p>' +
+    '<div class="gm-actions" style="flex-direction:column;align-items:stretch;gap:8px">' +
+      '<button class="btn-primary" onclick="gtCloseModal();gtGo(\'/gametracker/live/' + newId + '\')">▶ Track this game</button>' +
+      '<button class="gt-minibtn" style="padding:11px 16px" onclick="gtAnotherGame()">➕ Add another game — same squad, new opponent</button>' +
+    '</div>'
+  );
+  GT.setupSeed = seed;
+}
+function gtAnotherGame() {
+  var seed = GT.setupSeed;
+  gtCloseModal();
+  if (!seed) { gtGo('/gametracker'); return; }
+  GT.setup = seed;
+  GT.setupSeed = null;
+  gtGo('/gametracker/new');
+  gtRerender(true);
 }
 
 // ---------- LIVE GAME VIEW ----------

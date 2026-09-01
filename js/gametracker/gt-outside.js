@@ -137,9 +137,12 @@ function gtExtTotals(pid) {
 }
 
 // ---------- create / edit the game ----------
-function gtOpenExtForm(pid, egId) {
+// seed: a plain object shaped like a game, used to prefill the form when adding
+// several games from one tournament. It never carries an id, so this still saves
+// as a new game rather than editing the one it was copied from.
+function gtOpenExtForm(pid, egId, seed) {
   if (!gtCanTrackOutside(pid)) { showToast('You can only log outside games for your own player.'); return; }
-  var eg = egId ? gtExtGame(egId) : null;
+  var eg = egId ? gtExtGame(egId) : (seed || null);
   var gd = appGameDefaults();
   var v = function(k, d){ return eg && eg[k] != null && eg[k] !== '' ? eg[k] : d; };
   gtOpenModal(
@@ -164,9 +167,10 @@ function gtOpenExtForm(pid, egId) {
     '<div><label>Minutes / period</label><input type="number" id="gt-xf-min" min="1" max="60" value="' + v('period_duration_minutes', gd.period_duration_minutes) + '"/></div></div>' +
     '<label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input type="checkbox" id="gt-xf-started"' +
       (eg ? (eg.started ? ' checked' : '') : ' checked') + ' style="width:auto"/> Started the game</label>' +
-    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveExtGame(\'' + pid + '\',' + (eg ? '\'' + eg.id + '\'' : 'null') + ')">Save</button>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveExtGame(\'' + pid + '\',' + (egId ? '\'' + egId + '\'' : 'null') + ')">Save</button>' +
     '<button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
+  if (seed) setTimeout(function(){ var o = document.getElementById('gt-xf-opp'); if (o) o.focus(); }, 60);
 }
 function gtSaveExtGame(pid, egId) {
   if (!gtCanTrackOutside(pid)) return;
@@ -206,8 +210,32 @@ function gtSaveExtGame(pid, egId) {
   data.their_score = 0;
   data.created_at = ts;
   tdb('gt_ext_games').add(data)
-    .then(function(ref){ gtCloseModal(); gtGo('/gametracker/outside/' + ref.id); })
+    .then(function(ref){ gtExtAfterCreate(pid, ref.id, data); })
     .catch(function(e){ showToast('Error: ' + e.message); });
+}
+// A tournament is several games on one day against different teams, so offer to
+// go straight round again with everything but the opponent already filled in.
+function gtExtAfterCreate(pid, newId, data) {
+  var seed = {
+    event_name: data.event_name, played_for: data.played_for, opponent: '',
+    played_at: data.played_at, kickoff_time: '', competition: data.competition,
+    venue: data.venue, num_periods: data.num_periods,
+    period_duration_minutes: data.period_duration_minutes, started: data.started
+  };
+  GT.extSeed = seed;
+  gtOpenModal(
+    '<h3>✅ Game saved<button class="gm-close" onclick="gtCloseModal();gtGo(\'/gametracker/outside/' + newId + '\')">✕</button></h3>' +
+    '<p class="gt-sub" style="margin:-6px 0 14px">' + gtEsc(gtExtTitle(data)) + '</p>' +
+    '<div class="gm-actions" style="flex-direction:column;align-items:stretch;gap:8px">' +
+      '<button class="btn-primary" onclick="gtCloseModal();gtGo(\'/gametracker/outside/' + newId + '\')">▶ Track this game</button>' +
+      '<button class="gt-minibtn" style="padding:11px 16px" onclick="gtExtAnother(\'' + pid + '\')">➕ Add another game — same details, new opponent</button>' +
+    '</div>'
+  );
+}
+function gtExtAnother(pid) {
+  var seed = GT.extSeed;
+  gtCloseModal();
+  gtOpenExtForm(pid, null, seed || null);
 }
 function gtDeleteExtGame(egId) {
   var eg = gtExtGame(egId); if (!eg || !gtExtCanEdit(eg)) return;
