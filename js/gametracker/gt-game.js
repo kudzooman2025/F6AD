@@ -471,7 +471,7 @@ function gtRenderLive(view, gameId) {
   }
   html += '<div style="margin-top:22px;text-align:center"><button class="gt-minibtn" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Copy Game Link</button></div>';
   if (canEdit) {
-    html += '<div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end"><button class="gt-minibtn" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
+    html += '<div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button class="gt-minibtn" onclick="gtShareLineup(\'g\',\'' + g.id + '\',this)">🔗 Share Roster</button><button class="gt-minibtn" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
   }
   view.innerHTML = html;
   var _cm = document.getElementById('gt-chat-msgs'); if (_cm) _cm.scrollTop = _cm.scrollHeight;

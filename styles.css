@@ -1443,3 +1443,17 @@ html[data-theme="dark"] .gt-statbtn.hl{background:#2a2113;border-color:#5c4a1e;c
 .gt-ext-scorerow strong{font-size:1.15rem;min-width:26px;text-align:center;font-variant-numeric:tabular-nums}
 .gt-ext-scorerow .gt-minibtn{min-width:38px;font-size:1rem;line-height:1}
 .gt-ext-item.team-goal{background:var(--brand-tint);border-color:var(--brand-line)}
+
+/* ---------- SHAREABLE SQUAD LIST ---------- */
+.gt-ln-head{display:flex;flex-direction:column;gap:5px;padding-bottom:14px;margin-bottom:16px;border-bottom:2px solid var(--border-strong)}
+.gt-ln-badge{font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--brand);background:var(--brand-tint);border:1px solid var(--brand-line);border-radius:999px;padding:3px 11px;align-self:flex-start}
+.gt-ln-count{font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:10px}
+.gt-ln-start{font-size:.68rem;font-weight:800;letter-spacing:.05em;color:#0f5c2e;background:#dcfce7;border-radius:999px;padding:2px 9px}
+.gt-ln-bench{font-size:.68rem;font-weight:700;color:var(--muted)}
+.gt-ln-games{display:flex;flex-direction:column;gap:6px}
+.gt-ln-game{display:flex;gap:12px;align-items:baseline;padding:9px 13px;border:1px solid var(--border);border-radius:9px;background:var(--gray)}
+.gt-ln-game .lg-date{font-size:.78rem;color:var(--muted);min-width:88px}
+.gt-ln-game .lg-opp{font-weight:700;flex:1}
+.gt-ln-game .lg-time{font-size:.8rem;color:var(--muted)}
+.gt-ln-foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted)}
+html[data-theme="dark"] .gt-ln-start{background:#0f2e1c;color:#86efac}

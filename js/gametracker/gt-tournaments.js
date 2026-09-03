@@ -244,6 +244,7 @@ function gtRenderTournament(view, tid) {
     '<div class="gt-stat-box"><div class="sb-num">' + paidCount + '/' + availCount + '</div><div class="sb-label">Paid</div></div>' +
     '</div>';
   if (canEdit) html += '<div style="margin:4px 0 16px;display:flex;gap:10px;flex-wrap:wrap">' +
+    '<button class="gt-minibtn" onclick="gtShareLineup(\'t\',\'' + t.id + '\',this)">🔗 Share Roster</button>' +
     '<button class="gt-minibtn" onclick="gtOpenTournamentForm(\'' + t.id + '\')">✏️ Edit Details</button>' +
     '<button class="gt-minibtn" onclick="gtTournAddPlayerPrompt(\'' + t.id + '\')">➕ Add Player</button>' +
     '<button class="gt-minibtn" onclick="gtTournAddGuestPrompt(\'' + t.id + '\')">➕ Add Guest</button></div>';

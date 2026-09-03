@@ -123,7 +123,7 @@ function gtRoute() {
   }
   var parts = h.replace(/^#\//, '').split('/');
   var page = parts[1] || 'home';
-  GT.route = { page: page, arg: parts[2] || null };
+  GT.route = { page: page, arg: parts[2] || null, arg2: parts[3] || null };
   if (page !== 'live' && page !== 'outside' && GT.clockTimer) { clearInterval(GT.clockTimer); GT.clockTimer = null; }
   if (page !== 'review' && GT.filmTimer) { clearInterval(GT.filmTimer); GT.filmTimer = null; if (GT.film) GT.film.on = false; }
   window.scrollTo(0, 0);
@@ -151,6 +151,7 @@ function gtRerender(force) {
   else if (page === 'roster') gtRenderRoster(view);
   else if (page === 'player') gtRenderPlayerProfile(view, GT.route.arg);
   else if (page === 'outside') gtRenderOutside(view, GT.route.arg);
+  else if (page === 'lineup') gtRenderLineup(view, GT.route.arg, GT.route.arg2);
   else if (page === 'card') gtRenderPlayerCard(view, GT.route.arg);
   else if (page === 'profiles') gtRenderProfiles(view);
   else gtRenderHome(view);
