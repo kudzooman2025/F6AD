@@ -113,14 +113,16 @@ function gtRemovePlayerFromGame(gid, pid) {
   var g = gtGame(gid); if (!g) return;
   var evs = GT.events.filter(function(e){ return e.game_id === gid && e.player_id === pid; });
   var goalsRemoved = evs.filter(function(e){ return e.event_type === 'goal'; }).length;
+  var ownGoalsRemoved = evs.filter(function(e){ return e.event_type === 'own_goal'; }).length;
   var subs = GT.subs.filter(function(s){ return s.game_id === gid && (s.player_in_id === pid || s.player_out_id === pid); });
   if (!confirm('Remove ' + gtPlayerName(pid) + ' from this game?\n\nThis deletes their availability, ' + evs.length + ' event(s), and ' + subs.length + ' sub record(s) for THIS game only. Their roster profile and other games are unaffected.')) return;
   var batch = db.batch();
   gtGameAvail(gid).filter(function(a){ return a.player_id === pid; }).forEach(function(a){ batch.delete(tdb('gt_availability').doc(a.id)); });
   evs.forEach(function(e){ batch.delete(tdb('gt_events').doc(e.id)); });
   subs.forEach(function(s){ batch.delete(tdb('gt_subs').doc(s.id)); });
+  if (goalsRemoved) gtQueueEventScore(batch, g, 'goal', null, goalsRemoved);
+  if (ownGoalsRemoved) gtQueueEventScore(batch, g, 'own_goal', null, ownGoalsRemoved);
   batch.commit().then(function() {
-    if (goalsRemoved) gtBumpScore(g, 'us', -goalsRemoved);
     showToast(gtPlayerShort(pid) + ' removed from this game.');
   }).catch(function(e){ showToast('Error: ' + e.message); });
 }

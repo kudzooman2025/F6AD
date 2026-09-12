@@ -1,7 +1,7 @@
 // ---------- listeners ----------
 function gtAttachListeners(defs) {
-  defs.forEach(function(def) {
-    tdb(def[0]).onSnapshot(function(snap) {
+  return defs.map(function(def) {
+    return tdb(def[0]).onSnapshot(function(snap) {
       GT[def[1]] = snap.docs.map(function(d) {
         var o = d.data({ serverTimestamps: 'estimate' }); o.id = d.id; return o;
       });
@@ -289,4 +289,3 @@ function gtToggleUpcoming() {
   var b = document.getElementById('gt-upcoming-toggle');
   if (b) b.textContent = GT.upcomingCollapsed ? 'Expand' : 'Collapse';
 }
-

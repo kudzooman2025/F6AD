@@ -43,10 +43,22 @@ function gtExtStatDef(t) {
 // ---------- data ----------
 // Attached lazily: only the profile and outside-game screens need these, so
 // nobody else pays reads for them.
+var gtExtUnsubs = [], gtExtAuthUid = null;
+function gtExtResetListeners() {
+  gtExtUnsubs.forEach(function(unsub){ unsub(); });
+  gtExtUnsubs = [];
+  gtExtAuthUid = null;
+  GT.listeningExt = false;
+  GT.extGames = []; GT.extEvents = [];
+  delete GT.loaded.extGames; delete GT.loaded.extEvents;
+}
 function gtExtListen() {
-  if (GT.listeningExt) return;
+  var uid = authUser && authUser.uid;
+  if (gtExtAuthUid !== uid) gtExtResetListeners();
+  if (!uid || GT.listeningExt) return;
+  gtExtAuthUid = uid;
   GT.listeningExt = true;
-  gtAttachListeners([['gt_ext_games', 'extGames'], ['gt_ext_events', 'extEvents']]);
+  gtExtUnsubs = gtAttachListeners([['gt_ext_games', 'extGames'], ['gt_ext_events', 'extEvents']]);
 }
 function gtExtGame(id) { return (GT.extGames || []).find(function(g){ return g.id === id; }); }
 // What to call this game. The parent's own label wins; otherwise fall back to
@@ -80,7 +92,7 @@ function gtCanTrackOutside(pid) {
 function gtExtCanEdit(eg) {
   if (!eg) return false;
   if (typeof gtCanEdit === 'function' && gtCanEdit()) return true;
-  return !!(authUser && eg.owner_uid === authUser.uid);
+  return !!(authUser && eg.owner_uid === authUser.uid && gtCanTrackOutside(eg.player_id));
 }
 
 // ---------- minutes ----------

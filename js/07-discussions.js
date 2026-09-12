@@ -7,6 +7,8 @@ function discEsc(v) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
   });
 }
+// Inline handlers need JavaScript-string escaping followed by HTML escaping.
+function discArg(v) { return discEsc(JSON.stringify(String(v))); }
 function discMs(x) {
   var ts = x && x.created_at;
   if (!ts) return 0;
@@ -14,6 +16,7 @@ function discMs(x) {
   var d = ts.toDate ? ts.toDate() : new Date(ts);
   return isNaN(d.getTime()) ? 0 : d.getTime();
 }
+function discVoteCount(v) { return Number.isSafeInteger(v) ? v : 0; }
 function discTime(ts) {
   var d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
   if (!d || isNaN(d.getTime())) return 'just now';
@@ -89,11 +92,11 @@ function renderDiscussionList(root) {
 function discPostCard(p) {
   var n = discCommentsFor(p.id).length;
   return '<div class="disc-card">' +
-    '<div class="disc-vote"><button class="disc-up' + (discHasVoted('p', p.id) ? ' on' : '') + '" onclick="voteDiscussion(\'' + p.id + '\')" title="Upvote">▲</button>' +
-    '<span class="disc-score">' + (p.votes || 0) + '</span></div>' +
-    '<div class="disc-main"><a class="disc-title" href="#/discussions/' + p.id + '">' + discEsc(p.title || '(untitled)') + '</a>' +
+    '<div class="disc-vote"><button class="disc-up' + (discHasVoted('p', p.id) ? ' on' : '') + '" onclick="voteDiscussion(' + discArg(p.id) + ')" title="Upvote">▲</button>' +
+    '<span class="disc-score">' + discVoteCount(p.votes) + '</span></div>' +
+    '<div class="disc-main"><a class="disc-title" href="#/discussions/' + discEsc(p.id) + '">' + discEsc(p.title || '(untitled)') + '</a>' +
     '<div class="disc-meta">' + discEsc(p.author || 'Anonymous') + ' · ' + discTime(p.created_at) + ' · 💬 ' + n + ' comment' + (n === 1 ? '' : 's') +
-    ' <button class="disc-link" onclick="discCopyLink(\'' + p.id + '\')">🔗 Copy link</button></div></div></div>';
+    ' <button class="disc-link" onclick="discCopyLink(' + discArg(p.id) + ')">🔗 Copy link</button></div></div></div>';
 }
 function renderDiscussionDetail(root, pid) {
   var p = discussionItems.find(function(x){ return x.id === pid; });
@@ -103,12 +106,12 @@ function renderDiscussionDetail(root, pid) {
   var top = all.filter(function(c){ return !c.parent_id; });
   var html = '<a class="disc-back" href="#/discussions">← All discussions</a>' +
     '<div class="disc-post">' +
-      '<div class="disc-vote"><button class="disc-up' + (discHasVoted('p', pid) ? ' on' : '') + '" onclick="voteDiscussion(\'' + pid + '\')">▲</button>' +
-      '<span class="disc-score">' + (p.votes || 0) + '</span></div>' +
+      '<div class="disc-vote"><button class="disc-up' + (discHasVoted('p', pid) ? ' on' : '') + '" onclick="voteDiscussion(' + discArg(pid) + ')">▲</button>' +
+      '<span class="disc-score">' + discVoteCount(p.votes) + '</span></div>' +
       '<div class="disc-main"><div class="disc-ptitle">' + discEsc(p.title || '(untitled)') + '</div>' +
       '<div class="disc-meta">' + discEsc(p.author || 'Anonymous') + ' · ' + discTime(p.created_at) +
-        ' <button class="disc-link" onclick="discCopyLink(\'' + pid + '\')">🔗 Copy link</button>' +
-        (staff ? ' <button class="disc-del" onclick="deleteDiscussion(\'' + pid + '\')">🗑 Delete post</button>' : '') + '</div>' +
+        ' <button class="disc-link" onclick="discCopyLink(' + discArg(pid) + ')">🔗 Copy link</button>' +
+        (staff ? ' <button class="disc-del" onclick="deleteDiscussion(' + discArg(pid) + ')">🗑 Delete post</button>' : '') + '</div>' +
       (p.body ? '<div class="disc-body">' + discEsc(p.body) + '</div>' : '') +
       '</div></div>';
   html += discCommentForm(pid, '');
@@ -121,14 +124,14 @@ function discCommentRow(c, staff, cls) {
   return '<div class="disc-comment' + (cls || '') + '">' +
     '<div class="dc-head"><span class="dc-author">' + discEsc(c.author || 'Anonymous') + '</span>' +
     '<span class="dc-time">' + discTime(c.created_at) + '</span>' +
-    '<button class="disc-up sm' + (discHasVoted('c', c.id) ? ' on' : '') + '" onclick="voteDiscComment(\'' + c.id + '\')">▲ ' + (c.votes || 0) + '</button>' +
-    (staff ? '<button class="disc-del" onclick="deleteDiscComment(\'' + c.id + '\')">🗑</button>' : '') + '</div>' +
+    '<button class="disc-up sm' + (discHasVoted('c', c.id) ? ' on' : '') + '" onclick="voteDiscComment(' + discArg(c.id) + ')">▲ ' + discVoteCount(c.votes) + '</button>' +
+    (staff ? '<button class="disc-del" onclick="deleteDiscComment(' + discArg(c.id) + ')">🗑</button>' : '') + '</div>' +
     '<div class="dc-text">' + discEsc(c.text || '') + '</div>';
 }
 function discCommentHtml(c, all, staff, pid) {
   var replies = all.filter(function(r){ return r.parent_id === c.id; });
   return discCommentRow(c, staff, '') +
-    '<button class="dc-reply" onclick="toggleDiscReply(\'' + c.id + '\')">↩ Reply</button>' +
+    '<button class="dc-reply" onclick="toggleDiscReply(' + discArg(c.id) + ')">↩ Reply</button>' +
     (discReplyOpen === c.id ? discCommentForm(pid, c.id) : '') +
     (replies.length ? '<div class="dc-replies">' + replies.map(function(r){ return discCommentRow(r, staff, ' reply') + '</div>'; }).join('') + '</div>' : '') +
     '</div>';
@@ -136,9 +139,9 @@ function discCommentHtml(c, all, staff, pid) {
 function discCommentForm(pid, parentId) {
   var suf = parentId ? ('r-' + parentId) : ('p-' + pid);
   return '<div class="disc-form">' +
-    '<input type="text" id="dcn-' + suf + '" placeholder="Your name" value="' + discEsc(discName()) + '"/>' +
-    '<textarea id="dct-' + suf + '" rows="2" placeholder="' + (parentId ? 'Write a reply…' : 'Add a comment…') + '"></textarea>' +
-    '<button class="btn-primary" onclick="postDiscComment(\'' + pid + '\',\'' + (parentId || '') + '\')">' + (parentId ? 'Reply' : 'Comment') + '</button>' +
+    '<input type="text" id="dcn-' + discEsc(suf) + '" placeholder="Your name" value="' + discEsc(discName()) + '"/>' +
+    '<textarea id="dct-' + discEsc(suf) + '" rows="2" placeholder="' + (parentId ? 'Write a reply…' : 'Add a comment…') + '"></textarea>' +
+    '<button class="btn-primary" onclick="postDiscComment(' + discArg(pid) + ',' + discArg(parentId || '') + ')">' + (parentId ? 'Reply' : 'Comment') + '</button>' +
     '</div>';
 }
 function discNewPostForm() {

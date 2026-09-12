@@ -1,0 +1,13 @@
+{
+  "name": "f6ad-regression-tests",
+  "private": true,
+  "scripts": {
+    "test": "node --test regression.test.cjs",
+    "test:rules": "firebase emulators:exec --config ../firebase.json --project demo-f6ad --only firestore \"node --test rules.test.cjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "4.0.1",
+    "firebase": "11.10.0",
+    "firebase-tools": "14.7.0"
+  }
+}

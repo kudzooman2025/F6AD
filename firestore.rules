@@ -21,6 +21,31 @@ service cloud.firestore {
         || (isStaff()
             && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == 'admin');
     }
+    function ownsPlayer(pid) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + pid))
+        && get(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + pid)).data.status == 'approved';
+    }
+    function canEditOutsideGame(g) {
+      return isStaff() || isAdmin()
+        || (signedIn() && g.owner_uid == request.auth.uid && ownsPlayer(g.player_id));
+    }
+    function validOutsideEvent(e) {
+      let g = get(/databases/$(database)/documents/gt_ext_games/$(e.ext_game_id)).data;
+      return e.owner_uid == g.owner_uid && e.player_id == g.player_id
+        && canEditOutsideGame(g);
+    }
+    function canSubmitEval(doc, e) {
+      return signedIn() && (
+        (e.rater_type == 'peer'
+          && doc == e.period + '_peer_' + e.rater_id + '_' + e.target_player_id
+          && e.rater_id != e.target_player_id
+          && exists(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + e.rater_id))
+          && get(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + e.rater_id)).data.status == 'approved')
+        || (e.rater_type == 'family' && e.rater_id == request.auth.uid
+          && doc == e.period + '_family_' + request.auth.uid + '_' + e.target_player_id
+          && ownsPlayer(e.target_player_id)));
+    }
 
     // Staff directory: users can read their own record; admins manage all
     match /staff/{uid} {
@@ -69,18 +94,24 @@ service cloud.firestore {
     // ---- Outside games (a player guesting for another club, school, indoor) ----
     // Their own collections, never gt_games: nothing that reads team games can
     // see them by accident, so they can't reach team or season totals.
-    // owner_uid is denormalised onto the events so a write authorises without a join.
+    // Events must belong to a game this account can manage.
     match /gt_ext_games/{doc} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.owner_uid == request.auth.uid;
-      allow update, delete: if signedIn()
-        && (resource.data.owner_uid == request.auth.uid || isStaff() || isAdmin());
+      allow create: if signedIn() && request.resource.data.owner_uid == request.auth.uid
+        && (ownsPlayer(request.resource.data.player_id) || isStaff() || isAdmin());
+      allow update: if canEditOutsideGame(resource.data)
+        && request.resource.data.owner_uid == resource.data.owner_uid
+        && request.resource.data.player_id == resource.data.player_id;
+      allow delete: if canEditOutsideGame(resource.data);
     }
     match /gt_ext_events/{doc} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.owner_uid == request.auth.uid;
-      allow update, delete: if signedIn()
-        && (resource.data.owner_uid == request.auth.uid || isStaff() || isAdmin());
+      allow create: if validOutsideEvent(request.resource.data);
+      allow update: if validOutsideEvent(resource.data)
+        && request.resource.data.ext_game_id == resource.data.ext_game_id
+        && request.resource.data.owner_uid == resource.data.owner_uid
+        && request.resource.data.player_id == resource.data.player_id;
+      allow delete: if validOutsideEvent(resource.data) || isStaff() || isAdmin();
     }
 
     // Guest-player applications: the public may submit, only staff may read or act.
@@ -88,14 +119,11 @@ service cloud.firestore {
     match /pd_config/{doc}      { allow read: if true; allow write: if isStaff() || isAdmin(); }
     match /pd_evals/{doc} {
       allow read: if isStaff() || isAdmin();
-      allow create, update: if isStaff() || isAdmin()
-        || (request.auth != null && request.resource.data.rater_type == 'peer'
-            && request.resource.data.rater_id != request.resource.data.target_player_id
-            && exists(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + request.resource.data.rater_id))
-            && get(/databases/$(database)/documents/pd_player_links/$(request.auth.uid + '_' + request.resource.data.rater_id)).data.status == 'approved')
-        || (request.auth != null && request.resource.data.rater_type == 'family'
-            && exists(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + request.resource.data.target_player_id))
-            && get(/databases/$(database)/documents/family_links/$(request.auth.uid + '_' + request.resource.data.target_player_id)).data.status == 'approved');
+      allow create: if isStaff() || isAdmin() || canSubmitEval(doc, request.resource.data);
+      allow update: if isStaff() || isAdmin()
+        || (canSubmitEval(doc, resource.data) && canSubmitEval(doc, request.resource.data)
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['period', 'rater_type', 'rater_id', 'target_player_id']));
       allow delete: if isStaff() || isAdmin();
     }
     match /pd_player_links/{doc} {
@@ -133,13 +161,17 @@ service cloud.firestore {
     // Discussions: anyone can read/post; anyone may change ONLY the vote count;
     // content edits and deletes are staff-only.
     match /discussions/{doc} {
-      allow read, create: if true;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']) || isStaff() || isAdmin();
+      allow read: if true;
+      allow create: if request.resource.data.votes is int && request.resource.data.votes == 0;
+      allow update: if request.resource.data.votes is int
+        && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']) || isStaff() || isAdmin());
       allow delete: if isStaff() || isAdmin();
     }
     match /discussion_comments/{doc} {
-      allow read, create: if true;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']) || isStaff() || isAdmin();
+      allow read: if true;
+      allow create: if request.resource.data.votes is int && request.resource.data.votes == 0;
+      allow update: if request.resource.data.votes is int
+        && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes']) || isStaff() || isAdmin());
       allow delete: if isStaff() || isAdmin();
     }
 

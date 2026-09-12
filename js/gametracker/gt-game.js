@@ -764,12 +764,30 @@ function gtDoFinishGame(gid, reason) {
 }
 
 // ---------- event logging ----------
-function gtBumpScore(g, side, delta) {
+function gtQueueEventScore(batch, g, oldType, newType, count) {
+  if (!g) return;
+  if (count == null) count = 1;
   var ourField = g.f6ad_side === 'away' ? 'away_score' : 'home_score';
   var theirField = g.f6ad_side === 'away' ? 'home_score' : 'away_score';
+  function side(type) {
+    if (type === 'goal' || type === 'opponent_own_goal') return ourField;
+    if (type === 'own_goal' || type === 'opponent_goal') return theirField;
+    return null;
+  }
+  var before = side(oldType), after = side(newType);
+  if (before === after) return;
   var u = {};
-  u[side === 'us' ? ourField : theirField] = firebase.firestore.FieldValue.increment(delta);
-  return tdb('gt_games').doc(g.id).update(u);
+  if (before) u[before] = firebase.firestore.FieldValue.increment(-count);
+  if (after) u[after] = firebase.firestore.FieldValue.increment(count);
+  batch.update(tdb('gt_games').doc(g.id), u);
+}
+// Queue the event, score and optional assist atomically, including while offline.
+function gtAddScoredEvent(g, data, assist) {
+  var batch = db.batch();
+  batch.set(tdb('gt_events').doc(), data);
+  gtQueueEventScore(batch, g, null, data.event_type);
+  if (assist) batch.set(tdb('gt_events').doc(), assist);
+  return batch.commit();
 }
 function gtOpenEventPopup(gid, pid) {
   if (!gtCanEdit()) return;
@@ -855,20 +873,12 @@ function gtSaveLiveEvent() {
     notes: notes, youtube_url: '',
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
-  tdb('gt_events').add(evData).then(function() {
-    if (pe.type === 'goal' && g) gtBumpScore(g, 'us', 1);
-    else if (pe.type === 'own_goal' && g) gtBumpScore(g, 'them', 1);
-    var ops = [];
-    if (pe.type === 'goal' && assistPid) {
-      ops.push(tdb('gt_events').add({
-        game_id: pe.gameId, player_id: assistPid, event_type: 'assist',
-        game_clock_seconds: clock, period: pe.period,
-        notes: '', youtube_url: '',
-        created_at: firebase.firestore.FieldValue.serverTimestamp()
-      }));
-    }
-    return Promise.all(ops);
-  }).then(function() {
+  var assist = assistPid ? {
+    game_id: pe.gameId, player_id: assistPid, event_type: 'assist',
+    game_clock_seconds: clock, period: period, notes: '', youtube_url: '',
+    created_at: firebase.firestore.FieldValue.serverTimestamp()
+  } : null;
+  gtAddScoredEvent(g, evData, assist).then(function() {
     var msg = gtEventType(pe.type).emoji + ' ' + gtEventType(pe.type).label + ' logged for ' + gtPlayerShort(pe.playerId);
     if (assistPid) msg += ' (assist: ' + gtPlayerShort(assistPid) + ')';
     if (pe.type === 'red_card') msg = '🟥 ' + gtPlayerShort(pe.playerId) + ' sent off — taken off, man down';
@@ -880,11 +890,11 @@ function gtLogOpponentGoal(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
   if (!confirm('Log a goal for ' + gtTheirName(g) + '?')) return;
-  tdb('gt_events').add({
+  gtAddScoredEvent(g, {
     game_id: gid, player_id: null, event_type: 'opponent_goal',
     game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
     notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function(){ gtBumpScore(g, 'them', 1); })
+  })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtLogOwnGoalForUs(gid) {
@@ -892,11 +902,11 @@ function gtLogOwnGoalForUs(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
   if (!confirm('Log an own goal by ' + gtTheirName(g) + ' (counts for us)?')) return;
-  tdb('gt_events').add({
+  gtAddScoredEvent(g, {
     game_id: gid, player_id: null, event_type: 'opponent_own_goal',
     game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
     notes: '', youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(function(){ gtBumpScore(g, 'us', 1); })
+  })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtDeleteEvent(eid) {
@@ -905,11 +915,10 @@ function gtDeleteEvent(eid) {
   if (!e) return;
   if (!confirm('Delete this ' + gtEventType(e.event_type).label + ' event?')) return;
   var g = gtGame(e.game_id);
-  tdb('gt_events').doc(eid).delete().then(function() {
-    if (g && e.event_type === 'goal') gtBumpScore(g, 'us', -1);
-    if (g && e.event_type === 'opponent_goal') gtBumpScore(g, 'them', -1);
-    if (g && e.event_type === 'own_goal') gtBumpScore(g, 'them', -1);
-    if (g && e.event_type === 'opponent_own_goal') gtBumpScore(g, 'us', -1);
+  var batch = db.batch();
+  batch.delete(tdb('gt_events').doc(eid));
+  gtQueueEventScore(batch, g, e.event_type, null);
+  batch.commit().then(function() {
     showToast('Event deleted.');
   }).catch(function(err){ showToast('Error: ' + err.message); });
 }
@@ -941,11 +950,7 @@ function gtSaveAddEvent(gid) {
   var pid = isOpp ? '' : ((document.getElementById('gt-add-player') || {}).value || '');
   if (!isOpp && !pid) { showToast('Pick a player.'); return; }
   var notes = document.getElementById('gt-add-notes').value.trim();
-  tdb('gt_events').add({ game_id: gid, player_id: pid, event_type: type, game_clock_seconds: ps.sec, period: ps.period, notes: notes, youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp() })
-    .then(function(){
-      if (type === 'goal') return gtBumpScore(g, 'us', 1);
-      if (type === 'own_goal' || type === 'opponent_goal') return gtBumpScore(g, 'them', 1);
-    })
+  gtAddScoredEvent(g, { game_id: gid, player_id: pid, event_type: type, game_clock_seconds: ps.sec, period: ps.period, notes: notes, youtube_url: '', created_at: firebase.firestore.FieldValue.serverTimestamp() })
     .then(function(){ showToast('Event added to timeline ✓'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
@@ -995,13 +1000,10 @@ function gtSaveEditEvent(eid) {
     upd.event_type = newType;
     upd.player_id = document.getElementById('gt-edit-player').value || e.player_id;
   }
-  tdb('gt_events').doc(eid).update(upd).then(function() {
-    if (!isOpp && g) {
-      var wasGoal = e.event_type === 'goal', isGoal = newType === 'goal';
-      if (isGoal && !wasGoal) return gtBumpScore(g, 'us', 1);
-      if (!isGoal && wasGoal) return gtBumpScore(g, 'us', -1);
-    }
-  }).then(function() {
+  var batch = db.batch();
+  batch.update(tdb('gt_events').doc(eid), upd);
+  gtQueueEventScore(batch, g, e.event_type, newType);
+  batch.commit().then(function() {
     showToast('Event updated ✓');
     gtCloseModal();
   }).catch(function(err){ showToast('Error: ' + err.message); });

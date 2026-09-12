@@ -81,6 +81,7 @@ function subscribeStaff() {
   }, function(){ /* permissions race during sign-out */ });
 }
 firebase.auth().onAuthStateChanged(function(u) {
+  if (typeof gtExtResetListeners === 'function') gtExtResetListeners();
   authUser = u;
   if (u && u.email) {
     tdb('user_directory').doc(u.uid).set({ email: u.email, name: u.displayName || '', last_seen: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(function(){});
@@ -174,4 +175,3 @@ function authSendReset(email) {
 function authSignOut() {
   firebase.auth().signOut().then(function(){ showToast('Signed out.'); });
 }
-
