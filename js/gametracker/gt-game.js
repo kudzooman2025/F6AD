@@ -335,6 +335,9 @@ function gtRenderLive(view, gameId) {
     '<span style="color:#666">–</span>' +
     '<span class="sc-num">' + (g.away_score || 0) + '</span><span class="sc-team">' + gtEsc(gtAwayName(g)) + '</span>' +
     '</div>';
+  if (canEdit && g.status !== 'setup' && !inPK) {
+    html += '<div class="gt-clock-actions"><button type="button" class="gt-opponent-goal" onclick="gtLogOpponentGoal(\'' + g.id + '\')">⚽ Opponent Goal</button></div>';
+  }
   html += gtManDownHtml(g);
   var _tUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
   if (_tUrl) html += '<a class="gt-tourn-link" href="' + gtAttr(_tUrl) + '" target="_blank" rel="noopener">🔗 Official tournament site →</a>';
@@ -354,10 +357,10 @@ function gtRenderLive(view, gameId) {
         '<button class="gt-cbtn gt-cbtn-danger" onpointerdown="gtHoldStart(event,\'endGame\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">🏁 End Game (hold)</button>';
     } else if (g.status === 'between_periods') {
       var _nlbl = gtEsc(gtPeriodLabel(g, g.current_period, 'in_progress'));
-      html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtStartNextPeriod(\'' + g.id + '\')">▶ Start ' + _nlbl + ' (as-is)</button>' +
-        '<button class="gt-cbtn gt-cbtn-dark" onclick="gtStartPeriodWithStarters(\'' + g.id + '\')">↺ Start with starting XI</button>' +
+      html += '<button class="gt-cbtn gt-cbtn-go" onclick="gtStartNextPeriod(\'' + g.id + '\')">▶ Start ' + _nlbl + '</button>' +
+        '<button class="gt-cbtn gt-cbtn-dark" onclick="gtResetToStarters(\'' + g.id + '\')">↺ Reset to game starters</button>' +
         '<button class="gt-cbtn gt-cbtn-danger" onpointerdown="gtHoldStart(event,\'endGame\',\'' + g.id + '\')" onpointerup="gtHoldCancel()" onpointerleave="gtHoldCancel()" onpointercancel="gtHoldCancel()">🏁 End Game (hold)</button>';
-      html += '<div class="gt-clock-hint">“As-is” keeps whoever is on now. “Starting XI” puts your original starters back on — or make changes below first.</div>';
+      html += '<div class="gt-clock-hint">Reset to game starters restores your original starters and leaves the clock stopped. Make any changes below, then press Start when ready.</div>';
     }
     html += '</div>';
   }
@@ -378,7 +381,8 @@ function gtRenderLive(view, gameId) {
   var gtPps = g.players_per_side || 11;
   var gtTallyCls = gtOnCount === gtPps ? 'ok' : (gtOnCount > gtPps ? 'over' : 'under');
   var gtOnFieldTally = '<span class="gt-onfield ' + gtTallyCls + '">' + gtOnCount + '/' + gtPps + ' ' + (g.status === 'setup' ? 'starters' : 'on field') + '</span>';
-  html += '<div class="section-title" style="margin-bottom:12px">👕 Players ' + gtOnFieldTally + (canEdit ? ' <span style="font-size:.72rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters · hold for options (scratch, position)' : 'tap to sub on/off · hold for stats') + '</span>' : '') + '</div>';
+  html += '<div class="section-title" style="margin-bottom:12px">👕 Players ' + gtOnFieldTally + (canEdit ? ' <span style="font-size:.78rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters · hold for options' : 'tap a player, then their replacement · hold for stats') + '</span>' : '') + '</div>';
+  if (canEdit && g.status !== 'setup' && !inPK) html += gtSwapBarHtml(g);
   var _setup = g.status === 'setup';
   function gtPCardHtml(p) {
     var st = gtStatLine(p.id, events);
@@ -397,28 +401,26 @@ function gtRenderLive(view, gameId) {
     var ae = gtGameAvailEntry(g.id, p.id) || {};
     var off = _setup ? !ae.started : (onField[p.id] === false);
     var starterCls = (_setup && ae.started) ? ' starter' : '';
-    var posShow = _setup ? (ae.start_position || p.default_position || '') : gtLastPosition(g.id, p.id);
-    var statusLabel = _setup ? (ae.started ? 'START' : 'BENCH') : gtStatusShort(gtPlayerGameStatus(g.id, p.id));
+    var statusLabel = _setup ? (ae.started ? 'STARTER' : 'BENCH') : (gtPlayerRedInfo(g.id, p.id) ? 'SENT OFF' : (off ? 'BENCH' : 'ON FIELD'));
     var pcHandlers = '';
     if (canEdit) {
-      pcHandlers = ' onpointerdown="gtCardPressStart(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerup="gtCardPressEnd(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerleave="gtCardPressCancel()" onpointercancel="gtCardPressCancel()" oncontextmenu="return false"';
+      pcHandlers = ' onpointerdown="gtCardPressStart(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerup="gtCardPressEnd(event,\'' + g.id + '\',\'' + p.id + '\')" onpointerleave="gtCardPressCancel()" onpointercancel="gtCardPressCancel()" oncontextmenu="return false" onkeydown="if(!event.repeat && (event.key===\'Enter\'||event.key===\' \')){event.preventDefault();gtTapSwap(\'' + g.id + '\',\'' + p.id + '\')}"';
     }
-    return '<button class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + '"' + pcHandlers + '>' +
+    var selected = canEdit && GT.swapSelection && GT.swapSelection.gid === g.id && GT.swapSelection.pid === p.id;
+    return '<button type="button" aria-pressed="' + (!!selected) + '" class="gt-pcard' + (gtIsGK(p) ? ' gk' : '') + starterCls + (off ? ' off' : '') + (selected ? ' swap-selected' : '') + '"' + pcHandlers + '>' +
       '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
-      '<span class="pc-name">' + gtEsc(gtPlayerShort(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') + '</span>' +
-      '<span class="pc-pos">' + (posShow ? gtEsc(posShow) + ' · ' : '') + statusLabel + '</span>' +
+      '<span class="pc-name">' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">Guest</span>' : '') + '</span>' +
+      '<span class="pc-pos">' + statusLabel + '</span>' +
       '<span class="pc-badges">' + badges + '</span></button>';
   }
-  // Pool membership is fixed by the STARTING designation (starter vs bench at kickoff)
-  // and does not change when a player is subbed on/off — the card just dims/highlights
-  // in place. During setup, tapping toggles who's a starter, so cards move then.
-  var _startedStarter = function(p) { var ae = gtGameAvailEntry(g.id, p.id) || {}; return !!ae.started; };
+  // During play, cards follow the current lineup, including substitutions and cards.
+  var _startedStarter = function(p) { return _setup ? !!(gtGameAvailEntry(g.id, p.id) || {}).started : onField[p.id] === true; };
   var _startersPool = players.filter(_startedStarter);
   var _benchPool = players.filter(function(p){ return !_startedStarter(p); });
   if (!players.length) html += '<div class="gt-empty">No available players for this game.</div>';
   else {
-    html += '<div class="gt-pool-label gt-pool-on">🟢 Starters <span class="gt-pool-count">' + _startersPool.length + '</span></div>';
-    html += _startersPool.length ? '<div class="gt-pgrid">' + _startersPool.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">' + (_setup ? 'No starters set yet — tap a bench player to start them.' : 'No starters recorded.') + '</div>';
+    html += '<div class="gt-pool-label gt-pool-on">🟢 ' + (_setup ? 'Starters' : 'On field') + ' <span class="gt-pool-count">' + _startersPool.length + '</span></div>';
+    html += _startersPool.length ? '<div class="gt-pgrid">' + _startersPool.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">' + (_setup ? 'No starters set yet — tap a bench player to start them.' : 'No players currently on the field.') + '</div>';
     html += '<div class="gt-pool-label gt-pool-bench">🪑 Bench <span class="gt-pool-count">' + _benchPool.length + '</span></div>';
     html += _benchPool.length ? '<div class="gt-pgrid">' + _benchPool.map(gtPCardHtml).join('') + '</div>' : '<div class="gt-pool-empty">Bench is empty.</div>';
   }
@@ -446,7 +448,6 @@ function gtRenderLive(view, gameId) {
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenMassSub(\'' + g.id + '\')">🔄 Mass Sub</button>' +
-      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentGoal(\'' + g.id + '\')">😣 Opponent Goal</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOwnGoalForUs(\'' + g.id + '\')">🥅 Own Goal (our favor)</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentCard(\'' + g.id + '\')">🟨 Opponent Card</button></div>';
   }
@@ -595,26 +596,27 @@ function gtRestartGame(gid) {
     return batch.commit();
   }).then(function(){ showToast('Game reset to setup \u2713'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
-// Start the next period with the original starting XI back on the field.
-function gtStartPeriodWithStarters(gid) {
+// Restore the original starting XI between periods without touching the clock.
+function gtResetToStarters(gid) {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }
   var g = gtGame(gid); if (!g) return;
+  if (g.status !== 'between_periods') return;
   var period = g.current_period || 1;
   var kickoff = gtKickoffOn(gid);      // pid -> was a starter at kickoff
   var on = gtOnField(gid);             // pid -> currently on the field
   var bringOn = [], takeOff = [];
   Object.keys(kickoff).forEach(function(pid){ if (kickoff[pid] && on[pid] === false && !gtPlayerRedInfo(gid, pid)) bringOn.push(pid); });
   Object.keys(on).forEach(function(pid){ if (on[pid] && !kickoff[pid]) takeOff.push(pid); });
+  var n = Math.min(bringOn.length, takeOff.length);
+  if (!n) { showToast('Starting XI already on \u00b7 clock still stopped'); return; }
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var batch = db.batch();
-  var n = Math.min(bringOn.length, takeOff.length);
   for (var i = 0; i < n; i++) {
     var inPid = bringOn[i], outPid = takeOff[i];
     var pos = (gtGameAvailEntry(gid, inPid) || {}).start_position || (gtP(inPid) || {}).default_position || '';
     batch.set(tdb('gt_subs').doc(), { game_id: gid, player_out_id: outPid, player_in_id: inPid, position: pos, game_clock_seconds: 0, period: period, created_at: ts });
   }
-  batch.set(tdb('gt_games').doc(gid), { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: ts, updated_at: ts }, { merge: true });
-  batch.commit().then(function(){ showToast(n ? ('Starting XI restored \u00b7 ' + n + ' change' + (n === 1 ? '' : 's') + ' \ud83d\udd04') : 'Starting XI already on \u00b7 started'); }).catch(function(e){ showToast('Error: ' + e.message); });
+  batch.commit().then(function(){ showToast('Starting XI restored \u00b7 ' + n + ' change' + (n === 1 ? '' : 's') + ' \u00b7 clock still stopped'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtStartNextPeriod(gid) {
   gtGameUpdate(gid, { status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: firebase.firestore.FieldValue.serverTimestamp() });
@@ -1321,6 +1323,87 @@ function gtAddGuestToGame(gid) {
   batch.commit().then(function(){ showToast('➕ ' + first + ' added as guest — tap to send on.'); gtCloseModal(); })
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
+function gtSwapPending(gid) {
+  var pending = GT.swapPending;
+  if (!pending || pending.gid !== gid) return false;
+  if ((GT.subs || []).some(function(s){ return s.id === pending.id; })) { GT.swapPending = null; return false; }
+  return true;
+}
+function gtCancelSwap() { GT.swapSelection = null; gtRerender(); }
+function gtSwapBarHtml(g) {
+  var sel = GT.swapSelection;
+  if (sel && (sel.gid !== g.id || sel.period !== g.current_period || sel.status !== g.status || gtOnField(g.id)[sel.pid] !== sel.on)) {
+    GT.swapSelection = null; sel = null;
+  }
+  var text = 'Tap an on-field player, then a bench player to swap.';
+  var action = '';
+  if (gtSwapPending(g.id)) text = 'Applying substitution…';
+  else if (sel) {
+    text = '<strong>' + gtEsc(gtPlayerName(sel.pid)) + '</strong> selected. Tap ' + (sel.on ? 'a replacement on the bench.' : 'the player coming off.');
+    action = '<button class="gt-minibtn" onclick="gtCancelSwap()">Cancel</button>';
+  } else if (GT.lastSwap && GT.lastSwap.gid === g.id && GT.lastSwap.period === g.current_period) {
+    var last = GT.lastSwap;
+    text = '<strong>' + gtEsc(gtPlayerName(last.out)) + '</strong> OFF → <strong>' + gtEsc(gtPlayerName(last.inn)) + '</strong> ON';
+    action = '<button class="gt-minibtn" onclick="gtUndoSwap(\'' + g.id + '\')">↶ Undo substitution</button>';
+  }
+  return '<div class="gt-swap-slot"><div class="gt-swap-bar' + (action ? ' gt-swap-active' : '') + '" role="status" aria-live="polite"><span>' + text + '</span>' + action + '</div></div>';
+}
+function gtTapSwap(gid, pid) {
+  if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g) return;
+  if (g.status === 'setup') { gtToggleStarter(gid, pid); return; }
+  if (['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0 || gtIsPK(g)) return;
+  if (gtSwapPending(gid)) { showToast('Wait for the lineup to update.'); return; }
+  var on = gtOnField(gid);
+  if (typeof on[pid] !== 'boolean' || gtPlayerRedInfo(gid, pid)) { showToast('This player is unavailable for a substitution.'); return; }
+  var sel = GT.swapSelection;
+  if (sel && (sel.gid !== gid || sel.period !== g.current_period || sel.status !== g.status || on[sel.pid] !== sel.on || gtPlayerRedInfo(gid, sel.pid))) sel = null;
+  if (sel && sel.pid === pid) { gtCancelSwap(); return; }
+  if (!sel || sel.on === on[pid]) {
+    GT.swapSelection = { gid: gid, pid: pid, on: on[pid], period: g.current_period, status: g.status };
+    gtRerender(); return;
+  }
+  var out = sel.on ? sel.pid : pid, inn = sel.on ? pid : sel.pid;
+  var data = {
+    game_id: gid, player_out_id: out, player_in_id: inn,
+    position: gtLastPosition(gid, out) || (gtP(inn) || {}).default_position || '',
+    game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
+    created_at: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  var ref = tdb('gt_subs').doc();
+  var last = { gid: gid, id: ref.id, out: out, inn: inn, period: data.period, data: data };
+  GT.swapSelection = null;
+  GT.swapPending = { gid: gid, id: ref.id };
+  GT.lastSwap = last;
+  // Firestore emits the local snapshot before server acknowledgement, so swaps
+  // and Undo remain usable on a field with no network connection.
+  ref.set(data).then(function() {
+    if (GT.swapPending && GT.swapPending.id === ref.id) GT.swapPending = null;
+    gtRerender();
+  }).catch(function(e) {
+    if (GT.swapPending && GT.swapPending.id === ref.id) GT.swapPending = null;
+    if (GT.lastSwap === last) GT.lastSwap = null;
+    showToast('Substitution failed: ' + e.message); gtRerender();
+  });
+  gtRerender();
+}
+function gtUndoSwap(gid) {
+  if (!gtCanEdit() || gtSwapPending(gid)) return;
+  var last = GT.lastSwap, g = gtGame(gid);
+  if (!last || last.gid !== gid || !g || last.period !== g.current_period || gtIsPK(g) || ['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0) return;
+  var subs = gtGameSubs(gid), index = subs.findIndex(function(s){ return s.id === last.id; });
+  var saved = subs[index];
+  var involved = function(s){ return [s.player_in_id, s.player_out_id].some(function(pid){ return pid === last.inn || pid === last.out; }); };
+  if (!saved || ['player_in_id', 'player_out_id', 'position', 'period', 'game_clock_seconds'].some(function(k){ return saved[k] !== last.data[k]; }) || subs.slice(index + 1).some(involved) || gtPlayerRedInfo(gid, last.out) || gtPlayerRedInfo(gid, last.inn)) {
+    GT.lastSwap = null; showToast('The lineup has changed since this swap. Use the substitution log to review it.'); gtRerender(); return;
+  }
+  GT.lastSwap = null; GT.swapSelection = null;
+  tdb('gt_subs').doc(last.id).delete().then(function(){ showToast('Substitution undone.'); }).catch(function(e) {
+    if (!GT.lastSwap) GT.lastSwap = last;
+    showToast('Could not undo: ' + e.message); gtRerender();
+  });
+  gtRerender();
+}
 function gtCardPressStart(e, gid, pid) {
   if (!gtCanEdit()) return;
   gtCardPressCancel();
@@ -1328,6 +1411,7 @@ function gtCardPressStart(e, gid, pid) {
   GT._pressTimer = setTimeout(function() {
     var pr = GT._press; GT._press = null; GT._pressTimer = null;
     if (!pr) return;
+    GT.swapSelection = null;
     var gg = gtGame(pr.gid);
     if (gg && gg.status === 'setup') gtOpenSetupPlayerPopup(pr.gid, pr.pid);
     else gtOpenEventPopup(pr.gid, pr.pid);
@@ -1337,7 +1421,7 @@ function gtCardPressEnd(e, gid, pid) {
   if (!GT._press) return;            // hold already fired the stats popup
   clearTimeout(GT._pressTimer); GT._pressTimer = null;
   var pr = GT._press; GT._press = null;
-  gtToggleField(pr.gid, pr.pid);     // short tap = flip on/off the field
+  gtTapSwap(pr.gid, pr.pid);
 }
 function gtCardPressCancel() {
   if (GT._pressTimer) { clearTimeout(GT._pressTimer); GT._pressTimer = null; }

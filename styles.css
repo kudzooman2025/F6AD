@@ -586,6 +586,11 @@ footer strong{color:#fff}
 .gt-scoreline{font-size:1.05rem;font-weight:800;margin-top:4px;display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap}
 .gt-scoreline .sc-num{font-size:1.5rem;font-weight:900;color:#fff}
 .gt-scoreline .sc-team{color:#bbb;font-size:.85rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gt-clock-actions{flex-basis:100%;margin-top:10px}
+.gt-clockbar.collapsed .gt-clock-actions{margin-top:0}
+.gt-opponent-goal{min-height:44px;padding:10px 18px;border:1px solid #fca5a5;border-radius:8px;background:#fee2e2;color:#991b1b;font:inherit;font-size:.9rem;font-weight:800;cursor:pointer}
+.gt-opponent-goal:hover{background:#fecaca}
+.gt-opponent-goal:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .gt-clock-controls{display:flex;justify-content:center;gap:8px;margin-top:12px;flex-wrap:wrap}
 .gt-cbtn{border:none;border-radius:8px;padding:10px 18px;font-size:.85rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;font-family:inherit}
 .gt-cbtn-go{background:#16a34a;color:#fff}
@@ -593,16 +598,22 @@ footer strong{color:#fff}
 .gt-cbtn-dark{background:#333;color:#fff;border:1px solid #555}
 .gt-cbtn-danger{background:#dc2626;color:#fff}
 /* player grid */
-.gt-pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:10px;margin-bottom:24px}
+.gt-pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:24px}
 .gt-pcard{background:#fff;border:2px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer;transition:all .12s;min-height:94px;position:relative;font-family:inherit;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 .gt-pcard:active{transform:scale(.96)}
 .gt-pcard:hover{border-color:var(--brand)}
-.gt-pcard .pc-num{font-size:1.25rem;font-weight:900;color:var(--brand);line-height:1}
-.gt-pcard .pc-name{font-size:.95rem;font-weight:800;margin-top:4px;line-height:1.15;word-break:break-word}
-.gt-pcard .pc-pos{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:2px}
+.gt-pcard .pc-num{display:block;font-size:1rem;font-weight:900;color:var(--brand);line-height:1.2}
+.gt-pcard .pc-name{display:block;font-size:1.2rem;font-weight:800;margin-top:6px;line-height:1.25;overflow-wrap:anywhere;color:var(--text)}
+.gt-pcard .pc-pos{display:block;font-size:.76rem;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);margin-top:6px}
 .gt-pcard.gk{border-color:#d97706;background:#fffbeb}
 .gt-pcard.gk .pc-num{color:#d97706}
-.gt-pcard.off{opacity:.4;background:#f5f5f5}
+.gt-pcard.off{background:var(--brand-wash,#f5f5f5)}
+.gt-pcard.swap-selected{border-color:var(--brand);outline:3px solid var(--brand);outline-offset:2px}
+.gt-pcard:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.gt-swap-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;margin:0 0 18px;border:1px solid var(--brand-line);border-radius:10px;background:var(--brand-tint);color:var(--text);font-size:1rem;line-height:1.4}
+.gt-swap-bar .gt-minibtn{min-height:44px;padding:8px 16px;font-size:.95rem}
+.gt-swap-slot{min-height:82px}
+.gt-swap-bar.gt-swap-active{position:fixed;z-index:950;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:calc(100% - 32px);max-width:640px;margin:0;box-shadow:0 6px 24px rgba(0,0,0,.22)}
 .gt-pcard .pc-badges{display:flex;justify-content:center;gap:3px;margin-top:5px;flex-wrap:wrap;min-height:16px}
 .gt-pbadge{font-size:.64rem;font-weight:800;background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:1px 6px}
 .gt-pbadge.card-y{background:#fef9c3;color:#854d0e}
@@ -677,7 +688,7 @@ footer strong{color:#fff}
   .gt-clockbar.collapsed{padding:8px 42px}
   .gt-clockbar.collapsed .gt-scoreline .sc-team{max-width:74px}
   .gt-clock{font-size:2.6rem}
-  .gt-pgrid{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+  .gt-pgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 }
 
 .nav-gt{color:var(--ink-2)!important;background:transparent!important;border:none;box-shadow:none;border-radius:9px;padding:8px 13px;font-weight:500}

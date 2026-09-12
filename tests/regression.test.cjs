@@ -242,3 +242,120 @@ test('legacy tournaments use deduplicated game players and never the whole club 
   assert.ok(!html.includes('Club Only Player'));
   assert.ok(tournamentSquad(undefined, []).includes('0 players'));
 });
+
+test('halftime starter reset records substitutions without starting or resetting the clock', () => {
+  const { c, commits, game } = gameContext();
+  Object.assign(game, { status: 'between_periods', current_period: 2, clock_elapsed_seconds: 0, clock_started_at: null, period_elapsed: { 1: 2140 } });
+  const before = plain(game);
+  c.gtKickoffOn = () => ({ starter: true, sentOff: true, substitute: false });
+  c.gtOnField = () => ({ starter: false, sentOff: false, substitute: true });
+  c.gtPlayerRedInfo = (_, pid) => pid === 'sentOff';
+  c.gtGameAvailEntry = () => ({ start_position: 'CM' });
+  c.gtResetToStarters('game');
+  assert.equal(commits.length, 1);
+  assert.deepEqual(commits[0], [{ kind: 'set', ref: 'gt_subs/auto', data: {
+    game_id: 'game', player_out_id: 'substitute', player_in_id: 'starter',
+    position: 'CM', game_clock_seconds: 0, period: 2, created_at: 0
+  } }]);
+  assert.deepEqual(game, before);
+
+  // Repeating the reset after the roster updates should create no extra subs.
+  c.gtOnField = () => ({ starter: true, sentOff: false, substitute: false });
+  c.gtResetToStarters('game');
+  assert.equal(commits.length, 1);
+});
+
+test('starter reset cannot alter a running game or be used by a spectator', () => {
+  const { c, commits, game } = gameContext();
+  game.status = 'in_progress';
+  c.gtResetToStarters('game');
+  assert.equal(commits.length, 0);
+  game.status = 'between_periods';
+  c.gtCanEdit = () => false;
+  c.gtResetToStarters('game');
+  assert.equal(commits.length, 0);
+});
+
+test('the separate Start action still starts the next period clock', () => {
+  const { c } = gameContext();
+  const updates = [];
+  c.gtGameUpdate = (gid, data) => updates.push({ gid, data: plain(data) });
+  c.gtStartNextPeriod('game');
+  assert.deepEqual(updates, [{ gid: 'game', data: {
+    status: 'in_progress', clock_elapsed_seconds: 0, clock_started_at: 0
+  } }]);
+});
+
+function swapContext() {
+  const c = load('js/gametracker/gt-game.js');
+  const fixture = require('./live-fixture.js')(c);
+  c.gtRerender();
+  return { c, fixture };
+}
+test('live cards show full names in current On field / Bench groups without positions', () => {
+  const { c, fixture } = swapContext();
+  c.GT.subs.push({ id: 'earlier', game_id: 'demo', player_in_id: 'chris', player_out_id: 'alex' });
+  c.gtRerender();
+  const html = fixture.view.innerHTML;
+  const split = html.indexOf('🪑 Bench');
+  assert.ok(html.slice(0, split).includes('Christopher Bennett'));
+  assert.ok(html.slice(split).includes('Alexander Robinson'));
+  assert.ok(html.includes('ON FIELD'));
+  assert.ok(html.includes('BENCH'));
+});
+test('two taps create one paired substitution and Undo restores the lineup offline', () => {
+  const { c, fixture } = swapContext();
+  fixture.offline = true;
+  c.gtTapSwap('demo', 'alex');
+  assert.equal(fixture.writes.length, 0);
+  c.gtTapSwap('demo', 'chris');
+  assert.equal(fixture.writes.length, 1);
+  assert.equal(c.gtOnField('demo').alex, false);
+  assert.equal(c.gtOnField('demo').chris, true);
+  assert.equal(fixture.game.status, 'between_periods');
+  assert.ok(fixture.view.innerHTML.includes('Undo substitution'));
+  c.gtUndoSwap('demo');
+  assert.equal(c.gtOnField('demo').alex, true);
+  assert.equal(c.gtOnField('demo').chris, false);
+  assert.equal(c.GT.subs.length, 0);
+});
+test('swap selection can cancel, switch players and start from the bench', () => {
+  const { c, fixture } = swapContext();
+  c.gtTapSwap('demo', 'alex'); c.gtTapSwap('demo', 'alex');
+  assert.equal(c.GT.swapSelection, null);
+  c.gtTapSwap('demo', 'chris'); c.gtTapSwap('demo', 'max');
+  assert.equal(fixture.writes.length, 0);
+  c.gtTapSwap('demo', 'jordan');
+  assert.equal(c.GT.subs[0].player_out_id, 'jordan');
+  assert.equal(c.GT.subs[0].player_in_id, 'max');
+});
+test('stale selections, sent-off players and spectators cannot cause a swap', () => {
+  const { c, fixture } = swapContext();
+  c.gtTapSwap('demo', 'alex');
+  fixture.game.current_period = 3;
+  c.gtTapSwap('demo', 'chris');
+  assert.equal(fixture.writes.length, 0);
+  c.gtPlayerRedInfo = (_, pid) => pid === 'alex' ? {} : null;
+  c.gtTapSwap('demo', 'alex');
+  assert.equal(fixture.writes.length, 0);
+  c.gtCanEdit = () => false;
+  c.gtTapSwap('demo', 'jordan');
+  assert.equal(fixture.writes.length, 0);
+});
+test('Undo refuses to rewrite a later substitution involving the same players', () => {
+  const { c, fixture } = swapContext();
+  c.gtTapSwap('demo', 'alex'); c.gtTapSwap('demo', 'chris');
+  c.GT.subs.push({ id: 'later', game_id: 'demo', player_in_id: 'max', player_out_id: 'chris' });
+  c.gtUndoSwap('demo');
+  assert.equal(c.GT.subs.length, 2);
+  assert.ok(fixture.messages.some(message => message.includes('lineup has changed')));
+});
+test('a failed swap clears its selection and Undo state', async () => {
+  const { c, fixture } = swapContext();
+  fixture.failWrite = true;
+  c.gtTapSwap('demo', 'alex'); c.gtTapSwap('demo', 'chris');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(c.GT.swapPending, null);
+  assert.equal(c.GT.lastSwap, null);
+  assert.equal(c.GT.subs.length, 0);
+});
