@@ -192,3 +192,53 @@ test('outside edit controls follow family approval as well as ownership', () => 
   c.gtCanEdit = () => true;
   assert.equal(c.gtExtCanEdit({ owner_uid: 'other', player_id: 'p' }), true);
 });
+
+function tournamentSquad(lineup, gamePlayers = ['out']) {
+  const players = {
+    selected: { id: 'selected', name: 'Selected Player', jersey_number: 9, position: 'MID', parent_email: 'private@example.test' },
+    guest: { id: 'guest', name: 'Guest Player', jersey_number: 1, is_guest: true },
+    out: { id: 'out', name: 'Excluded Player', jersey_number: 4 },
+    club: { id: 'club', name: 'Club Only Player', jersey_number: 2 }
+  };
+  const tournament = { id: 't', name: 'Cup', base_roster_id: 'club' };
+  if (lineup !== undefined) tournament.lineup = lineup;
+  const c = load('js/gametracker/gt-lineup.js', {
+    GT: { loaded: {}, tournaments: [tournament], games: [{ id: 'g', tournament_id: 't' }] },
+    gtP: id => players[id], gtPlayerName: id => players[id].name,
+    gtAvailIds: () => gamePlayers, gtEsc: value => String(value || ''),
+    gtFmtDate: () => '', gtTheirName: () => 'Opponent', gtGameSortMs: () => 0,
+    gtRosterPlayers: () => Object.values(players)
+  });
+  load('js/gametracker/gt-tournaments.js', c);
+  const view = {};
+  c.gtRenderLineup(view, 't', 't');
+  return view.innerHTML;
+}
+
+test('shared tournament squad uses In selections, places guests last and omits contacts', () => {
+  const html = tournamentSquad({ selected: { available: true }, guest: { available: true }, out: { available: false } });
+  assert.ok(html.includes('2 players'));
+  assert.ok(html.indexOf('Selected Player') < html.indexOf('Guest Player'));
+  assert.ok(!html.includes('Excluded Player'));
+  assert.ok(!html.includes('Club Only Player'));
+  assert.ok(!html.includes('private@example.test'));
+});
+
+test('empty, all-Out and deleted-player tournament lineups never restore game players', () => {
+  for (const lineup of [{}, { out: { available: false } }, { deleted: { available: true } }]) {
+    const html = tournamentSquad(lineup);
+    assert.ok(html.includes('0 players'));
+    assert.ok(html.includes('No squad set yet.'));
+    assert.ok(!html.includes('Excluded Player'));
+    assert.ok(!html.includes('Club Only Player'));
+  }
+});
+
+test('legacy tournaments use deduplicated game players and never the whole club roster', () => {
+  const html = tournamentSquad(undefined, ['selected', 'selected', 'guest']);
+  assert.ok(html.includes('2 players'));
+  assert.ok(html.includes('Selected Player'));
+  assert.ok(html.includes('Guest Player'));
+  assert.ok(!html.includes('Club Only Player'));
+  assert.ok(tournamentSquad(undefined, []).includes('0 players'));
+});

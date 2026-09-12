@@ -60,14 +60,23 @@ function gtRenderLineup(view, kind, id) {
       return;
     }
     var tGames = gtTournamentGames(id);
-    // Squad = whoever is down for any of its games, else the base roster.
-    var seen = {};
-    tGames.forEach(function(g){ gtAvailIds(g.id).forEach(function(pid){ seen[pid] = true; }); });
-    var tPlayers = Object.keys(seen).map(gtP).filter(Boolean);
-    if (!tPlayers.length && t.base_roster_id) {
-      tPlayers = gtRosterPlayers(t.base_roster_id).filter(function(p){ return !p.is_guest; });
+    // The squad is the tournament's own roster — t.lineup, the In/Out list on the
+    // tournament page — not the club roster. Falling back to the base roster
+    // published all 23 players for a tournament you'd picked 14 for.
+    var lu = (typeof gtTournLineup === 'function') ? gtTournLineup(t) : (t.lineup || {});
+    var tPlayers = Object.keys(lu)
+      .filter(function(pid){ return lu[pid] && lu[pid].available; })
+      .map(gtP).filter(Boolean);
+    if (!t.lineup) {
+      // Older tournaments without a saved lineup can use their game rosters.
+      // An explicit empty or all-Out lineup must stay empty.
+      var seen = {};
+      tGames.forEach(function(g){ gtAvailIds(g.id).forEach(function(pid){ seen[pid] = true; }); });
+      tPlayers = Object.keys(seen).map(gtP).filter(Boolean);
     }
-    tPlayers.sort(function(a, b){
+    tPlayers.sort(function(a, b) {
+      var ag = a.is_guest ? 1 : 0, bg = b.is_guest ? 1 : 0;
+      if (ag !== bg) return ag - bg;
       return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number);
     });
     var dates = [t.start_date, t.end_date].filter(Boolean);
