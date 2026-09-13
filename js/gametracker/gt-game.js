@@ -1330,7 +1330,6 @@ function gtSwapPending(gid) {
   return true;
 }
 function gtCancelSwap() { GT.swapSelection = null; gtRerender(); }
-function gtDismissSwap() { GT.lastSwap = null; gtRerender(); }
 function gtSwapBarHtml(g) {
   var sel = GT.swapSelection;
   if (sel && (sel.gid !== g.id || sel.period !== g.current_period || sel.status !== g.status || gtOnField(g.id)[sel.pid] !== sel.on)) {
@@ -1338,17 +1337,16 @@ function gtSwapBarHtml(g) {
   }
   var text = 'Tap an on-field player, then a bench player to swap.';
   var action = '';
+  var selecting = false;
   if (gtSwapPending(g.id)) text = 'Applying substitution…';
   else if (sel) {
+    selecting = true;
     text = '<strong>' + gtEsc(gtPlayerName(sel.pid)) + '</strong> selected. Tap ' + (sel.on ? 'a replacement on the bench.' : 'the player coming off.');
     action = '<button class="gt-minibtn" onclick="gtCancelSwap()">Cancel</button>';
   } else if (GT.lastSwap && GT.lastSwap.gid === g.id && GT.lastSwap.period === g.current_period) {
-    var last = GT.lastSwap;
-    text = '<strong>' + gtEsc(gtPlayerName(last.out)) + '</strong> OFF → <strong>' + gtEsc(gtPlayerName(last.inn)) + '</strong> ON';
-    action = '<button type="button" class="gt-minibtn" onclick="gtUndoSwap(\'' + g.id + '\')">↶ Undo substitution</button>' +
-      '<button type="button" class="gt-minibtn" aria-label="Dismiss substitution confirmation" onclick="gtDismissSwap()">Done</button>';
+    action = '<button type="button" class="gt-minibtn" onclick="gtUndoSwap(\'' + g.id + '\')">↶ Undo substitution</button>';
   }
-  return '<div class="gt-swap-slot"><div class="gt-swap-bar' + (action ? ' gt-swap-active' : '') + '" role="status" aria-live="polite"><span>' + text + '</span>' + action + '</div></div>';
+  return '<div class="gt-swap-slot"><div class="gt-swap-bar' + (selecting ? ' gt-swap-active' : '') + '" role="status" aria-live="polite"><span>' + text + '</span>' + action + '</div></div>';
 }
 function gtTapSwap(gid, pid) {
   if (!gtCanEdit()) return;
