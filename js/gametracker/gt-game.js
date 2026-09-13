@@ -1330,6 +1330,7 @@ function gtSwapPending(gid) {
   return true;
 }
 function gtCancelSwap() { GT.swapSelection = null; gtRerender(); }
+function gtDismissSwap() { GT.lastSwap = null; gtRerender(); }
 function gtSwapBarHtml(g) {
   var sel = GT.swapSelection;
   if (sel && (sel.gid !== g.id || sel.period !== g.current_period || sel.status !== g.status || gtOnField(g.id)[sel.pid] !== sel.on)) {
@@ -1344,7 +1345,8 @@ function gtSwapBarHtml(g) {
   } else if (GT.lastSwap && GT.lastSwap.gid === g.id && GT.lastSwap.period === g.current_period) {
     var last = GT.lastSwap;
     text = '<strong>' + gtEsc(gtPlayerName(last.out)) + '</strong> OFF → <strong>' + gtEsc(gtPlayerName(last.inn)) + '</strong> ON';
-    action = '<button class="gt-minibtn" onclick="gtUndoSwap(\'' + g.id + '\')">↶ Undo substitution</button>';
+    action = '<button type="button" class="gt-minibtn" onclick="gtUndoSwap(\'' + g.id + '\')">↶ Undo substitution</button>' +
+      '<button type="button" class="gt-minibtn" aria-label="Dismiss substitution confirmation" onclick="gtDismissSwap()">Done</button>';
   }
   return '<div class="gt-swap-slot"><div class="gt-swap-bar' + (action ? ' gt-swap-active' : '') + '" role="status" aria-live="polite"><span>' + text + '</span>' + action + '</div></div>';
 }
