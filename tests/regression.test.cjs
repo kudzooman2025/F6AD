@@ -293,6 +293,41 @@ function swapContext() {
   return { c, fixture };
 }
 
+test('player cards show readable playing time for starters and bench players', () => {
+  const { fixture } = swapContext();
+  assert.match(fixture.view.innerHTML, /data-gt-player-minutes="alex">35:00 played/);
+  assert.match(fixture.view.innerHTML, /data-gt-player-minutes="chris">0:00 played/);
+});
+
+test('card minutes tick on field, freeze on bench and at breaks, and recalculate after Undo', () => {
+  const c = load('js/gametracker/gt-core.js');
+  load('js/gametracker/gt-game.js', c);
+  const start = Date.UTC(2026, 8, 14, 12);
+  let now = start + 600000;
+  c.gtServerNow = () => now;
+  const game = { id: 'game', status: 'in_progress', current_period: 1, num_periods: 2, period_duration_minutes: 40, clock_elapsed_seconds: 0, clock_started_at: start };
+  c.GT.games = [game];
+  c.GT.avail = ['starter', 'bench'].map((id, i) => ({ game_id: 'game', player_id: id, available: true, started: i === 0 }));
+  const nodes = ['starter', 'bench'].map(id => ({ textContent: '', getAttribute: () => id }));
+  const view = { querySelectorAll: () => nodes };
+  const tick = () => { c.gtUpdatePlayerMinutes(view, 'game'); return nodes.map(n => n.textContent); };
+  assert.deepEqual(tick(), ['10:00 played', '0:00 played']);
+  c.GT.subs = [{ id: 'sub', game_id: 'game', period: 1, game_clock_seconds: 600, player_out_id: 'starter', player_in_id: 'bench' }];
+  now += 300000;
+  assert.deepEqual(tick(), ['10:00 played', '5:00 played']);
+  game.status = 'paused'; game.clock_elapsed_seconds = 900; game.clock_started_at = null;
+  now += 120000;
+  assert.deepEqual(tick(), ['10:00 played', '5:00 played']);
+  game.status = 'in_progress'; game.clock_started_at = now;
+  now += 60000;
+  assert.deepEqual(tick(), ['10:00 played', '6:00 played']);
+  game.status = 'between_periods'; game.current_period = 2; game.period_elapsed = { 1: 960 }; game.clock_elapsed_seconds = 0; game.clock_started_at = null;
+  now += 600000;
+  assert.deepEqual(tick(), ['10:00 played', '6:00 played']);
+  c.GT.subs = [];
+  assert.deepEqual(tick(), ['16:00 played', '0:00 played']);
+});
+
 function shortElevenContext() {
   const ctx = swapContext(), { c, fixture } = ctx;
   fixture.game.players_per_side = 11;

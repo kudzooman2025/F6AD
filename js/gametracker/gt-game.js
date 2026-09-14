@@ -373,6 +373,7 @@ function gtRenderLive(view, gameId) {
   var availIds = gtAvailIds(g.id);
   var events = gtGameEvents(g.id);
   var onField = gtOnField(g.id);
+  var playingSeconds = gtMinutesMap(g.id);
   var players = availIds.map(function(pid){ return gtP(pid); }).filter(Boolean).sort(function(a, b) {
     return String(gtPlayerName(a.id) || '').localeCompare(String(gtPlayerName(b.id) || ''), undefined, { sensitivity: 'base' });
   });
@@ -411,6 +412,7 @@ function gtRenderLive(view, gameId) {
       '<span class="pc-num">' + (p.jersey_number != null ? '#' + p.jersey_number : '·') + '</span>' +
       '<span class="pc-name">' + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">Guest</span>' : '') + '</span>' +
       '<span class="pc-pos">' + statusLabel + '</span>' +
+      '<span class="pc-minutes" data-gt-player-minutes="' + gtEsc(p.id) + '">' + gtCardMinutesText(playingSeconds[p.id]) + '</span>' +
       '<span class="pc-badges">' + badges + '</span></button>';
   }
   // During play, cards follow the current lineup, including substitutions and cards.
@@ -484,8 +486,21 @@ function gtRenderLive(view, gameId) {
       var pl = document.getElementById('gt-period-label');
       if (cur && el) el.innerHTML = gtFmtDisplayClock(cur);
       if (cur && pl) pl.textContent = gtPeriodLabel(cur);
+      if (cur && el) gtUpdatePlayerMinutes(view, gameId);
     }, 500);
   }
+}
+function gtCardMinutesText(seconds) {
+  var total = Math.max(0, Math.floor(Number(seconds) || 0));
+  return Math.floor(total / 60) + ':' + ('0' + (total % 60)).slice(-2) + ' played';
+}
+function gtUpdatePlayerMinutes(view, gid) {
+  // Update only the time labels so an in-progress tap or hold is not interrupted.
+  var minutes = gtMinutesMap(gid);
+  Array.prototype.forEach.call(view.querySelectorAll('[data-gt-player-minutes]'), function(el) {
+    var text = gtCardMinutesText(minutes[el.getAttribute('data-gt-player-minutes')]);
+    if (el.textContent !== text) el.textContent = text;
+  });
 }
 function gtFeedItem(g, e, canEdit) {
   var t = gtEventType(e.event_type);

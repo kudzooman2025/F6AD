@@ -26,6 +26,10 @@ function setupLiveFixture(target) {
       return on;
     },
     gtPlayerRedInfo: function(){ return null; }, gtLastPosition: function(){ return ''; },
+    gtMinutesMap: function(){
+      var minutes = {}; avail.forEach(function(a){ minutes[a.player_id] = a.started ? 2100 : 0; });
+      return minutes;
+    },
     gtGameSubs: function(){ return target.GT.subs; }, gtGameEvents: function(){ return []; }, gtStatLine: function(){ return {}; },
     gtIsPK: function(){ return false; }, gtIsOT: function(){ return false; }, gtIsGK: function(){ return false; },
     gtLockBanner: function(){ return ''; }, gtGameCanceled: function(){ return false; }, gtClockCollapsed: function(){ return true; },
