@@ -378,6 +378,7 @@ function gtRenderLive(view, gameId) {
     return String(gtPlayerName(a.id) || '').localeCompare(String(gtPlayerName(b.id) || ''), undefined, { sensitivity: 'base' });
   });
   html += gtStartingXiHtml(g.id);
+  html += gtUndoNoticesHtml(g.id);
   var gtOnCount = Object.keys(onField).filter(function(k){ return onField[k] === true; }).length;
   var gtPps = g.players_per_side || 11;
   var gtTallyCls = gtOnCount === gtPps ? 'ok' : (gtOnCount > gtPps ? 'over' : 'under');
@@ -1371,6 +1372,19 @@ function gtSwapPending(gid) {
   return true;
 }
 function gtCancelSwap() { GT.swapSelection = null; gtRerender(); }
+function gtDismissUndoNotice(id) {
+  GT.undoNotices = (GT.undoNotices || []).filter(function(n){ return n.id !== id; });
+  gtRerender();
+}
+function gtUndoNoticesHtml(gid) {
+  var subs = gtGameSubs(gid);
+  return (GT.undoNotices || []).filter(function(n) {
+    return n.gid === gid && (n.confirmed || !subs.some(function(s){ return s.id === n.id; }));
+  }).map(function(n) {
+    return '<div class="gt-swap-bar" role="status" aria-live="polite"><span>' + gtEsc(n.text) + '</span>' +
+      '<button type="button" class="gt-minibtn" aria-label="Dismiss Undo details" onclick="gtDismissUndoNotice(\'' + gtEsc(n.id) + '\')">Dismiss</button></div>';
+  }).join('');
+}
 function gtSwapBarHtml(g) {
   var sel = GT.swapSelection;
   if (sel && (sel.gid !== g.id || sel.period !== g.current_period || sel.status !== g.status || gtOnField(g.id)[sel.pid] !== sel.on)) {
@@ -1448,7 +1462,10 @@ function gtUndoSwap(gid) {
   }
   GT.lastSwap = null; GT.swapSelection = null;
   var undoDetails = 'Substitution undone: ' + (last.out ? gtPlayerName(last.out) + ' back on the field; ' : '') + gtPlayerName(last.inn) + ' back on the bench.';
-  tdb('gt_subs').doc(last.id).delete().then(function(){ showToast(undoDetails); }).catch(function(e) {
+  var notice = { gid: gid, id: last.id, text: undoDetails, confirmed: false };
+  GT.undoNotices = (GT.undoNotices || []).concat([notice]);
+  tdb('gt_subs').doc(last.id).delete().then(function(){ notice.confirmed = true; gtRerender(); }).catch(function(e) {
+    GT.undoNotices = (GT.undoNotices || []).filter(function(n){ return n !== notice; });
     if (!GT.lastSwap) GT.lastSwap = last;
     showToast('Could not undo: ' + e.message); gtRerender();
   });

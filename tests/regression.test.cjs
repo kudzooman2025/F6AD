@@ -522,12 +522,41 @@ test('Undo reports the actual players restored for swaps and standalone addition
   c.gtTapSwap('demo', 'alex'); c.gtTapSwap('demo', 'chris');
   c.gtUndoSwap('demo');
   await new Promise(resolve => setImmediate(resolve));
-  assert.ok(fixture.messages.includes('Substitution undone: Alexander Robinson back on the field; Christopher Bennett back on the bench.'));
+  assert.ok(fixture.view.innerHTML.includes('Substitution undone: Alexander Robinson back on the field; Christopher Bennett back on the bench.'));
   const addition = shortElevenContext();
   addition.c.gtTapSwap('demo', 'chris', true);
   addition.c.gtUndoSwap('demo');
   await new Promise(resolve => setImmediate(resolve));
-  assert.ok(addition.fixture.messages.includes('Substitution undone: Christopher Bennett back on the bench.'));
+  assert.ok(addition.fixture.view.innerHTML.includes('Substitution undone: Christopher Bennett back on the bench.'));
+});
+
+test('Undo details remain through rerenders and new selections until dismissed, including offline', async () => {
+  const { c, fixture } = swapContext();
+  fixture.offline = true;
+  c.gtTapSwap('demo', 'alex'); c.gtTapSwap('demo', 'chris'); c.gtUndoSwap('demo');
+  const noticeId = c.GT.undoNotices[0].id;
+  assert.match(fixture.view.innerHTML, /Substitution undone: Alexander/);
+  c.gtRerender(); c.gtTapSwap('demo', 'jordan');
+  assert.match(fixture.view.innerHTML, /Substitution undone: Alexander/);
+  assert.equal(c.gtUndoNoticesHtml('another-game'), '');
+  c.gtDismissUndoNotice(noticeId);
+  c.gtRerender();
+  assert.doesNotMatch(fixture.view.innerHTML, /Substitution undone:/);
+  assert.equal(c.gtOnField('demo').alex, true);
+  assert.equal(c.gtOnField('demo').chris, false);
+});
+
+test('failed Undo removes its success details and retains the saved substitution', async () => {
+  const { c, fixture } = swapContext();
+  c.gtTapSwap('demo', 'alex'); c.gtTapSwap('demo', 'chris');
+  await new Promise(resolve => setImmediate(resolve));
+  c.tdb = () => ({ doc: () => ({ delete: () => Promise.reject(new Error('Test failure')) }) });
+  c.gtUndoSwap('demo');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.doesNotMatch(fixture.view.innerHTML, /Substitution undone:/);
+  assert.equal(c.GT.undoNotices.length, 0);
+  assert.equal(c.GT.subs.length, 1);
+  assert.ok(fixture.messages.includes('Could not undo: Test failure'));
 });
 test('a failed swap clears its selection and Undo state', async () => {
   const { c, fixture } = swapContext();
