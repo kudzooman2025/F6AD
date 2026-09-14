@@ -1072,12 +1072,13 @@ function gtSaveSub(gid, outPid, clock, period) {
 function gtOpenMassSub(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
-  if (g.status === 'setup') { showToast('Start the game clock first.'); return; }
+  if (['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0 || gtIsPK(g)) return;
+  if (gtSwapPending(gid)) { showToast('Wait for the lineup to update.'); return; }
   var onField = gtOnField(gid);
   var clock = gtClockSeconds(g), period = g.current_period || 1;
   var players = gtAvailIds(gid).map(function(id){ return gtP(id); }).filter(Boolean).sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
   var onList = players.filter(function(p){ return onField[p.id] !== false; });
-  var bench = players.filter(function(p){ return onField[p.id] === false; });
+  var bench = players.filter(function(p){ return onField[p.id] === false && !gtPlayerRedInfo(gid, p.id); });
   var offHtml = onList.length ? onList.map(function(p){
     return '<div class="gt-avail-row"><label class="gt-avail-name" style="cursor:pointer"><input type="checkbox" class="gt-ms-off" value="' + p.id + '" style="margin-right:8px"/>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(p.id)) + ' <span style="color:var(--muted);font-size:.75rem">' + gtEsc(gtLastPosition(gid, p.id)) + '</span></label></div>';
   }).join('') : '<div class="gt-empty">No players on the field.</div>';
@@ -1088,30 +1089,50 @@ function gtOpenMassSub(gid) {
   gtOpenModal(
     '<h3><span>🔄 Mass Substitution</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
     '<div class="gm-clock">🕐 ' + gtEsc(gtPeriodLabel(g, period, 'in_progress')) + ' · ' + gtFmtMMSS(clock) + '</div>' +
-    '<p style="font-size:.8rem;color:var(--muted);margin:6px 0">Check the players coming OFF and the players coming ON (equal numbers). Positions default to the saved position.</p>' +
+    '<p style="font-size:.9rem;margin:6px 0">Choose players coming OFF and ON. To fill empty spots, select extra players coming ON. Positions are optional.</p>' +
+    '<div id="gt-ms-count" role="status" aria-live="polite" style="font-weight:800;margin:12px 0"></div>' +
     '<label style="font-weight:800;font-size:.8rem;display:block;margin-top:6px">⬇ Coming OFF</label>' + offHtml +
     '<label style="font-weight:800;font-size:.8rem;display:block;margin-top:12px">⬆ Coming ON</label>' + onHtml +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveMassSub(\'' + gid + '\',' + clock + ',' + period + ')">🔄 Apply Subs</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
   );
+  Array.prototype.forEach.call(document.querySelectorAll('.gt-ms-off, .gt-ms-on'), function(el){ el.onchange = function(){ gtMassSubCount(gid); }; });
+  gtMassSubCount(gid);
+}
+function gtMassSubCount(gid) {
+  var g = gtGame(gid), el = document.getElementById('gt-ms-count'); if (!g || !el) return;
+  var on = gtOnField(gid);
+  var count = Object.keys(on).filter(function(pid){ return on[pid] === true; }).length;
+  var next = count - document.querySelectorAll('.gt-ms-off:checked').length + document.querySelectorAll('.gt-ms-on:checked').length;
+  var limit = g.players_per_side || 11;
+  el.textContent = 'After changes: ' + next + '/' + limit + ' on field' + (next < limit ? ' — ' + (limit - next) + ' empty spots' : next > limit ? ' — too many players' : ' — full lineup');
 }
 function gtSaveMassSub(gid, clock, period) {
   if (!gtCanEdit()) return;
+  var g = gtGame(gid); if (!g || ['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0 || gtIsPK(g) || gtSwapPending(gid)) return;
+  if ((g.current_period || 1) !== period) { showToast('The period changed. Reopen Mass Sub.'); return; }
   var offs = Array.prototype.slice.call(document.querySelectorAll('.gt-ms-off:checked')).map(function(c){ return c.value; });
   var ons = Array.prototype.slice.call(document.querySelectorAll('.gt-ms-on:checked')).map(function(c){ return c.value; });
-  if (!offs.length || !ons.length) { showToast('Select players coming off and on.'); return; }
-  if (offs.length !== ons.length) { showToast('Pick equal numbers: ' + offs.length + ' off, ' + ons.length + ' on.'); return; }
+  if (!offs.length && !ons.length) { showToast('Select players coming off or on.'); return; }
+  var on = gtOnField(gid), available = gtAvailIds(gid);
+  var ids = offs.concat(ons);
+  if (new Set(ids).size !== ids.length || offs.some(function(pid){ return available.indexOf(pid) < 0 || on[pid] !== true; }) || ons.some(function(pid){ return available.indexOf(pid) < 0 || on[pid] !== false || gtPlayerRedInfo(gid, pid); })) {
+    showToast('The lineup changed. Reopen Mass Sub and select players again.'); return;
+  }
+  var next = Object.keys(on).filter(function(pid){ return on[pid] === true; }).length - offs.length + ons.length;
+  if (next > (g.players_per_side || 11)) { showToast('That would put ' + next + ' players on the field. Select fewer players coming on.'); return; }
   var posByPid = {};
   Array.prototype.slice.call(document.querySelectorAll('.gt-ms-pos')).forEach(function(sel){ posByPid[sel.getAttribute('data-pid')] = sel.value; });
-  for (var k = 0; k < ons.length; k++) {
-    if (!posByPid[ons[k]]) { showToast('Pick a position for ' + gtPlayerShort(ons[k]) + '.'); return; }
-  }
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var batch = db.batch();
-  for (var i = 0; i < ons.length; i++) {
+  var pending = { gid: gid, ids: [] };
+  for (var i = 0; i < Math.max(ons.length, offs.length); i++) {
     var ref = tdb('gt_subs').doc();
-    batch.set(ref, { game_id: gid, player_out_id: offs[i], player_in_id: ons[i], position: posByPid[ons[i]] || '', game_clock_seconds: clock, period: period, created_at: ts });
+    pending.ids.push(ref.id);
+    batch.set(ref, { game_id: gid, player_out_id: offs[i] || null, player_in_id: ons[i] || null, position: posByPid[ons[i]] || '', game_clock_seconds: gtClockSeconds(g), period: period, created_at: ts });
   }
-  batch.commit().then(function(){ showToast(ons.length + ' substitution' + (ons.length === 1 ? '' : 's') + ' applied 🔄'); gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
+  GT.massSubPending = pending; GT.swapSelection = null; GT.lastSwap = null;
+  batch.commit().then(function(){ if (GT.massSubPending === pending) GT.massSubPending = null; gtRerender(); }).catch(function(e){ if (GT.massSubPending === pending) GT.massSubPending = null; showToast('Substitutions failed: ' + e.message); gtRerender(); });
+  gtCloseModal(); gtRerender();
 }
 function gtOpenSubEditor(sid) {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }
@@ -1324,6 +1345,11 @@ function gtAddGuestToGame(gid) {
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtSwapPending(gid) {
+  var mass = GT.massSubPending;
+  if (mass && mass.gid === gid) {
+    if (mass.ids.every(function(id){ return (GT.subs || []).some(function(s){ return s.id === id; }); })) GT.massSubPending = null;
+    else return true;
+  }
   var pending = GT.swapPending;
   if (!pending || pending.gid !== gid) return false;
   if ((GT.subs || []).some(function(s){ return s.id === pending.id; })) { GT.swapPending = null; return false; }
@@ -1336,19 +1362,23 @@ function gtSwapBarHtml(g) {
     GT.swapSelection = null; sel = null;
   }
   var text = 'Tap an on-field player, then a bench player to swap.';
+  var on = gtOnField(g.id);
+  var empty = (g.players_per_side || 11) - Object.keys(on).filter(function(pid){ return on[pid] === true; }).length;
+  if (empty > 0) text = empty + ' empty spot' + (empty === 1 ? '' : 's') + '. Tap a bench player, then Bring on to fill a spot.';
   var action = '';
   var selecting = false;
   if (gtSwapPending(g.id)) text = 'Applying substitution…';
   else if (sel) {
     selecting = true;
-    text = '<strong>' + gtEsc(gtPlayerName(sel.pid)) + '</strong> selected. Tap ' + (sel.on ? 'a replacement on the bench.' : 'the player coming off.');
+    text = '<strong>' + gtEsc(gtPlayerName(sel.pid)) + '</strong> selected. ' + (!sel.on && empty > 0 ? 'Bring on to fill an empty spot, or tap a player to swap.' : 'Tap ' + (sel.on ? 'a replacement on the bench.' : 'the player coming off.'));
     action = '<button class="gt-minibtn" onclick="gtCancelSwap()">Cancel</button>';
+    if (!sel.on && empty > 0) action = '<button type="button" class="gt-minibtn" onclick="gtTapSwap(\'' + g.id + '\',\'' + sel.pid + '\',true)">Bring on</button>' + action;
   } else if (GT.lastSwap && GT.lastSwap.gid === g.id && GT.lastSwap.period === g.current_period) {
     action = '<button type="button" class="gt-minibtn" onclick="gtUndoSwap(\'' + g.id + '\')">↶ Undo substitution</button>';
   }
   return '<div class="gt-swap-slot"><div class="gt-swap-bar' + (selecting ? ' gt-swap-active' : '') + '" role="status" aria-live="polite"><span>' + text + '</span>' + action + '</div></div>';
 }
-function gtTapSwap(gid, pid) {
+function gtTapSwap(gid, pid, bringOn) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
   if (g.status === 'setup') { gtToggleStarter(gid, pid); return; }
@@ -1357,7 +1387,11 @@ function gtTapSwap(gid, pid) {
   var on = gtOnField(gid);
   if (typeof on[pid] !== 'boolean' || gtPlayerRedInfo(gid, pid)) { showToast('This player is unavailable for a substitution.'); return; }
   var sel = GT.swapSelection;
-  if (sel && (sel.gid !== gid || sel.period !== g.current_period || sel.status !== g.status || on[sel.pid] !== sel.on || gtPlayerRedInfo(gid, sel.pid))) sel = null;
+  if (bringOn) {
+    if (on[pid] !== false || Object.keys(on).filter(function(id){ return on[id] === true; }).length >= (g.players_per_side || 11)) { showToast('The field is full. Swap with an on-field player instead.'); return; }
+    sel = { gid: gid, pid: null, on: true, period: g.current_period, status: g.status };
+  }
+  if (!bringOn && sel && (sel.gid !== gid || sel.period !== g.current_period || sel.status !== g.status || on[sel.pid] !== sel.on || gtPlayerRedInfo(gid, sel.pid))) sel = null;
   if (sel && sel.pid === pid) { gtCancelSwap(); return; }
   if (!sel || sel.on === on[pid]) {
     GT.swapSelection = { gid: gid, pid: pid, on: on[pid], period: g.current_period, status: g.status };
@@ -1366,7 +1400,7 @@ function gtTapSwap(gid, pid) {
   var out = sel.on ? sel.pid : pid, inn = sel.on ? pid : sel.pid;
   var data = {
     game_id: gid, player_out_id: out, player_in_id: inn,
-    position: gtLastPosition(gid, out) || (gtP(inn) || {}).default_position || '',
+    position: (out ? gtLastPosition(gid, out) : '') || (gtP(inn) || {}).default_position || '',
     game_clock_seconds: gtClockSeconds(g), period: g.current_period || 1,
     created_at: firebase.firestore.FieldValue.serverTimestamp()
   };
@@ -1393,8 +1427,8 @@ function gtUndoSwap(gid) {
   if (!last || last.gid !== gid || !g || last.period !== g.current_period || gtIsPK(g) || ['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0) return;
   var subs = gtGameSubs(gid), index = subs.findIndex(function(s){ return s.id === last.id; });
   var saved = subs[index];
-  var involved = function(s){ return [s.player_in_id, s.player_out_id].some(function(pid){ return pid === last.inn || pid === last.out; }); };
-  if (!saved || ['player_in_id', 'player_out_id', 'position', 'period', 'game_clock_seconds'].some(function(k){ return saved[k] !== last.data[k]; }) || subs.slice(index + 1).some(involved) || gtPlayerRedInfo(gid, last.out) || gtPlayerRedInfo(gid, last.inn)) {
+  var involved = function(s){ return [s.player_in_id, s.player_out_id].some(function(pid){ return pid && (pid === last.inn || pid === last.out); }); };
+  if (!saved || ['player_in_id', 'player_out_id', 'position', 'period', 'game_clock_seconds'].some(function(k){ return saved[k] !== last.data[k]; }) || subs.slice(index + 1).some(involved) || (last.out && gtPlayerRedInfo(gid, last.out)) || gtPlayerRedInfo(gid, last.inn)) {
     GT.lastSwap = null; showToast('The lineup has changed since this swap. Use the substitution log to review it.'); gtRerender(); return;
   }
   GT.lastSwap = null; GT.swapSelection = null;

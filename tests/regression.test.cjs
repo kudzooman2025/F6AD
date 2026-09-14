@@ -292,6 +292,137 @@ function swapContext() {
   c.gtRerender();
   return { c, fixture };
 }
+
+function shortElevenContext() {
+  const ctx = swapContext(), { c, fixture } = ctx;
+  fixture.game.players_per_side = 11;
+  for (let i = 0; i < 6; i++) {
+    const id = 'extra-' + i;
+    fixture.players.push({ id, name: 'Extra Player ' + i });
+    c.gtGameAvail().push({ player_id: id, available: true, started: true });
+  }
+  return ctx;
+}
+
+test('halftime corrections replay in entry order and preserve eleven players and minutes', () => {
+  const c = load('js/gametracker/gt-core.js');
+  c.GT.games = [{ id: 'game', period_duration_minutes: 40, num_periods: 2 }];
+  c.GT.avail = Array.from({ length: 15 }, (_, i) => ({ game_id: 'game', player_id: 'p' + i, available: true, started: i < 11 }));
+  // Document IDs put the later corrections first, like the Sporting records.
+  c.GT.subs = [
+    { id: 'a', game_id: 'game', period: 2, game_clock_seconds: 0, player_out_id: 'p2', player_in_id: 'p0', created_at: '2026-09-13T16:04:00Z' },
+    { id: 'b', game_id: 'game', period: 2, game_clock_seconds: 0, player_out_id: 'p3', player_in_id: 'p1', created_at: '2026-09-13T16:04:01Z' },
+    { id: 'y', game_id: 'game', period: 2, game_clock_seconds: 0, player_out_id: 'p0', player_in_id: 'p11', created_at: '2026-09-13T16:00:00Z' },
+    { id: 'z', game_id: 'game', period: 2, game_clock_seconds: 0, player_out_id: 'p1', player_in_id: 'p12', created_at: '2026-09-13T16:00:00Z' }
+  ];
+  c.gtTotalSeconds = () => 4800;
+  assert.equal(Object.values(c.gtOnField('game')).filter(Boolean).length, 11);
+  assert.equal(c.gtOnField('game').p0, true);
+  assert.equal(c.gtOnField('game').p1, true);
+  assert.equal(c.gtOnField('game').p2, false);
+  const minutes = c.gtMinutesMap('game');
+  assert.equal(minutes.p0, 4800);
+  assert.equal(minutes.p2, 2400);
+  assert.equal(minutes.p11, 2400);
+});
+
+test('nine-player halftime lineup can reach eleven with standalone additions and Undo', () => {
+  const { c, fixture } = shortElevenContext();
+  fixture.offline = true;
+  c.gtTapSwap('demo', 'chris');
+  assert.match(fixture.view.innerHTML, /Bring on/);
+  c.gtTapSwap('demo', 'chris', true);
+  assert.equal(c.GT.subs[0].player_out_id, null);
+  c.gtTapSwap('demo', 'max'); c.gtTapSwap('demo', 'max', true);
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 11);
+  c.gtTapSwap('demo', 'leo', true);
+  assert.equal(c.GT.subs.length, 2);
+  c.gtPlayerRedInfo = (_, pid) => pid === null ? { t: 0 } : null;
+  c.gtUndoSwap('demo');
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 10);
+  assert.equal(fixture.game.status, 'between_periods');
+  assert.equal(fixture.game.current_period, 2);
+});
+
+function massContext() {
+  const ctx = shortElevenContext(), { c, fixture } = ctx;
+  const selection = { offs: [], ons: [] }, count = { textContent: '' };
+  c.document.querySelectorAll = selector => selector === '.gt-ms-off:checked' ? selection.offs.map(value => ({ value })) : selector === '.gt-ms-on:checked' ? selection.ons.map(value => ({ value })) : [];
+  c.document.getElementById = id => id === 'gt-ms-count' ? count : null;
+  c.gtCloseModal = () => {};
+  c.db = { batch: () => {
+    const records = [];
+    return { set: (ref, data) => records.push({ id: ref.id, ...data }), commit: () => {
+      fixture.writes.push(records);
+      c.GT.subs.push(...records);
+      return Promise.resolve();
+    } };
+  } };
+  return { ...ctx, selection, count };
+}
+
+test('Mass Sub fills nine to eleven without outgoing players or required positions', () => {
+  const { c, fixture, selection, count } = massContext();
+  selection.ons = ['chris', 'max'];
+  c.gtMassSubCount('demo');
+  assert.match(count.textContent, /11\/11.*full lineup/);
+  c.gtSaveMassSub('demo', 0, 2);
+  assert.equal(fixture.writes.length, 1);
+  assert.equal(c.GT.subs.length, 2);
+  assert.ok(c.GT.subs.every(s => s.player_out_id === null && s.position === ''));
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 11);
+  assert.equal(fixture.game.status, 'between_periods');
+});
+
+test('Mass Sub allows unequal swaps to fill vacancies in one atomic batch', () => {
+  const { c, fixture, selection } = massContext();
+  selection.offs = ['alex']; selection.ons = ['chris', 'max', 'leo'];
+  c.gtSaveMassSub('demo', 0, 2);
+  assert.equal(fixture.writes.length, 1);
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 11);
+  assert.equal(c.gtOnField('demo').alex, false);
+});
+
+test('Mass Sub rejects stale selections, duplicates, excess players and sent-off players', () => {
+  for (const scenario of ['stale', 'duplicate', 'excess', 'red', 'period', 'spectator']) {
+    const { c, fixture, selection } = massContext();
+    selection.ons = ['chris'];
+    if (scenario === 'stale') selection.offs = ['max'];
+    if (scenario === 'duplicate') selection.ons = ['chris', 'chris'];
+    if (scenario === 'excess') selection.ons = ['chris', 'max', 'leo'];
+    if (scenario === 'red') c.gtPlayerRedInfo = (_, pid) => pid === 'chris' ? { t: 0 } : null;
+    if (scenario === 'period') fixture.game.current_period = 3;
+    if (scenario === 'spectator') c.gtCanEdit = () => false;
+    c.gtSaveMassSub('demo', 0, 2);
+    assert.equal(fixture.writes.length, 0, scenario);
+  }
+});
+
+test('pending Mass Sub blocks duplicate saves and quick additions until local lineup arrives', () => {
+  const { c, fixture, selection } = massContext();
+  const queued = [];
+  c.db = { batch: () => ({ set: (ref, data) => queued.push({ id: ref.id, ...data }), commit: () => new Promise(() => {}) }) };
+  selection.ons = ['chris', 'max'];
+  c.gtSaveMassSub('demo', 0, 2);
+  c.gtSaveMassSub('demo', 0, 2);
+  c.gtTapSwap('demo', 'leo', true);
+  assert.equal(queued.length, 2);
+  assert.equal(fixture.writes.length, 0);
+  c.GT.subs.push(...queued);
+  assert.equal(c.gtSwapPending('demo'), false);
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 11);
+});
+
+test('failed Mass Sub clears pending state and preserves the existing lineup', async () => {
+  const { c, fixture, selection } = massContext();
+  c.db = { batch: () => ({ set: () => {}, commit: () => Promise.reject(new Error('Test failure')) }) };
+  selection.ons = ['chris', 'max'];
+  c.gtSaveMassSub('demo', 0, 2);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(c.gtSwapPending('demo'), false);
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 9);
+  assert.ok(fixture.messages.some(message => message.includes('Substitutions failed')));
+});
 test('live cards show full names in current On field / Bench groups without positions', () => {
   const { c, fixture } = swapContext();
   c.GT.subs.push({ id: 'earlier', game_id: 'demo', player_in_id: 'chris', player_out_id: 'alex' });

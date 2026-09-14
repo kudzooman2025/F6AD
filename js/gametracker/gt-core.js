@@ -270,7 +270,10 @@ function gtGameEvents(gid) {
 function gtGameSubs(gid) {
   var g = gtGame(gid);
   return GT.subs.filter(function(s){ return s.game_id === gid; }).sort(function(a, b) {
-    return gtCumSec(g, a.period, a.game_clock_seconds) - gtCumSec(g, b.period, b.game_clock_seconds);
+    var clockOrder = gtCumSec(g, a.period, a.game_clock_seconds) - gtCumSec(g, b.period, b.game_clock_seconds);
+    // Several changes can share 0:00 while the halftime clock is stopped.
+    // Replay later corrections after the original batch, not in document-ID order.
+    return clockOrder || gtTsMillis(a.created_at) - gtTsMillis(b.created_at);
   });
 }
 function gtGameAvail(gid) { return GT.avail.filter(function(a){ return a.game_id === gid; }); }
