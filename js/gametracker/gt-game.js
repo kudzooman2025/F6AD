@@ -1447,7 +1447,8 @@ function gtUndoSwap(gid) {
     GT.lastSwap = null; showToast('The lineup has changed since this swap. Use the substitution log to review it.'); gtRerender(); return;
   }
   GT.lastSwap = null; GT.swapSelection = null;
-  tdb('gt_subs').doc(last.id).delete().then(function(){ showToast('Substitution undone.'); }).catch(function(e) {
+  var undoDetails = 'Substitution undone: ' + (last.out ? gtPlayerName(last.out) + ' back on the field; ' : '') + gtPlayerName(last.inn) + ' back on the bench.';
+  tdb('gt_subs').doc(last.id).delete().then(function(){ showToast(undoDetails); }).catch(function(e) {
     if (!GT.lastSwap) GT.lastSwap = last;
     showToast('Could not undo: ' + e.message); gtRerender();
   });

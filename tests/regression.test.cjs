@@ -516,6 +516,19 @@ test('Undo refuses to rewrite a later substitution involving the same players', 
   assert.equal(c.GT.subs.length, 2);
   assert.ok(fixture.messages.some(message => message.includes('lineup has changed')));
 });
+
+test('Undo reports the actual players restored for swaps and standalone additions', async () => {
+  const { c, fixture } = swapContext();
+  c.gtTapSwap('demo', 'alex'); c.gtTapSwap('demo', 'chris');
+  c.gtUndoSwap('demo');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(fixture.messages.includes('Substitution undone: Alexander Robinson back on the field; Christopher Bennett back on the bench.'));
+  const addition = shortElevenContext();
+  addition.c.gtTapSwap('demo', 'chris', true);
+  addition.c.gtUndoSwap('demo');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.ok(addition.fixture.messages.includes('Substitution undone: Christopher Bennett back on the bench.'));
+});
 test('a failed swap clears its selection and Undo state', async () => {
   const { c, fixture } = swapContext();
   fixture.failWrite = true;
