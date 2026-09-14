@@ -608,6 +608,7 @@ footer strong{color:#fff}
 .gt-pcard .pc-minutes{display:block;margin-top:6px;font-size:1rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
 .gt-pcard.gk{border-color:#d97706;background:#fffbeb}
 .gt-pcard.gk .pc-num{color:#d97706}
+.gt-pcard:not(.off):not(.gk){background:#f0fdf4}
 .gt-pcard.off{background:var(--brand-wash,#f5f5f5)}
 .gt-pcard.swap-selected{border-color:var(--brand);outline:3px solid var(--brand);outline-offset:2px}
 .gt-pcard:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
@@ -1286,6 +1287,7 @@ html[data-theme="dark"] .gt-bigbtn{background:#1e1c26;color:var(--text);border-c
 html[data-theme="dark"] .gt-gitem,
 html[data-theme="dark"] .gt-fitem{color:var(--text)}
 html[data-theme="dark"] .gt-pcard.gk{background:#2a2410;border-color:#7a5a12}
+html[data-theme="dark"] .gt-pcard:not(.off):not(.gk){background:#182b22}
 html[data-theme="dark"] .season-tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
 html[data-theme="dark"] .gt-table th{background:#1a1922}
 html[data-theme="dark"] .gt-table td,html[data-theme="dark"] .gt-table th{border-color:#2a2833}
