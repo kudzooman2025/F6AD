@@ -79,6 +79,10 @@
       </div>
       <button class="home-expand-btn" type="button" onclick="toggleHomeSection('gt-spotlight')"><span class="he-expand">Expand</span><span class="he-collapse">Collapse</span></button>
     </div>
+    <div id="home-events" class="home-events" style="display:none">
+      <div class="section-title" style="margin-bottom:10px">🎉 Upcoming Team Events</div>
+      <div id="home-events-list"></div>
+    </div>
   </section>
 
   <!-- DISCUSSIONS -->
@@ -391,8 +395,11 @@
             <div class="form-row">
               <div class="form-group"><label>Date</label><input type="date" id="ev-date"/></div>
               <div class="form-group"><label>Time</label><input type="time" id="ev-time"/></div>
+              <div class="form-group"><label>End Time <span style="font-weight:400;color:var(--muted)">(optional)</span></label><input type="time" id="ev-end"/></div>
             </div>
             <div class="form-group"><label>Location</label><input type="text" id="ev-location" list="venue-datalist" placeholder="Riverside Park Field 2"/></div>
+            <div class="form-group"><label>Description / Details <span style="font-weight:400;color:var(--muted)">(optional)</span></label><textarea id="ev-desc" rows="3" placeholder="What to bring, cost, who's invited…"></textarea></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:.84rem;margin:2px 0 12px"><input type="checkbox" id="ev-rsvp" checked/> Families can RSVP with a headcount <span style="color:var(--muted)">(team events)</span></label>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <button class="btn-primary" onclick="saveEvent()">Save Event</button>
               <button class="btn-edit" onclick="cancelEventEdit()" id="cancel-ev-btn" style="display:none">Cancel</button>

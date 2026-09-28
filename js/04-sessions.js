@@ -617,6 +617,7 @@ function startListeners() {
   tdb('schedule').onSnapshot(snap => {
     scheduleItems=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderSchedule();
+    if (typeof renderHomeEvents === 'function') renderHomeEvents();
     if(document.getElementById('admin-panel')&&document.getElementById('admin-panel').style.display!=='none') renderAdminSchedule();
   });
   tdb('venues').onSnapshot(snap => {

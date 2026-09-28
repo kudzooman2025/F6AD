@@ -681,6 +681,17 @@ function gtRsvpTally(gid) {
   gtGameRsvps(gid).forEach(function(r){ if (!r.hidden && t[r.status] !== undefined) t[r.status]++; });
   return t;
 }
+// Team-event headcount: people coming per player (defaults to 1) summed over In.
+function gtRsvpHeadcount(gid) {
+  var n = 0;
+  gtGameRsvps(gid).forEach(function(r){ if (!r.hidden && r.status === 'in') n += (+r.count || 1); });
+  return n;
+}
+function gtSetRsvpCount(gid, pid, val) {
+  var n = Math.max(1, Math.min(20, parseInt(val, 10) || 1));
+  return tdb('gt_rsvp').doc(gid + '_' + pid).set({ game_id: gid, player_id: pid, count: n, updated_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
 function gtRsvpOpen(g) { return g && g.status === 'setup'; }   // frozen once a game kicks off
 function gtSetRsvp(gid, pid, status, note) {
   var id = gid + '_' + pid;

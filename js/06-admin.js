@@ -137,7 +137,7 @@ function renderSchedule() {
     });
   }
   const schedMs = ev => new Date((ev.date || '') + 'T' + (ev.time && /^\d{1,2}:\d{2}/.test(ev.time) ? ev.time : '00:00')).getTime();
-  const sorted = [...scheduleItems.filter(it => !schedHidden(it)).map(it => Object.assign({ _cancelId: 'sched_' + it.id }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
+  const sorted = [...scheduleItems.filter(it => !schedHidden(it)).map(it => Object.assign({ _cancelId: 'sched_' + it.id, _rsvpId: schedEventRsvpId(it) }, it)), ...gtEvents, ...condEvents, ...campEvents].sort((a,b) => schedMs(a) - schedMs(b));
   // Populate the team dropdown from the teams actually present.
   var _teamSel = document.getElementById('sched-team-filter');
   if (_teamSel) {
@@ -161,7 +161,7 @@ function renderSchedule() {
     const d = new Date(ev.date + 'T00:00:00');
     const month = d.toLocaleString('en-US',{month:'short'});
     const day = d.getDate();
-    const time = ev.time ? (() => { const [h,m]=ev.time.split(':'); const hr=+h; return `${hr>12?hr-12:hr||12}:${m} ${hr>=12?'PM':'AM'}`; })() : '';
+    const time = schedTimeRange(ev.time, ev.end_time);
     const canceled = !!(ev._cancelId && typeof canceledEvents !== 'undefined' && canceledEvents[ev._cancelId]);
     var _seasonName = (typeof schedSeasonLabel === 'function') ? schedSeasonLabel(ev) : '';
     const staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
@@ -298,12 +298,27 @@ function deleteVenue(id) {
   if (!confirm('Delete this venue?')) return;
   tdb('venues').doc(id).delete().then(function(){ showToast('Venue deleted.'); }).catch(function(e){ showToast('Error: '+e.message); });
 }
+// Team (non-soccer) events: RSVP id + time range helpers.
+function schedEventRsvpId(it) { return (it && it.type === 'event' && it.rsvp !== false) ? 'ev_' + it.id : ''; }
+function schedFmtTime(t) {
+  if (!t || !/^\d{1,2}:\d{2}/.test(t)) return '';
+  var hm = t.split(':'), hr = +hm[0];
+  return (hr > 12 ? hr - 12 : hr || 12) + ':' + hm[1] + ' ' + (hr >= 12 ? 'PM' : 'AM');
+}
+function schedTimeRange(t, end) {
+  var a = schedFmtTime(t), b = schedFmtTime(end);
+  return a && b ? a + '\u2013' + b : a;
+}
+
 function saveEvent() {
   const name = document.getElementById('ev-name').value.trim();
   const type = document.getElementById('ev-type').value;
   const date = document.getElementById('ev-date').value;
   const time = document.getElementById('ev-time').value;
   const location = document.getElementById('ev-location').value.trim();
+  const end_time = document.getElementById('ev-end').value;
+  const description = document.getElementById('ev-desc').value.trim();
+  const rsvp = document.getElementById('ev-rsvp').checked;
   if (!name || !date) { showToast('Name and date are required.'); return; }
   // A GameTracker game: write the changes back to gt_games, not the schedule collection.
   if (String(editingEventId || '').indexOf('gt:') === 0) {
@@ -329,7 +344,7 @@ function saveEvent() {
       .catch(e => showToast('Error: ' + e.message));
     return;
   }
-  const data = {name, type, date, time, location};
+  const data = {name, type, date, time, location, end_time, description, rsvp};
   // Editing pins the event: merge (so source/club survive) and flag it so the
   // TeamSnap sync will not overwrite your changes on its next run.
   if (editingEventId) data.manual_override = true;
@@ -356,6 +371,9 @@ function editEvent(id) {
   document.getElementById('ev-date').value = ev.date;
   document.getElementById('ev-time').value = ev.time || '';
   document.getElementById('ev-location').value = ev.location;
+  document.getElementById('ev-end').value = ev.end_time || '';
+  document.getElementById('ev-desc').value = ev.description || '';
+  document.getElementById('ev-rsvp').checked = ev.rsvp !== false;
   document.getElementById('schedule-form-title').textContent = '✏️ Edit Event';
   document.getElementById('cancel-ev-btn').style.display = 'inline-block';
   var ft = document.getElementById('schedule-form-title');
@@ -364,7 +382,8 @@ function editEvent(id) {
 
 function cancelEventEdit() {
   editingEventId = null;
-  ['ev-name','ev-date','ev-time','ev-location'].forEach(id => document.getElementById(id).value = '');
+  ['ev-name','ev-date','ev-time','ev-location','ev-end','ev-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ev-rsvp').checked = true;
   document.getElementById('ev-type').value = 'game';
   document.getElementById('schedule-form-title').textContent = '➕ Add Event';
   document.getElementById('cancel-ev-btn').style.display = 'none';
@@ -1397,7 +1416,8 @@ function schedShowDetails(cancelId) {
     type = ev.type || '';
     if (typeof schedSeasonLabel === 'function') season = schedSeasonLabel(ev) || '';
     officialUrl = (ev.official_url || '');
-    rsvpId = ev._rsvpId || '';
+    rsvpId = schedEventRsvpId(ev);
+    var _endTime = ev.end_time || '', _desc = ev.description || '';
   } else {
     // conditioning / camp / other auto events
     var src = null;
@@ -1409,8 +1429,7 @@ function schedShowDetails(cancelId) {
   var typeLabel = type ? (type.charAt(0).toUpperCase() + type.slice(1)) : '';
   var dObj = date ? new Date(date + 'T00:00:00') : null;
   var dateStr = (dObj && !isNaN(dObj.getTime())) ? dObj.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : (date || '');
-  var timeStr = '';
-  if (time && /^\d{1,2}:\d{2}/.test(time)) { var hm = time.split(':'); var hr = +hm[0]; timeStr = (hr>12?hr-12:hr||12) + ':' + hm[1] + ' ' + (hr>=12?'PM':'AM'); }
+  var timeStr = schedTimeRange(time, (typeof _endTime !== 'undefined') ? _endTime : '');
   var mapsUrl = addr ? ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent((venue?venue+', ':'') + addr)) : '';
 
   var h = '<h3>' + gtEsc(name) + '<button class="gm-close" onclick="gtCloseModal()">\u2715</button></h3>';
@@ -1423,6 +1442,7 @@ function schedShowDetails(cancelId) {
   if (dateStr) h += '<div class="sd-row"><span class="sd-k">\ud83d\udcc5 When</span><span class="sd-v">' + gtEsc(dateStr) + (timeStr ? ' \u00b7 ' + gtEsc(timeStr) : '') + '</span></div>';
   if (venue || addr) h += '<div class="sd-row"><span class="sd-k">\ud83d\udccd Where</span><span class="sd-v">' + gtEsc([venue, addr].filter(Boolean).join(' \u2014 ')) + (mapsUrl ? ' <a href="' + gtAttr(mapsUrl) + '" target="_blank" rel="noopener">map \u2192</a>' : '') + '</span></div>';
   if (field) h += '<div class="sd-row"><span class="sd-k">\ud83e\udd45 Field</span><span class="sd-v">' + gtEsc(field) + '</span></div>';
+  if (typeof _desc !== 'undefined' && _desc) h += '<div class="sd-row"><span class="sd-k">\ud83d\udcdd Details</span><span class="sd-v" style="white-space:pre-wrap">' + gtEsc(_desc) + '</span></div>';
   h += '</div>';
   if (officialUrl) h += '<a class="gt-tourn-link" href="' + gtAttr(officialUrl) + '" target="_blank" rel="noopener">\ud83d\udd17 Official tournament site \u2192</a>';
   var _staff = (typeof isAdminUnlocked === 'function' && isAdminUnlocked()) || (typeof isCoachLoggedIn === 'function' && isCoachLoggedIn());
@@ -1758,4 +1778,29 @@ function adminPromoteExisting() {
   tdb('staff').doc(uid).set({ name: name || email || uid, email: email, role: (role === 'admin' ? 'admin' : 'coach'), created_at: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
     .then(function(){ document.getElementById('promo-name').value = ''; document.getElementById('promo-email').value = ''; document.getElementById('promo-uid').value = ''; showToast((name || email || 'Account') + ' granted ' + role + ' access ✓'); renderAdminAccounts(); })
     .catch(function(e){ showToast('Error: ' + authErrMsg(e)); });
+}
+
+
+// ===================== HOME: UPCOMING TEAM EVENTS =====================
+function renderHomeEvents() {
+  var sec = document.getElementById('home-events'), box = document.getElementById('home-events-list');
+  if (!sec || !box) return;
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var evs = (typeof scheduleItems !== 'undefined' ? scheduleItems : [])
+    .filter(function(it){ return it.type === 'event' && !schedHidden(it) && it.date && new Date(it.date + 'T00:00:00') >= today; })
+    .sort(function(a, b){ return (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')); })
+    .slice(0, 3);
+  sec.style.display = evs.length ? '' : 'none';
+  box.innerHTML = evs.map(function(it) {
+    var d = new Date(it.date + 'T00:00:00');
+    var canceled = !!(typeof canceledEvents !== 'undefined' && canceledEvents['sched_' + it.id]);
+    var t = schedTimeRange(it.time, it.end_time);
+    var rid = schedEventRsvpId(it);
+    return '<div class="home-ev" onclick="schedShowDetails(\'sched_' + it.id + '\')">' +
+      '<div class="event-date"><div class="month">' + d.toLocaleString('en-US', { month: 'short' }) + '</div><div class="day">' + d.getDate() + '</div></div>' +
+      '<div class="home-ev-info"><div class="home-ev-name">' + gtEsc(it.name) + (canceled ? ' <span class="cancel-badge">Canceled</span>' : '') + '</div>' +
+      '<div class="home-ev-meta">' + gtEsc([it.location, t].filter(Boolean).join(' \u00b7 ') || 'Time TBD') + '</div></div>' +
+      (rid && !canceled ? '<a class="btn-primary home-ev-rsvp" href="#/gametracker/rsvp/' + rid + '" onclick="event.stopPropagation()">RSVP</a>' : '') +
+      '</div>';
+  }).join('');
 }

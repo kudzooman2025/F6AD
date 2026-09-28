@@ -567,3 +567,55 @@ test('a failed swap clears its selection and Undo state', async () => {
   assert.equal(c.GT.lastSwap, null);
   assert.equal(c.GT.subs.length, 0);
 });
+
+// ---- Team (non-soccer) events ----
+function loadAdmin(extra = {}) {
+  const els = {};
+  const document = { getElementById: id => els[id] || null, querySelectorAll: () => [], querySelector: () => null, addEventListener() {} };
+  const c = load('js/06-admin.js', Object.assign({ document, window: {}, localStorage: { getItem: () => null },
+    gtEsc: s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])),
+    schedHidden: () => false, canceledEvents: {}, scheduleItems: [] }, extra));
+  return { c, els };
+}
+
+test('team event time ranges and RSVP ids', () => {
+  const { c } = loadAdmin();
+  assert.equal(c.schedTimeRange('18:00', '21:30'), '6:00 PM–9:30 PM');
+  assert.equal(c.schedTimeRange('09:15', ''), '9:15 AM');
+  assert.equal(c.schedTimeRange('', ''), '');
+  assert.equal(c.schedEventRsvpId({ id: 'a1', type: 'event' }), 'ev_a1');
+  assert.equal(c.schedEventRsvpId({ id: 'a1', type: 'event', rsvp: false }), '');
+  assert.equal(c.schedEventRsvpId({ id: 'a1', type: 'game' }), '');
+});
+
+test('home team events list upcoming events only and escape their text', () => {
+  const box = { innerHTML: '' }, sec = { style: {} };
+  const { c, els } = loadAdmin();
+  els['home-events'] = sec; els['home-events-list'] = box;
+  const payload = '<img src=x onerror="globalThis.pwned=1">';
+  c.scheduleItems = [
+    { id: 'past', type: 'event', name: 'Old', date: '2000-01-01' },
+    { id: 'game', type: 'game', name: 'Match', date: '2099-01-01' },
+    { id: 'e1', type: 'event', name: payload, location: payload, date: '2099-10-17' }
+  ];
+  c.renderHomeEvents();
+  assert.equal(sec.style.display, '');
+  assert.ok(!box.innerHTML.includes('<img'));
+  assert.ok(box.innerHTML.includes('#/gametracker/rsvp/ev_e1'));
+  assert.ok(!box.innerHTML.includes('Old') && !box.innerHTML.includes('Match'));
+  c.scheduleItems = [];
+  c.renderHomeEvents();
+  assert.equal(sec.style.display, 'none');
+});
+
+test('team event headcount counts In families only, defaulting to one person', () => {
+  const c = load('js/gametracker/gt-core.js', { localStorage: { getItem: () => null }, window: {}, document: { addEventListener() {} } });
+  c.GT.rsvp = [
+    { game_id: 'ev_1', status: 'in', count: 4 },
+    { game_id: 'ev_1', status: 'in' },
+    { game_id: 'ev_1', status: 'maybe', count: 3 },
+    { game_id: 'ev_1', status: 'in', count: 2, hidden: true },
+    { game_id: 'ev_2', status: 'in', count: 9 }
+  ];
+  assert.equal(c.gtRsvpHeadcount('ev_1'), 5);
+});

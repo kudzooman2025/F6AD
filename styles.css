@@ -1471,3 +1471,17 @@ html[data-theme="dark"] .gt-statbtn.hl{background:#2a2113;border-color:#5c4a1e;c
 .gt-ln-game .lg-time{font-size:.8rem;color:var(--muted)}
 .gt-ln-foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted)}
 html[data-theme="dark"] .gt-ln-start{background:#0f2e1c;color:#86efac}
+
+/* ===== Team events: home list, RSVP headcount, description ===== */
+.home-events{margin-top:18px}
+.home-ev{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer}
+.home-ev:hover{box-shadow:var(--shadow-card)}
+.home-ev-info{flex:1;min-width:0}
+.home-ev-name{font-weight:800;font-size:.95rem}
+.home-ev-meta{font-size:.8rem;color:var(--muted);margin-top:2px}
+.home-ev-rsvp{padding:7px 14px;font-size:.8rem;text-decoration:none;flex-shrink:0}
+.rsvp-count{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:700;color:var(--ink-2);margin:0 6px}
+.rsvp-count input{width:52px;padding:3px 6px;border:1px solid var(--border-strong);border-radius:6px;font-size:.8rem;font-family:inherit}
+.rsvp-evdesc{font-size:.8rem;color:var(--ink-2);margin-top:4px;white-space:pre-wrap}
+html[data-theme="dark"] .home-ev{background:#1e1c26;border-color:#2a2833}
+html[data-theme="dark"] .rsvp-count input{background:#1e1c26;color:var(--text);border-color:#3a3846}
