@@ -3,6 +3,14 @@
 // Unlike tournaments there is no shared lineup — each game keeps its own
 // availability/starters, since availability changes week to week.
 function gtSeason(id) { return GT.seasons.find(function(se){ return se.id === id; }); }
+// Optional season roster: { playerId: true } for players committed to the season.
+// No roster set = the whole squad, exactly as before.
+function gtSeasonRoster(se) { return (se && se.roster && typeof se.roster === 'object') ? se.roster : null; }
+function gtSeasonRosterPlayers(se) {
+  var r = gtSeasonRoster(se); if (!r) return [];
+  return Object.keys(r).filter(function(pid){ return r[pid]; }).map(gtP).filter(Boolean)
+    .sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
+}
 // The "current" season: prefer an MLS Next season, else the most recently started/created.
 // The season whose date range contains a YYYY-MM-DD date (for labelling schedule rows).
 function gtSeasonForDate(ds) {
@@ -136,11 +144,28 @@ function gtRenderSeasonEntity(view, sid) {
     '<button class="gt-minibtn" onclick="gtCopySeasonLink(\'' + se.id + '\')">🔗 Share Season</button>' +
     (canEdit ? '<button class="gt-minibtn" onclick="gtOpenSeasonForm(\'' + se.id + '\')">✏️ Edit Details</button>' : '') +
     '</div>';
+  var sr = gtSeasonRoster(se), srPlayers = gtSeasonRosterPlayers(se);
+  html += '<div class="section-title" style="margin-bottom:10px">👥 Season Roster' + (sr ? ' <span style="font-size:.78rem;color:var(--muted);font-weight:600">(' + srPlayers.length + ' committed)</span>' : '') + '</div>';
+  if (!sr) {
+    html += '<div class="gt-empty" style="margin-bottom:12px">No season roster yet — the whole squad is included.' + (canEdit ? ' Pick who committed to narrow it down.' : '') + '</div>';
+    if (canEdit) html += '<button class="gt-minibtn" style="margin-bottom:18px" onclick="gtSeasonPickRoster(\'' + se.id + '\')">✅ Choose committed players</button>';
+  } else {
+    if (canEdit) html += '<div style="margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap">' +
+      '<button class="gt-minibtn" onclick="gtSeasonAddPrompt(\'' + se.id + '\',false)">➕ Add Player</button>' +
+      '<button class="gt-minibtn" onclick="gtSeasonAddPrompt(\'' + se.id + '\',true)">➕ Add Guest</button>' +
+      '<button class="gt-minibtn" onclick="gtSeasonPickRoster(\'' + se.id + '\')">✏️ Edit list</button></div>';
+    html += srPlayers.length ? '<div class="gt-season-roster">' + srPlayers.map(function(p){
+      return '<span class="gt-sr-chip">' + (p.jersey_number != null ? '<b>#' + p.jersey_number + '</b> ' : '') + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">G</span>' : '') +
+        (canEdit ? ' <button class="gt-sr-x" title="Remove from season" onclick="gtSeasonRemove(\'' + se.id + '\',\'' + p.id + '\')">✕</button>' : '') + '</span>';
+    }).join('') + '</div>' : '<div class="gt-empty">No players on the season roster.</div>';
+    html += '<div style="height:14px"></div>';
+  }
   html += '<div class="section-title" style="margin-bottom:12px">⚽ Games</div>';
   if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtStartSeasonGame(\'' + se.id + '\')">➕ Add Game</button>';
   html += games.length ? '<div class="gt-glist">' + games.map(gtGameItem).join('') + '</div>' : '<div class="gt-empty">No games yet.</div>';
   // player stats across the season's completed games
   var stats = gtSeasonPlayerStats(done, se.base_roster_id);
+  if (sr) stats = stats.filter(function(st){ return st.gp > 0 || sr[st.id]; });
   if (stats.length) {
     stats.sort(function(a, b){ return (b.goals - a.goals) || (b.assists - a.assists) || a.name.localeCompare(b.name); });
     html += '<div class="section-title" style="margin:26px 0 12px">🏆 Player Stats</div>' +
@@ -158,13 +183,18 @@ function gtStartSeasonGame(sid) {
   if (!gtCanEdit()) { showToast('Coach login required.'); return; }
   var se = gtSeason(sid); if (!se) return;
   var ros = gtRoster(se.base_roster_id);
+  var sr = gtSeasonRoster(se), avail = {}, guestIds = {};
+  if (sr) {
+    gtRosterPlayers(se.base_roster_id).forEach(function(p){ if (!p.is_guest) avail[p.id] = !!sr[p.id]; });
+    gtSeasonRosterPlayers(se).forEach(function(p){ if (p.is_guest) guestIds[p.id] = true; });
+  }
   GT.setup = {
     step: 1,
     home_team: se.team_name || (ros ? ros.name : appTeamName()),
     away_team: '', f6ad_side: 'home', game_type: 'league', venue: se.venue || '', venue_address: se.venue_address || '', venue_city: se.venue_city || '', venue_state: se.venue_state || '', venue_zip: se.venue_zip || '', field: se.field || '',
     num_periods: se.num_periods || appGameDefaults().num_periods, period_duration_minutes: se.period_duration_minutes || appGameDefaults().period_duration_minutes, players_per_side: se.players_per_side || appGameDefaults().players_per_side,
     roster_id: se.base_roster_id,
-    avail: {}, notes: {}, guests: [], guestIds: {}, kickoff_time: '', game_date: gtTodayStr(),
+    avail: avail, notes: {}, guests: [], guestIds: guestIds, kickoff_time: '', game_date: gtTodayStr(),
     tournament_id: null, season_id: sid,
     started: {}, startPos: {}, team_name: se.team_name || (ros ? ros.name : appTeamName())
   };
@@ -174,4 +204,59 @@ function gtDeleteSeason(sid) {
   if (!gtCanEdit()) return;
   if (!confirm('Delete this season? Its games are kept but unlinked from the season.')) return;
   tdb('gt_seasons').doc(sid).delete().then(function(){ showToast('Season deleted.'); gtGo('/gametracker/seasons'); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+
+// ---- season roster editing ----
+function gtSeasonPickRoster(sid) {
+  if (!gtCanEdit()) return;
+  var se = gtSeason(sid); if (!se) return;
+  var sr = gtSeasonRoster(se) || {};
+  var squad = gtRosterPlayers(se.base_roster_id).filter(function(p){ return !p.is_guest; });
+  gtOpenModal(
+    '<h3>✅ Committed Players<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<p style="font-size:.85rem;color:var(--muted)">Check everyone committed to <strong>' + gtEsc(se.name) + '</strong>. You can add or remove players later.</p>' +
+    '<div id="gt-sr-pick">' + squad.map(function(p){
+      return '<label class="gt-avail-row" style="cursor:pointer"><span class="gt-avail-name"><input type="checkbox" value="' + p.id + '"' + (sr[p.id] ? ' checked' : '') + '/> ' +
+        (p.jersey_number != null ? '<b>#' + p.jersey_number + '</b> ' : '') + gtEsc(gtPlayerName(p.id)) + '</span></label>';
+    }).join('') + '</div>' +
+    '<div class="gm-actions"><button class="btn-primary" onclick="gtSeasonSaveRoster(\'' + sid + '\')">Save roster</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
+  );
+}
+function gtSeasonSaveRoster(sid) {
+  if (!gtCanEdit()) return;
+  var se = gtSeason(sid); if (!se) return;
+  var old = gtSeasonRoster(se) || {}, roster = {};
+  // keep guests already on the roster; squad players come from the checklist
+  Object.keys(old).forEach(function(pid){ var p = gtP(pid); if (old[pid] && p && p.is_guest) roster[pid] = true; });
+  Array.prototype.forEach.call(document.querySelectorAll('#gt-sr-pick input:checked'), function(cb){ roster[cb.value] = true; });
+  tdb('gt_seasons').doc(sid).update({ roster: roster })
+    .then(function(){ showToast('Season roster saved ✓'); gtCloseModal(); }).catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtSeasonAddPrompt(sid, guests) {
+  if (!gtCanEdit()) return;
+  var se = gtSeason(sid); if (!se) return;
+  var sr = gtSeasonRoster(se) || {};
+  var pool = (guests ? gtGuestPool() : gtRosterPlayers(se.base_roster_id).filter(function(p){ return !p.is_guest; }))
+    .filter(function(p){ return !sr[p.id]; });
+  if (!pool.length) { showToast(guests ? 'No more guests in the pool.' : 'Everyone on the squad is already on the season roster.'); return; }
+  gtOpenModal(
+    '<h3>➕ Add ' + (guests ? 'Guest' : 'Player') + '<button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<div>' + pool.map(function(p){
+      return '<div class="gt-avail-row"><span class="gt-avail-name">' + (p.jersey_number != null ? '<b>#' + p.jersey_number + '</b> ' : '') + gtEsc(gtPlayerName(p.id)) + (p.is_guest ? ' <span class="gt-guest-badge">Guest</span>' : '') + '</span>' +
+        '<button class="gt-minibtn" onclick="gtSeasonAdd(\'' + sid + '\',\'' + p.id + '\',this)">Add</button></div>';
+    }).join('') + '</div>' +
+    '<div class="gm-actions"><button class="gt-minibtn" onclick="gtCloseModal()">Done</button></div>'
+  );
+}
+function gtSeasonAdd(sid, pid, btn) {
+  if (!gtCanEdit()) return;
+  var u = {}; u['roster.' + pid] = true;
+  tdb('gt_seasons').doc(sid).update(u).then(function(){ showToast(gtPlayerName(pid) + ' added ✓'); if (btn) { btn.disabled = true; btn.textContent = 'Added'; } })
+    .catch(function(e){ showToast('Error: ' + e.message); });
+}
+function gtSeasonRemove(sid, pid) {
+  if (!gtCanEdit()) return;
+  if (!confirm('Remove ' + gtPlayerName(pid) + ' from this season roster?')) return;
+  var u = {}; u['roster.' + pid] = firebase.firestore.FieldValue.delete();
+  tdb('gt_seasons').doc(sid).update(u).then(function(){ showToast('Removed.'); }).catch(function(e){ showToast('Error: ' + e.message); });
 }

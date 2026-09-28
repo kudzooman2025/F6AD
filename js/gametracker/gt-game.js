@@ -1783,7 +1783,11 @@ function gtRsvpPlayersFor(rosterId, eventId) {
   var list = rosterId ? gtRosterPlayers(rosterId).filter(function(p){ return !p.is_guest; }) : [];
   list = list.slice().sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
   var pool = gtGuestPool();
-  if (eventId) { var eg = gtEventGuestIds(eventId); pool = pool.filter(function(p){ return eg[p.id]; }); }
+  var eg = eventId ? gtEventGuestIds(eventId) : null;
+  var _g = eventId ? gtGame(eventId) : null;
+  var sr = (_g && _g.season_id && typeof gtSeasonRoster === 'function') ? gtSeasonRoster(gtSeason(_g.season_id)) : null;
+  if (sr) list = list.filter(function(p){ return sr[p.id] || eg[p.id]; });
+  if (eventId) pool = pool.filter(function(p){ return eg[p.id] || (sr && sr[p.id]); });
   var guests = pool.slice().sort(function(a, b){ return gtPlayerName(a.id).localeCompare(gtPlayerName(b.id)); });
   return list.concat(guests);
 }

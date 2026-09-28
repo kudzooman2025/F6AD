@@ -1485,3 +1485,10 @@ html[data-theme="dark"] .gt-ln-start{background:#0f2e1c;color:#86efac}
 .rsvp-evdesc{font-size:.8rem;color:var(--ink-2);margin-top:4px;white-space:pre-wrap}
 html[data-theme="dark"] .home-ev{background:#1e1c26;border-color:#2a2833}
 html[data-theme="dark"] .rsvp-count input{background:#1e1c26;color:var(--text);border-color:#3a3846}
+
+/* Season roster chips */
+.gt-season-roster{display:flex;flex-wrap:wrap;gap:6px}
+.gt-sr-chip{display:inline-flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:.82rem}
+.gt-sr-x{border:none;background:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:0 2px}
+.gt-sr-x:hover{color:#b91c1c}
+html[data-theme="dark"] .gt-sr-chip{background:#1e1c26;border-color:#2a2833}

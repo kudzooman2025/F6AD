@@ -619,3 +619,47 @@ test('team event headcount counts In families only, defaulting to one person', (
   ];
   assert.equal(c.gtRsvpHeadcount('ev_1'), 5);
 });
+
+// ---- Season roster (committed players) ----
+function loadGt() {
+  const ctx = { localStorage: { getItem: () => null, setItem() {} }, window: {}, document: { addEventListener() {}, getElementById: () => null, querySelectorAll: () => [] },
+    appTeamName: () => 'Team', appGameDefaults: () => ({ num_periods: 2, period_duration_minutes: 30, players_per_side: 7 }), gtCanEdit: () => true, gtGo() {}, showToast() {} };
+  load('js/gametracker/gt-core.js', ctx);
+  load('js/gametracker/gt-game.js', ctx);
+  load('js/gametracker/gt-seasons.js', ctx);
+  ctx.gtCanEdit = () => true; ctx.gtGo = () => {};
+  ctx.GT.rosters = [{ id: 'r1', name: 'Squad' }];
+  ctx.GT.players = [
+    { id: 'a', roster_id: 'r1', first_name: 'Al', last_name: 'A' },
+    { id: 'b', roster_id: 'r1', first_name: 'Bo', last_name: 'B' },
+    { id: 'c', roster_id: 'r1', first_name: 'Cy', last_name: 'C' },
+    { id: 'g', roster_id: '__guests__', first_name: 'Gus', last_name: 'G', is_guest: true }
+  ];
+  return ctx;
+}
+
+test('season games start with committed players available and others Out', () => {
+  const c = loadGt();
+  c.GT.seasons = [{ id: 's7', name: '7v7', base_roster_id: 'r1', roster: { a: true, g: true } }];
+  c.gtStartSeasonGame('s7');
+  assert.deepEqual(plain(c.GT.setup.avail), { a: true, b: false, c: false });
+  assert.deepEqual(plain(c.GT.setup.guestIds), { g: true });
+});
+
+test('seasons without a roster keep the whole squad', () => {
+  const c = loadGt();
+  c.GT.seasons = [{ id: 'mls', name: 'MLS', base_roster_id: 'r1' }];
+  c.gtStartSeasonGame('mls');
+  assert.deepEqual(plain(c.GT.setup.avail), {});
+  c.GT.games = [{ id: 'g1', season_id: 'mls', roster_id: 'r1' }];
+  assert.deepEqual(c.gtRsvpPlayersFor('r1', 'g1').map(p => p.id), ['a', 'b', 'c']);
+});
+
+test('season game RSVP lists committed players plus anyone a coach added', () => {
+  const c = loadGt();
+  c.GT.seasons = [{ id: 's7', name: '7v7', base_roster_id: 'r1', roster: { a: true, g: true } }];
+  c.GT.games = [{ id: 'g1', season_id: 's7', roster_id: 'r1' }];
+  assert.deepEqual(c.gtRsvpPlayersFor('r1', 'g1').map(p => p.id), ['a', 'g']);
+  c.GT.rsvp = [{ game_id: 'g1', player_id: 'c', status: 'in' }];
+  assert.deepEqual(c.gtRsvpPlayersFor('r1', 'g1').map(p => p.id), ['a', 'c', 'g']);
+});
