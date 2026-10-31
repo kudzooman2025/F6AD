@@ -475,7 +475,7 @@ function gtRenderLive(view, gameId) {
   }
   html += '<div style="margin-top:22px;text-align:center"><button class="gt-minibtn" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Copy Game Link</button></div>';
   if (canEdit) {
-    html += '<div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button class="gt-minibtn" onclick="gtShareLineup(\'g\',\'' + g.id + '\',this)">🔗 Share Roster</button><button class="gt-minibtn" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
+    html += '<div style="margin-top:14px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">' + gtLineupActions('g', g.id) + '<button class="gt-minibtn" onclick="gtOpenGameEdit(\'' + g.id + '\')">✏️ Edit Game</button><button class="gt-minibtn danger" onclick="gtDeleteGame(\'' + g.id + '\')">🗑 Delete Game</button></div>';
   }
   view.innerHTML = html;
   var _cm = document.getElementById('gt-chat-msgs'); if (_cm) _cm.scrollTop = _cm.scrollHeight;
@@ -1891,7 +1891,8 @@ function gtToggleRsvpCard(id) {
 function gtRsvpGameCard(g, collapsible) {
   var meta = gtFmtDate(g.played_at || g.created_at) + (g.kickoff_time ? ' · ' + gtFmtKickoff(g.kickoff_time) : '') + (g.venue ? ' · ' + gtEsc(g.venue) : '') + (g.field ? ' · ' + gtEsc(g.field) : '');
   var ourName = gtOurName(g) || 'FC Delco MLS Next AD U14';   // event team name, default to MLS Next squad
-  return gtRsvpCard(g.id, gtEsc(ourName) + ' vs ' + gtEsc(gtTheirName(g) || 'TBD'), meta, g.roster_id, gtRsvpOpen(g), gtGameCanceled(g), collapsible);
+  return gtRsvpCard(g.id, gtEsc(ourName) + ' vs ' + gtEsc(gtTheirName(g) || 'TBD'), meta, g.roster_id, gtRsvpOpen(g), gtGameCanceled(g), collapsible) +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px">' + gtLineupActions('g', g.id) + '</div>';
 }
 // mini-camp availability (reuses the same RSVP machinery)
 function gtCampRosterId() {

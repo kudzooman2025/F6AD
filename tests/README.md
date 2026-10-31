@@ -15,3 +15,7 @@ npm run test:rules
 The rules tests use the `demo-f6ad` project, seed synthetic records, and refuse
 to run without `FIRESTORE_EMULATOR_HOST`. They never use the production database.
 Test files and dependencies are excluded from Firebase Hosting.
+
+For a browser check of roster sharing, copying, PDF, and CSV exports, serve the
+repository locally and open `/tests/roster-preview.html`. It uses synthetic
+game, season, and tournament rosters, with no Firebase connection.

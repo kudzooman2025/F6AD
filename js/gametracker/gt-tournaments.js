@@ -244,7 +244,7 @@ function gtRenderTournament(view, tid) {
     '<div class="gt-stat-box"><div class="sb-num">' + paidCount + '/' + availCount + '</div><div class="sb-label">Paid</div></div>' +
     '</div>';
   if (canEdit) html += '<div style="margin:4px 0 16px;display:flex;gap:10px;flex-wrap:wrap">' +
-    '<button class="gt-minibtn" onclick="gtShareLineup(\'t\',\'' + t.id + '\',this)">🔗 Share Roster</button>' +
+    gtLineupActions('t', t.id) +
     '<button class="gt-minibtn" onclick="gtOpenTournamentForm(\'' + t.id + '\')">✏️ Edit Details</button>' +
     '<button class="gt-minibtn" onclick="gtTournAddPlayerPrompt(\'' + t.id + '\')">➕ Add Player</button>' +
     '<button class="gt-minibtn" onclick="gtTournAddGuestPrompt(\'' + t.id + '\')">➕ Add Guest</button></div>';
@@ -354,6 +354,8 @@ function gtStartTournamentGame(tid) {
   var lu = gtTournLineup(t);
   var ros = gtRoster(t.base_roster_id);
   var avail = {}, guestIds = {};
+  // Missing players were removed from this tournament, so default them to Out.
+  gtRosterPlayers(t.base_roster_id).forEach(function(p){ if (!p.is_guest) avail[p.id] = false; });
   Object.keys(lu).forEach(function(pid) {
     var p = gtP(pid); if (!p) return;
     if (p.is_guest) { if (lu[pid].available) guestIds[pid] = true; }

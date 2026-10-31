@@ -187,6 +187,16 @@ edit controls, and Firestore rules enforce it server-side).
 
 ### Seasons & tournaments
 
+- **Roster sharing and exports:** games (including league games), seasons, and
+  tournaments have **Share Roster**, **Copy Roster**, **Export Roster PDF**, and
+  **Export Spreadsheet (CSV)** buttons. Copy gives a plain-text list ready for a
+  text or email; PDF and CSV contain names, jersey numbers, and guest labels.
+  Game lists use selected game availability and exclude scratched players and
+  players removed from the availability list. Season lists use committed players
+  (the regular squad if no season roster is set); tournament lists use players
+  marked In. Explicitly empty rosters stay empty. Parent contacts are omitted.
+  Each game keeps its own selections, independent of later season roster edits.
+
 - **Seasons (`gt-seasons.js`):** group games into a season, set players-per-side,
   track per-game availability (no fees), and view the season record plus
   per-player stats. "Add Game" seeds the setup wizard. The season game log

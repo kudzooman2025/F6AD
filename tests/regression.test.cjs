@@ -229,9 +229,9 @@ function tournamentSquad(lineup, gamePlayers = ['out']) {
   const tournament = { id: 't', name: 'Cup', base_roster_id: 'club' };
   if (lineup !== undefined) tournament.lineup = lineup;
   const c = load('js/gametracker/gt-lineup.js', {
-    GT: { loaded: {}, tournaments: [tournament], games: [{ id: 'g', tournament_id: 't' }] },
+    GT: { loaded: { players: true, tournaments: true, games: true, avail: true, rsvp: true }, tournaments: [tournament], games: [{ id: 'g', tournament_id: 't' }] },
     gtP: id => players[id], gtPlayerName: id => players[id].name,
-    gtAvailIds: () => gamePlayers, gtEsc: value => String(value || ''),
+    gtGameAvail: () => gamePlayers.map(pid => ({ player_id: pid, available: true })), gtEsc: value => String(value || ''),
     gtFmtDate: () => '', gtTheirName: () => 'Opponent', gtGameSortMs: () => 0,
     gtRosterPlayers: () => Object.values(players)
   });
@@ -314,6 +314,7 @@ test('the separate Start action still starts the next period clock', () => {
 
 function swapContext() {
   const c = load('js/gametracker/gt-game.js');
+  load('js/gametracker/gt-lineup.js', c);
   const fixture = require('./live-fixture.js')(c);
   c.gtRerender();
   return { c, fixture };
@@ -688,4 +689,137 @@ test('season game RSVP lists committed players plus anyone a coach added', () =>
   assert.deepEqual(c.gtRsvpPlayersFor('r1', 'g1').map(p => p.id), ['a', 'g']);
   c.GT.rsvp = [{ game_id: 'g1', player_id: 'c', status: 'in' }];
   assert.deepEqual(c.gtRsvpPlayersFor('r1', 'g1').map(p => p.id), ['a', 'c', 'g']);
+});
+
+
+// Roster exports must match the selected scope, even after removals.
+function lineupContext() {
+  const c = loadGt();
+  load('js/gametracker/gt-tournaments.js', c);
+  load('js/gametracker/gt-lineup.js', c);
+  c.GT.loaded = { players: true, games: true, seasons: true, tournaments: true, avail: true, rsvp: true };
+  c.GT.players[0].jersey_number = 0;
+  c.GT.players[0].parent_email = 'private@example.test';
+  c.GT.players[3].jersey_number = 7;
+  c.GT.games = [{ id: 'game', game_type: 'league', home_team: 'Our Team', away_team: 'Rivals', f6ad_side: 'home', roster_id: 'r1' }];
+  c.GT.avail = ['a', 'b', 'g'].map(pid => ({ game_id: 'game', player_id: pid, available: true }));
+  return c;
+}
+
+test('game roster excludes scratched, deleted and RSVP-removed regular players and guests for every game type', () => {
+  for (const type of ['league', 'tournament', 'friendly']) {
+    const c = lineupContext();
+    c.GT.games[0].game_type = type;
+    c.GT.avail.push({ game_id: 'other', player_id: 'c', available: true });
+    c.GT.rsvp = [{ game_id: 'game', player_id: 'b', hidden: true }];
+    assert.deepEqual(plain(c.gtLineupData('g', 'game').players.map(p => p.id)), ['a', 'g']);
+    c.GT.rsvp.push({ game_id: 'game', player_id: 'g', hidden: true });
+    assert.deepEqual(plain(c.gtLineupData('g', 'game').players.map(p => p.id)), ['a']);
+    c.GT.avail[0].available = false;
+    assert.equal(c.gtLineupData('g', 'game').players.length, 0);
+    c.GT.avail = [];
+    assert.equal(c.gtLineupData('g', 'game').players.length, 0);
+  }
+});
+
+test('season and league exports include committed guests and never restore removed players or an empty roster', () => {
+  const c = lineupContext();
+  c.GT.seasons = [{ id: 's', name: 'League Season', base_roster_id: 'r1', roster: { a: true, b: false, g: true, deleted: true } }];
+  assert.deepEqual(plain(c.gtLineupData('s', 's').players.map(p => p.id)), ['a', 'g']);
+  delete c.GT.seasons[0].roster.g;
+  assert.deepEqual(plain(c.gtLineupData('s', 's').players.map(p => p.id)), ['a']);
+  c.GT.seasons[0].roster = {};
+  assert.equal(c.gtLineupData('s', 's').players.length, 0);
+  delete c.GT.seasons[0].roster;
+  assert.deepEqual(plain(c.gtLineupData('s', 's').players.map(p => p.id)), ['a', 'b', 'c']);
+  c.window.location = { origin: 'https://team.test', pathname: '/' };
+  assert.equal(c.gtLineupUrl('s', 's'), 'https://team.test/#/gametracker/lineup/s/s');
+});
+
+test('new tournament games keep removed regular players Out and include only selected guests', () => {
+  const c = lineupContext();
+  c.GT.tournaments = [{ id: 't', base_roster_id: 'r1', lineup: { a: { available: true }, b: { available: false }, g: { available: true } } }];
+  c.gtStartTournamentGame('t');
+  assert.deepEqual(plain(c.GT.setup.avail), { a: true, b: false, c: false });
+  assert.deepEqual(plain(c.GT.setup.guestIds), { g: true });
+  c.GT.tournaments[0].lineup = {};
+  c.gtStartTournamentGame('t');
+  assert.deepEqual(plain(c.GT.setup.avail), { a: false, b: false, c: false });
+  assert.deepEqual(plain(c.GT.setup.guestIds), {});
+});
+
+test('copy and PDF export contain the same scope-specific players without contact details', async () => {
+  const c = lineupContext();
+  c.GT.seasons = [{ id: 's', name: 'League Season', roster: { a: true, g: true } }];
+  c.GT.tournaments = [{ id: 't', name: 'Cup', lineup: { a: { available: true }, g: { available: true }, b: { available: false } } }];
+  c.GT.rsvp = [{ game_id: 'game', player_id: 'b', hidden: true }];
+  let copied, table, filename;
+  c.navigator = { clipboard: { writeText: async text => { copied = text; } } };
+  c.window.jspdf = { jsPDF: function() {
+    return { setFont() {}, setFontSize() {}, text() {}, splitTextToSize: text => [text],
+      autoTable: opts => { table = opts; }, save: name => { filename = name; } };
+  } };
+  for (const [kind, id] of [['g', 'game'], ['s', 's'], ['t', 't']]) {
+    await c.gtCopyLineup(kind, id);
+    assert.match(copied, /#0 Al A/);
+    assert.match(copied, /#7 Gus G \(Guest\)/);
+    assert.doesNotMatch(copied, /Bo B|Cy C|private@example/);
+    c.gtExportLineup(kind, id);
+    assert.deepEqual(plain(table.body), [['0', 'Al A', ''], ['7', 'Gus G', 'Guest']]);
+    assert.match(filename, /_roster\.pdf$/);
+    const view = {};
+    c.gtRenderLineup(view, kind, id);
+    assert.match(view.innerHTML, /Copy Roster/);
+    assert.match(view.innerHTML, /Export Roster PDF/);
+    assert.doesNotMatch(view.innerHTML, /Bo B|Cy C|private@example/);
+  }
+});
+
+test('copy fallback selects a readable multiline roster when clipboard is unavailable or denied', async () => {
+  const c = lineupContext();
+  let modal, selected = 0;
+  c.gtOpenModal = html => { modal = html; };
+  c.document.getElementById = () => ({ focus() {}, select() { selected++; } });
+  for (const navigator of [{}, { clipboard: { writeText: () => Promise.reject(new Error('denied')) } }]) {
+    c.navigator = navigator;
+    await c.gtCopyLineup('g', 'game');
+    assert.match(modal, /textarea/);
+    assert.match(modal, /Al A/);
+    assert.match(modal, /Gus G/);
+  }
+  assert.equal(selected, 2);
+});
+
+test('roster exports wait for player and removal data instead of publishing a partial list', async () => {
+  const c = lineupContext();
+  let copied = false, notice;
+  c.navigator = { clipboard: { writeText: async () => { copied = true; } } };
+  c.showToast = text => { notice = text; };
+  delete c.GT.loaded.rsvp;
+  await c.gtCopyLineup('g', 'game');
+  c.gtExportLineup('g', 'game');
+  assert.equal(copied, false);
+  assert.match(notice, /loading/);
+  const view = {};
+  c.gtRenderLineup(view, 'g', 'game');
+  assert.match(view.innerHTML, /Loading roster/);
+});
+
+
+test('spreadsheet exports match the roster and safely quote names, Unicode and formula-like values', () => {
+  const c = lineupContext();
+  c.GT.rsvp = [{ game_id: 'game', player_id: 'b', hidden: true }];
+  c.GT.players[0].first_name = 'Alex, "Álex"';
+  c.GT.players[3].first_name = '=HYPERLINK("bad")';
+  const csv = c.gtLineupCsv(c.gtLineupData('g', 'game'));
+  assert.ok(csv.startsWith('\uFEFF"Roster","Details","Jersey number","Player","Guest"\r\n'));
+  assert.ok(csv.includes('"Alex, ""Álex"" A"'));
+  assert.ok(csv.includes('"\'=HYPERLINK(""bad"") G"'));
+  assert.doesNotMatch(csv, /Bo B|Cy C|private@example/);
+  assert.equal(csv.split('\r\n').length, 4);
+  for (const title of ['=1+1', ' +1', '@SUM(A1)', '-1', '\tname', '\nname']) {
+    assert.ok(c.gtLineupCsv({ title, meta: '', players: [c.GT.players[0]] }).includes('"\'' + title + '"'));
+  }
+  c.GT.avail = [];
+  assert.equal(c.gtLineupCsv(c.gtLineupData('g', 'game')).split('\r\n').length, 2);
 });

@@ -95,6 +95,7 @@ function gtRenderReview(view, gameId) {
   html += (typeof gtParentReviewSectionHtml === 'function' ? gtParentReviewSectionHtml(g) : '');
   html += (typeof gtParentCoachReviewHtml === 'function' ? gtParentCoachReviewHtml(g) : '');
   html += gtChatPanelHtml(g.id);
+  html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' + gtLineupActions('g', g.id) + '</div>';
   html += '<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">' +
     '<button class="btn-primary" onclick="gtCopyGameLink(\'' + g.id + '\')">🔗 Share</button>' +
     '<button class="btn-primary" onclick="gtExportGame(\'' + g.id + '\')">📋 Copy Summary</button>' +

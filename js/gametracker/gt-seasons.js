@@ -146,6 +146,7 @@ function gtRenderSeasonEntity(view, sid) {
     '</div>';
   var sr = gtSeasonRoster(se), srPlayers = gtSeasonRosterPlayers(se);
   html += '<div class="section-title" style="margin-bottom:10px">👥 Season Roster' + (sr ? ' <span style="font-size:.78rem;color:var(--muted);font-weight:600">(' + srPlayers.length + ' committed)</span>' : '') + '</div>';
+  html += '<div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap">' + gtLineupActions('s', se.id) + '</div>';
   if (!sr) {
     html += '<div class="gt-empty" style="margin-bottom:12px">No season roster yet — the whole squad is included.' + (canEdit ? ' Pick who committed to narrow it down.' : '') + '</div>';
     if (canEdit) html += '<button class="gt-minibtn" style="margin-bottom:18px" onclick="gtSeasonPickRoster(\'' + se.id + '\')">✅ Choose committed players</button>';
