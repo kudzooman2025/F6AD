@@ -111,6 +111,32 @@ test('manual goals and assists are included in the same pending commit', () => {
   assert.equal(commits[1][2].data.event_type, 'assist');
 });
 
+test('player-card adjusted times use the full game clock even after the second half', () => {
+  const core = load('js/gametracker/gt-core.js');
+  for (const [input, period, seconds] of [['36:54', 1, 2214], ['76:54', 2, 2214], ['40:00', 2, 0]]) {
+    const { c, commits, values, game } = gameContext();
+    Object.assign(game, { status: 'complete', current_period: 2, num_periods: 2, period_duration_minutes: 40 });
+    c.gtNominalToPeriodSec = core.gtNominalToPeriodSec;
+    c.GT.events = [{ game_id: 'game', event_type: 'goal', period: 1, game_clock_seconds: 2214 }];
+    c.GT.pendingEvent = { gameId: 'game', playerId: 'helper', type: 'assist', clock: 0, period: 2 };
+    values['gt-ev-override'] = { checked: true };
+    values['gt-ev-time'] = { value: input };
+    c.gtSaveLiveEvent();
+    assert.equal(commits[0][0].data.period, period, input);
+    assert.equal(commits[0][0].data.game_clock_seconds, seconds, input);
+    assert.equal(commits[0].length, 1);
+  }
+});
+
+test('unadjusted player-card assists retain automatic matching to the latest goal', () => {
+  const { c, commits } = gameContext();
+  c.GT.events = [{ game_id: 'game', event_type: 'goal', period: 1, game_clock_seconds: 2214 }];
+  c.GT.pendingEvent = { gameId: 'game', playerId: 'helper', type: 'assist', clock: 0, period: 2 };
+  c.gtSaveLiveEvent();
+  assert.equal(commits[0][0].data.period, 1);
+  assert.equal(commits[0][0].data.game_clock_seconds, 2214);
+});
+
 test('offline deletion and goal-to-own-goal edits update both teams atomically', () => {
   const { c, commits, values } = gameContext();
   c.GT.events = [{ id: 'e', game_id: 'game', event_type: 'goal', player_id: 'p' }];

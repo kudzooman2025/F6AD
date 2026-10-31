@@ -832,7 +832,7 @@ function gtOpenEventPopup(gid, pid) {
   }).join('');
   gtOpenModal(
     '<h3><span>' + (p && p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerName(pid)) + '</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<div class="gm-clock">🕐 ' + gtEsc(gtPeriodLabel(g, GT.pendingEvent.period, 'in_progress')) + ' · ' + gtFmtMMSS(GT.pendingEvent.clock) + ' (captured at tap)</div>' +
+    '<div class="gm-clock">🕐 ' + gtEsc(gtPeriodLabel(g, GT.pendingEvent.period, 'in_progress')) + ' · ' + gtFmtMMSS(gtDisplayCumSec(g, GT.pendingEvent.period, GT.pendingEvent.clock)) + ' (captured at tap)</div>' +
     '<div class="gt-evtypes">' + GT_EVENT_TYPES.map(function(t) {
       return '<button class="gt-evtype" id="gt-et-' + t.id + '" onclick="gtSelEventType(\'' + t.id + '\')"><span class="et-emoji">' + t.emoji + '</span>' + t.label + '</button>';
     }).join('') + '</div>' +
@@ -840,8 +840,8 @@ function gtOpenEventPopup(gid, pid) {
     '<select id="gt-starter-pos" style="display:' + (started ? '' : 'none') + '" onchange="gtSetStarter(\'' + gid + '\',\'' + pid + '\',document.getElementById(\'gt-starter-cb\').checked,this.value)">' + gtPositionOptions(startPos) + '</select>' +
     '<label>Notes</label><textarea id="gt-ev-notes" placeholder="Top corner off a cross…"></textarea>' +
     '<div class="gt-override-row"><input type="checkbox" id="gt-ev-override" onchange="document.getElementById(\'gt-ev-time\').style.display=this.checked?\'inline-block\':\'none\'"/>' +
-    '<label for="gt-ev-override" style="margin:0;text-transform:none">Adjust time</label>' +
-    '<input type="text" id="gt-ev-time" value="' + gtFmtMMSS(GT.pendingEvent.clock) + '" style="display:none" placeholder="MM:SS"/></div>' +
+    '<label for="gt-ev-override" style="margin:0;text-transform:none">Adjust time on game clock</label>' +
+    '<input type="text" id="gt-ev-time" aria-label="Time on game clock (MM:SS as shown in the timeline)" value="' + gtFmtMMSS(gtDisplayCumSec(g, GT.pendingEvent.period, GT.pendingEvent.clock)) + '" style="display:none" placeholder="MM:SS"/></div>' +
     '<label style="display:flex;align-items:center;gap:8px;text-transform:none;margin-top:8px;color:#b91c1c;font-weight:700"><input type="checkbox" onchange="gtScratchFromPopup(this,\'' + gid + '\',\'' + pid + '\')"/> 🚫 Scratch from gameday roster</label>' +
     '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveLiveEvent()">💾 Save Event</button>' +
     '<button class="gt-minibtn" style="padding:10px 16px" onclick="gtOpenSubForm(\'' + gid + '\',\'' + pid + '\')">🔄 Log Substitution</button></div>'
@@ -866,13 +866,15 @@ function gtSaveLiveEvent() {
   if (!pe) return;
   if (!pe.type) { showToast('Pick an event type.'); return; }
   var clock = pe.clock;
+  var g = gtGame(pe.gameId); if (!g) return;
+  var period = pe.period;
   if (document.getElementById('gt-ev-override').checked) {
     var manual = gtParseMMSS(document.getElementById('gt-ev-time').value);
     if (manual == null) { showToast('Time must be MM:SS.'); return; }
-    clock = manual;
+    var adjusted = gtNominalToPeriodSec(g, manual);
+    clock = adjusted.sec;
+    period = adjusted.period;
   }
-  var g = gtGame(pe.gameId);
-  var period = pe.period;
   // an assist can't exist without a goal — snap its timestamp to the most recent goal
   if (pe.type === 'assist') {
     var goals = GT.events.filter(function(e){ return e.game_id === pe.gameId && e.event_type === 'goal'; });
