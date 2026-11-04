@@ -687,7 +687,7 @@ test('season game RSVP lists committed players plus anyone a coach added', () =>
   c.GT.seasons = [{ id: 's7', name: '7v7', base_roster_id: 'r1', roster: { a: true, g: true } }];
   c.GT.games = [{ id: 'g1', season_id: 's7', roster_id: 'r1' }];
   assert.deepEqual(c.gtRsvpPlayersFor('r1', 'g1').map(p => p.id), ['a', 'g']);
-  c.GT.rsvp = [{ game_id: 'g1', player_id: 'c', status: 'in' }];
+  c.GT.rsvp = [{ game_id: 'g1', player_id: 'c', hidden: false, status: 'in' }];
   assert.deepEqual(c.gtRsvpPlayersFor('r1', 'g1').map(p => p.id), ['a', 'c', 'g']);
 });
 
@@ -822,4 +822,112 @@ test('spreadsheet exports match the roster and safely quote names, Unicode and f
   }
   c.GT.avail = [];
   assert.equal(c.gtLineupCsv(c.gtLineupData('g', 'game')).split('\r\n').length, 2);
+});
+
+
+function seasonRsvpContext() {
+  const c = loadGt();
+  c.GT.seasons = [{ id: 'winter', name: 'Winter 7s', roster: { a: true, g: true } }];
+  c.GT.games = [{ id: 'winter-game', season_id: 'winter', roster_id: 'r1', status: 'setup', home_team: 'Our team', away_team: '(re)United', f6ad_side: 'home', played_at: '2026-11-06', kickoff_time: '19:00' }];
+  // Actual setup stores all club players, including unavailable non-season players.
+  c.GT.avail = ['a', 'b', 'c', 'g'].map(pid => ({ id: 'avail-' + pid, game_id: 'winter-game', player_id: pid, available: ['a', 'g'].includes(pid) }));
+  c.GT.rsvp = [{ game_id: 'winter-game', player_id: 'b', hidden: true, status: 'in' }];
+  c.window.location = { origin: 'https://team.test', pathname: '/' };
+  c.gtFmtKickoff = time => time;
+  return c;
+}
+
+test('season RSVP rows and family picker exclude unavailable club records and preserve removals', () => {
+  const c = seasonRsvpContext();
+  const before = plain({ avail: c.GT.avail, rsvp: c.GT.rsvp, seasons: c.GT.seasons });
+  assert.deepEqual(plain(c.gtRsvpPlayersFor('r1', 'winter-game').map(p => p.id)), ['a', 'g']);
+  c.gtCanEdit = () => false;
+  const picker = c.gtRsvpIdentityPicker('r1', 'winter-game');
+  const card = c.gtRsvpCard('winter-game', 'Game', '', 'r1', true, false);
+  for (const html of [picker, card]) {
+    assert.match(html, /Al A/);
+    assert.match(html, /Gus G/);
+    assert.doesNotMatch(html, /Bo B|Cy C/);
+  }
+  assert.deepEqual(plain({ avail: c.GT.avail, rsvp: c.GT.rsvp, seasons: c.GT.seasons }), before);
+});
+
+test('season RSVP allows deliberate regular and guest additions without treating old responses as invitations', () => {
+  const c = seasonRsvpContext();
+  c.GT.players.push({ id: 'guest2', first_name: 'New', last_name: 'Guest', is_guest: true });
+  c.GT.rsvp.push({ game_id: 'winter-game', player_id: 'c', status: 'in' });
+  assert.deepEqual(plain(c.gtRsvpPlayersFor('r1', 'winter-game').map(p => p.id)), ['a', 'g']);
+  c.GT.rsvp[1].hidden = false; // Coach's Add/Restore action.
+  c.GT.rsvp.push({ game_id: 'winter-game', player_id: 'guest2', hidden: false });
+  assert.deepEqual(plain(c.gtRsvpPlayersFor('r1', 'winter-game').map(p => p.id)), ['a', 'c', 'g', 'guest2']);
+  c.GT.rsvp[1].hidden = true;
+  assert.doesNotMatch(c.gtRsvpIdentityPicker('r1', 'winter-game'), /Cy C/);
+  // A selected game-specific addition is also allowed.
+  c.GT.avail[2].available = true;
+  c.GT.rsvp = [];
+  assert.deepEqual(plain(c.gtRsvpPlayersFor('r1', 'winter-game').map(p => p.id)), ['a', 'c', 'g']);
+});
+
+test('an empty season roster and a season still loading never show the whole club', () => {
+  const c = seasonRsvpContext();
+  c.GT.avail.forEach(a => { a.available = false; });
+  c.GT.seasons[0].roster = {};
+  assert.equal(c.gtRsvpPlayersFor('r1', 'winter-game').length, 0);
+  c.GT.seasons = [];
+  assert.equal(c.gtRsvpPlayersFor('r1', 'winter-game').length, 0);
+  const view = {};
+  c.gtRenderRsvp(view, 'winter-game');
+  assert.match(view.innerHTML, /Loading game availability/);
+});
+
+test('RSVP tallies and applying responses ignore removed, out-of-season and invitation-only records', async () => {
+  const c = seasonRsvpContext(), writes = [];
+  c.GT.rsvp.push({ game_id: 'winter-game', player_id: 'a', status: 'out' },
+    { game_id: 'winter-game', player_id: 'c', status: 'in' },
+    { game_id: 'winter-game', player_id: 'g', hidden: false });
+  assert.deepEqual(plain(c.gtRsvpTally('winter-game')), { in: 0, out: 1, maybe: 0 });
+  c.confirm = () => true;
+  c.tdb = () => ({ doc: id => ({ id }) });
+  c.db = { batch: () => ({ set: (ref, data) => writes.push({ id: ref.id, data }), commit: async () => {} }) };
+  c.gtApplyRsvpsToGame('winter-game');
+  assert.deepEqual(plain(writes), [{ id: 'avail-a', data: { available: false, scratched: false } }]);
+});
+
+test('RSVP request copies a game-specific message and opens the same family RSVP route', async () => {
+  const c = seasonRsvpContext();
+  let copied, notice;
+  c.navigator = { clipboard: { writeText: async text => { copied = text; } } };
+  c.showToast = text => { notice = text; };
+  await c.gtRequestRsvps('winter-game');
+  assert.match(copied, /Our team vs \(re\)United/);
+  assert.match(copied, /19:00/);
+  assert.match(copied, /In, Maybe, or Out/);
+  assert.ok(copied.endsWith('https://team.test/#/gametracker/rsvp/winter-game'));
+  assert.match(notice, /copied/);
+  const actions = c.gtRsvpActions(c.GT.games[0]);
+  assert.match(actions, /Request RSVPs/);
+  assert.match(actions, /Copy RSVP Link/);
+  assert.match(actions, /href="#\/gametracker\/rsvp\/winter-game"/);
+  for (const status of ['in_progress', 'complete']) {
+    c.GT.games[0].status = status;
+    assert.equal(c.gtRsvpActions(c.GT.games[0]), '');
+  }
+  c.GT.games[0].status = 'setup';
+  c.canceledEvents = { 'game_winter-game': true };
+  assert.equal(c.gtRsvpActions(c.GT.games[0]), '');
+});
+
+test('RSVP request supports native share, cancellation, and clipboard failure', async () => {
+  const c = seasonRsvpContext();
+  let shared, fallback, copies = 0;
+  c.navigator = { share: async data => { shared = data; } };
+  await c.gtRequestRsvps('winter-game');
+  assert.match(shared.text, /rsvp\/winter-game/);
+  c.navigator = { share: async () => { throw { name: 'AbortError' }; }, clipboard: { writeText: async () => { copies++; } } };
+  await c.gtRequestRsvps('winter-game');
+  assert.equal(copies, 0);
+  c.window.prompt = (label, text) => { fallback = text; };
+  c.navigator = { share: async () => { throw new Error('unsupported'); }, clipboard: { writeText: async () => { throw new Error('denied'); } } };
+  await c.gtRequestRsvps('winter-game');
+  assert.match(fallback, /rsvp\/winter-game/);
 });

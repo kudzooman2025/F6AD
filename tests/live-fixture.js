@@ -33,6 +33,7 @@ function setupLiveFixture(target) {
     gtGameSubs: function(){ return target.GT.subs; }, gtGameEvents: function(){ return []; }, gtStatLine: function(){ return {}; },
     gtIsPK: function(){ return false; }, gtIsOT: function(){ return false; }, gtIsGK: function(){ return false; },
     gtLockBanner: function(){ return ''; }, gtGameCanceled: function(){ return false; }, gtClockCollapsed: function(){ return true; },
+    gtRsvpActions: function(){ return ''; },
     gtPeriodLabel: function(){ return '2nd half'; }, gtFmtDisplayClock: function(){ return '35:00'; },
     gtHomeName: function(){ return 'Sample team'; }, gtAwayName: function(){ return 'Visitors'; },
     gtManDownHtml: function(){ return ''; }, gtStartingXiHtml: function(){ return ''; }, gtChatPanelHtml: function(){ return ''; }, gtParentPanelHtml: function(){ return ''; },

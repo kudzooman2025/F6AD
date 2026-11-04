@@ -163,7 +163,7 @@ function gtRenderSeasonEntity(view, sid) {
   }
   html += '<div class="section-title" style="margin-bottom:12px">⚽ Games</div>';
   if (canEdit) html += '<button class="btn-primary" style="margin-bottom:14px" onclick="gtStartSeasonGame(\'' + se.id + '\')">➕ Add Game</button>';
-  html += games.length ? '<div class="gt-glist">' + games.map(gtGameItem).join('') + '</div>' : '<div class="gt-empty">No games yet.</div>';
+  html += games.length ? '<div class="gt-glist">' + games.map(function(g){ return '<div>' + gtGameItem(g) + gtRsvpActions(g) + '</div>'; }).join('') + '</div>' : '<div class="gt-empty">No games yet.</div>';
   // player stats across the season's completed games
   var stats = gtSeasonPlayerStats(done, se.base_roster_id);
   if (sr) stats = stats.filter(function(st){ return st.gp > 0 || sr[st.id]; });

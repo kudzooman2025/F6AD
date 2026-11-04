@@ -196,6 +196,13 @@ edit controls, and Firestore rules enforce it server-side).
   (the regular squad if no season roster is set); tournament lists use players
   marked In. Explicitly empty rosters stay empty. Parent contacts are omitted.
   Each game keeps its own selections, independent of later season roster edits.
+- **Season-game RSVP:** the family list uses the committed season roster plus
+  deliberately selected game additions. Unavailable club records created during
+  setup do not add players to this list, and saved removals stay hidden. Use
+  **Request RSVPs** beside a season game or on its game page to share an
+  availability request, or **Copy RSVP Link** to send just the link. Families
+  choose their player and mark In, Maybe, or Out. Removed and out-of-scope
+  responses are excluded from totals and from **Apply RSVPs**.
 
 - **Seasons (`gt-seasons.js`):** group games into a season, set players-per-side,
   track per-game availability (no fees), and view the season record plus

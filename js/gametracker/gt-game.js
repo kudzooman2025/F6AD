@@ -324,6 +324,7 @@ function gtRenderLive(view, gameId) {
   // clock bar — collapsible, because it is sticky and on a phone it can eat most
   // of the screen you are trying to tap events into.
   var _col = gtClockCollapsed();
+  html += gtRsvpActions(g);
   html += '<div class="gt-clockbar' + (_col ? ' collapsed' : '') + '">' +
     '<button class="gt-clock-toggle" type="button" aria-expanded="' + (_col ? 'false' : 'true') +
       '" title="' + (_col ? 'Expand clock' : 'Collapse clock') + '" aria-label="' +
@@ -1771,14 +1772,14 @@ function gtRsvpStatusBadge(status) {
   return '<span class="rsvp-b none">—</span>';
 }
 // roster (non-guest) players + the guest pool, so guests can RSVP too
-// Guests actually attached to a specific event: they have an availability record
-// (added at setup / via Add Player) OR have RSVP'd for it. Used to scope each
-// game's availability to its own roster + its own guests (not the global pool).
+// Explicit game additions: selected availability or a coach's Add/Restore action.
+// Setup also writes unavailable records for the rest of the club; those records
+// and old RSVP responses must not invite excluded players back into a season game.
 function gtEventGuestIds(eventId) {
   var set = {};
   if (!eventId) return set;
-  (GT.avail || []).forEach(function(a){ if (a.game_id === eventId && a.player_id) set[a.player_id] = true; });
-  (GT.rsvp || []).forEach(function(r){ if (r.game_id === eventId && r.player_id) set[r.player_id] = true; });
+  (GT.avail || []).forEach(function(a){ if (a.game_id === eventId && a.player_id && a.available) set[a.player_id] = true; });
+  (GT.rsvp || []).forEach(function(r){ if (r.game_id === eventId && r.player_id && r.hidden === false) set[r.player_id] = true; });
   return set;
 }
 function gtRsvpPlayersFor(rosterId, eventId) {
@@ -1787,6 +1788,8 @@ function gtRsvpPlayersFor(rosterId, eventId) {
   var pool = gtGuestPool();
   var eg = eventId ? gtEventGuestIds(eventId) : null;
   var _g = eventId ? gtGame(eventId) : null;
+  // Wait for the linked season instead of briefly offering the whole club.
+  if (_g && _g.season_id && !gtSeason(_g.season_id)) return [];
   var sr = (_g && _g.season_id && typeof gtSeasonRoster === 'function') ? gtSeasonRoster(gtSeason(_g.season_id)) : null;
   if (sr) list = list.filter(function(p){ return sr[p.id] || eg[p.id]; });
   if (eventId) pool = pool.filter(function(p){ return eg[p.id] || (sr && sr[p.id]); });
@@ -1806,7 +1809,7 @@ function gtRsvpRosterPlayers() {
 }
 function gtRsvpIdentityPicker(rosterId, eventId) {
   var players = eventId
-    ? gtRsvpPlayersFor(rosterId).filter(function(p){ var r = gtRsvp(eventId, p.id); return !(r && r.hidden); })
+    ? gtRsvpPlayersFor(rosterId, eventId).filter(function(p){ var r = gtRsvp(eventId, p.id); return !(r && r.hidden); })
     : gtRsvpRosterPlayers();
   var mineCount = gtMyRsvpPlayers().length;
   var selected = players.filter(function(p){ return gtIsMyRsvpPlayer(p.id); });
@@ -1955,6 +1958,9 @@ function gtRenderAvailability(view) {
 function gtSetRsvpFilter(f) { GT.rsvpFilter = f; gtRerender(true); }
 function gtRenderRsvp(view, gid) {
   var g = gtGame(gid), card = null, what = 'this game', rosterId = null;
+  if (g && (!GT.loaded.players || !GT.loaded.avail || !GT.loaded.rsvp || (g.season_id && !GT.loaded.seasons))) {
+    view.innerHTML = '<div class="gt-empty">Loading game availability…</div>'; return;
+  }
   if (g) { card = gtRsvpGameCard(g); rosterId = g.roster_id; }
   else { var day = gtCampDay(gid); if (day) { card = gtRsvpCampCard(day); what = 'this camp day'; rosterId = gtCampRosterId(); } }
   if (!card) { var tev = gtTeamEvent(gid); if (tev) { card = gtRsvpEventCard(tev); what = 'this team event (and how many are coming)'; rosterId = gtCampRosterId(); } }
@@ -1965,10 +1971,20 @@ function gtRenderRsvp(view, gid) {
     '<div style="margin-top:16px"><a class="gt-minibtn" href="#/gametracker/availability">← All upcoming</a></div>';
   view.innerHTML = html;
 }
+function gtRsvpResponses(gid) {
+  var g = gtGame(gid), allowed = null;
+  if (g) {
+    allowed = {};
+    gtRsvpPlayersFor(g.roster_id, gid).forEach(function(p){ allowed[p.id] = true; });
+  }
+  return gtGameRsvps(gid).filter(function(r){
+    return !r.hidden && (!allowed || allowed[r.player_id]) && ['in', 'out', 'maybe'].indexOf(r.status) >= 0;
+  });
+}
 function gtApplyRsvpsToGame(gid) {
   if (!gtCanEdit()) return;
   var g = gtGame(gid); if (!g) return;
-  var rsvps = gtGameRsvps(gid);
+  var rsvps = gtRsvpResponses(gid);
   if (!rsvps.length) { showToast('No RSVPs yet for this game.'); return; }
   var nOut = rsvps.filter(function(r){ return r.status === 'out'; }).length;
   if (!confirm('Apply ' + rsvps.length + ' RSVP response(s)? Players marked Out (' + nOut + ') will be set unavailable; In/Maybe set available. You can still adjust by hand.')) return;

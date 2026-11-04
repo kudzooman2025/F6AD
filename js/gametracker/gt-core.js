@@ -192,10 +192,43 @@ function gtDeleteChat(id) {
     .catch(function(e){ showToast('Error: ' + e.message); });
 }
 function gtCopyRsvpLink(gid) {
-  var url = window.location.origin + window.location.pathname + '#/gametracker/rsvp/' + gid;
+  var url = gtRsvpUrl(gid);
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url).then(function(){ showToast('RSVP link copied!'); }).catch(function(){ window.prompt('Copy this RSVP link:', url); });
   } else { window.prompt('Copy this RSVP link:', url); }
+}
+function gtRsvpUrl(gid) {
+  return window.location.origin + window.location.pathname + '#/gametracker/rsvp/' + gid;
+}
+function gtRsvpRequestText(g) {
+  return 'Please mark your player\'s availability for ' + gtOurName(g) + ' vs ' + gtTheirName(g) + '.\n' +
+    [gtFmtDate(g.played_at || g.created_at), g.kickoff_time ? gtFmtKickoff(g.kickoff_time) : '', g.venue || ''].filter(Boolean).join(' · ') +
+    '\nChoose your player, then select In, Maybe, or Out:\n' + gtRsvpUrl(g.id);
+}
+function gtRequestRsvps(gid) {
+  var g = gtGame(gid); if (!g || !gtRsvpOpen(g) || gtGameCanceled(g)) return;
+  var message = gtRsvpRequestText(g);
+  var copy = function() {
+    var fallback = function(){ window.prompt('Copy this availability request to send to families:', message); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(message).then(function(){ showToast('RSVP request copied — paste it into a text or email to families.'); }).catch(fallback);
+    }
+    fallback();
+  };
+  if (navigator.share) {
+    return navigator.share({ title: 'Game availability request', text: message }).catch(function(err){
+      if (!err || err.name !== 'AbortError') return copy();
+    });
+  }
+  return copy();
+}
+function gtRsvpActions(g) {
+  if (!gtRsvpOpen(g) || gtGameCanceled(g)) return '';
+  var arg = gtEsc(JSON.stringify(g.id));
+  return '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0" onclick="event.stopPropagation()">' +
+    '<a class="gt-minibtn" href="' + gtEsc('#/gametracker/rsvp/' + g.id) + '">📋 View availability</a>' +
+    '<button class="gt-minibtn" onclick="gtRequestRsvps(' + arg + ')">📨 Request RSVPs</button>' +
+    '<button class="gt-minibtn" onclick="gtCopyRsvpLink(' + arg + ')">🔗 Copy RSVP Link</button></div>';
 }
 function gtCopySeasonLink(sid) {
   var url = window.location.origin + window.location.pathname + '#/gametracker/seasons/' + sid;
@@ -678,7 +711,8 @@ function gtRsvp(gid, pid) { return GT.rsvp.find(function(r){ return r.game_id ==
 function gtRsvpStatus(gid, pid) { var r = gtRsvp(gid, pid); return r ? r.status : ''; }
 function gtRsvpTally(gid) {
   var t = { in: 0, out: 0, maybe: 0 };
-  gtGameRsvps(gid).forEach(function(r){ if (!r.hidden && t[r.status] !== undefined) t[r.status]++; });
+  var responses = typeof gtRsvpResponses === 'function' ? gtRsvpResponses(gid) : gtGameRsvps(gid);
+  responses.forEach(function(r){ if (!r.hidden && t[r.status] !== undefined) t[r.status]++; });
   return t;
 }
 // Team-event headcount: people coming per player (defaults to 1) summed over In.

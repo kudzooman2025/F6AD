@@ -18,6 +18,7 @@ function gtRenderReview(view, gameId) {
     (g.end_reason ? '<div class="gt-endreason-badge">⛔ Ended before full time — ' + gtEsc(g.end_reason) + (canEdit ? ' <a onclick="gtOpenEndReason(\'' + g.id + '\',true)" style="font-weight:700">edit</a>' : '') + '</div>' : (canEdit && g.status === 'complete' ? '<div style="margin-top:6px"><a class="gt-minibtn" style="padding:2px 10px;font-size:.72rem" onclick="gtOpenEndReason(\'' + g.id + '\',true)">⛔ Tag early end</a></div>' : '')) +
     '</div>';
   var _tUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
+  html += gtRsvpActions(g);
   if (_tUrl) html += '<a class="gt-tourn-link" href="' + gtAttr(_tUrl) + '" target="_blank" rel="noopener">🔗 Official tournament site →</a>';
   // stat strip
   var statEvents = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : events;
