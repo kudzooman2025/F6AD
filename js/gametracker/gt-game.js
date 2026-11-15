@@ -378,7 +378,7 @@ function gtRenderLive(view, gameId) {
   var players = availIds.map(function(pid){ return gtP(pid); }).filter(Boolean).sort(function(a, b) {
     return String(gtPlayerName(a.id) || '').localeCompare(String(gtPlayerName(b.id) || ''), undefined, { sensitivity: 'base' });
   });
-  html += gtStartingXiHtml(g.id);
+  html += gtStartingXiHtml(g.id, g.status !== 'setup');
   html += gtUndoNoticesHtml(g.id);
   var gtOnCount = Object.keys(onField).filter(function(k){ return onField[k] === true; }).length;
   var gtPps = g.players_per_side || 11;

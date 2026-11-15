@@ -726,6 +726,8 @@ nav a.nav-active:hover{color:#fff!important;background:var(--brand)!important;fi
 .gt-xi-label{font-weight:800;text-transform:uppercase;font-size:.72rem;letter-spacing:1px;color:var(--brand);margin-right:6px}
 .gt-xi-item{display:inline-block;margin:0 10px 4px 0;white-space:nowrap}
 .gt-xi-pos{font-weight:800;color:var(--brand);font-size:.74rem}
+details.gt-xi summary{cursor:pointer}
+details.gt-xi:not([open]){padding:4px 12px}
 
 .gt-addlist{display:flex;flex-wrap:wrap;margin:4px 0 6px}
 .gt-onfield{display:inline-block;font-size:.72rem;font-weight:800;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:2px}

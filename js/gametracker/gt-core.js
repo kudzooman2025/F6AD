@@ -617,17 +617,20 @@ function gtStarters(gid) {
       return (xp && xp.jersey_number != null ? xp.jersey_number : 999) - (yp && yp.jersey_number != null ? yp.jersey_number : 999);
     });
 }
-function gtStartingXiHtml(gid) {
+function gtStartingXiHtml(gid, collapsible) {
   var starters = gtStarters(gid);
   var canEd = (typeof gtCanEdit === 'function') && gtCanEdit();
   if (!starters.length && !canEd) return '';
   var editBtn = canEd ? ' <button class="gt-minibtn" style="padding:2px 10px;font-size:.7rem" onclick="gtOpenLineupEditor(\'' + gid + '\')">✏️ Edit starters</button>' : '';
   if (!starters.length) return '<div class="gt-xi"><span class="gt-xi-label">⭐ Starting XI</span> <span style="font-size:.8rem;color:var(--muted)">none set</span>' + editBtn + '</div>';
-  return '<div class="gt-xi"><span class="gt-xi-label">⭐ Starting XI (' + starters.length + ')</span> ' +
-    starters.map(function(s) {
+  var label = '<span class="gt-xi-label">⭐ Starting XI (' + starters.length + ')</span> ';
+  var items = starters.map(function(s) {
       var p = gtP(s.pid);
       return '<span class="gt-xi-item">' + (p && p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(s.pid)) + (s.pos ? ' <span class="gt-xi-pos">' + gtEsc(s.pos) + '</span>' : '') + '</span>';
-    }).join('') + editBtn + '</div>';
+    }).join('') + editBtn;
+  // Once a game is under way the list folds to one line; GT.xiOpen keeps it open across re-renders.
+  if (collapsible) return '<details class="gt-xi"' + (GT.xiOpen === gid ? ' open' : '') + ' ontoggle="GT.xiOpen=this.open?\'' + gid + '\':null"><summary>' + label + '</summary>' + items + '</details>';
+  return '<div class="gt-xi">' + label + items + '</div>';
 }
 function gtStatLine(pid, events) {
   var st = { goal: 0, assist: 0, shot_on_target: 0, shot: 0, highlight: 0, yellow_card: 0, red_card: 0, save: 0, tackle: 0, pass: 0, pass_comp: 0, own_goal: 0 };
