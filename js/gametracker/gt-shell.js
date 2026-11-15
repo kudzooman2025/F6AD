@@ -202,7 +202,9 @@ function gtOpenModal(html) {
 function gtCloseModal() {
   var sug = document.getElementById('gt-pf-sug');
   if (sug && sug.parentNode === document.body) document.body.removeChild(sug);
-  document.getElementById('gt-modal-overlay').classList.remove('open');
+  document.getElementById('gt-modal-overlay').classList.remove('open', 'gt-ms-open');
+  document.getElementById('gt-modal').classList.remove('gt-ms-full');
+  GT.massSel = null;
   document.getElementById('gt-modal').innerHTML = '';
   GT.pendingEvent = null;
 }

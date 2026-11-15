@@ -384,6 +384,7 @@ function gtRenderLive(view, gameId) {
   var gtPps = g.players_per_side || 11;
   var gtTallyCls = gtOnCount === gtPps ? 'ok' : (gtOnCount > gtPps ? 'over' : 'under');
   var gtOnFieldTally = '<span class="gt-onfield ' + gtTallyCls + '">' + gtOnCount + '/' + gtPps + ' ' + (g.status === 'setup' ? 'starters' : 'on field') + '</span>';
+  if (canEdit && ['in_progress', 'paused', 'between_periods'].indexOf(g.status) >= 0 && !inPK) html += '<button type="button" class="gt-ms-open-btn" onclick="gtOpenMassSub(\'' + g.id + '\')">🔄 Mass Subs</button>';
   html += '<div class="section-title" style="margin-bottom:12px">👕 Players ' + gtOnFieldTally + (canEdit ? ' <span style="font-size:.78rem;color:var(--muted);font-weight:600;text-transform:none">' + (g.status === 'setup' ? 'tap to set starters · hold for options' : 'tap a player, then their replacement · hold for stats') + '</span>' : '') + '</div>';
   if (canEdit && g.status !== 'setup' && !inPK) html += gtSwapBarHtml(g);
   var _setup = g.status === 'setup';
@@ -451,7 +452,6 @@ function gtRenderLive(view, gameId) {
   if (canEdit && g.status !== 'setup' && !inPK) {
     html += '<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap">' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenAddPlayer(\'' + g.id + '\')">➕ Add Player</button>' +
-      '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtOpenMassSub(\'' + g.id + '\')">🔄 Mass Sub</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOwnGoalForUs(\'' + g.id + '\')">🥅 Own Goal (our favor)</button>' +
       '<button class="gt-minibtn" style="padding:9px 16px" onclick="gtLogOpponentCard(\'' + g.id + '\')">🟨 Opponent Card</button></div>';
   }
@@ -1093,64 +1093,66 @@ function gtOpenMassSub(gid) {
   var g = gtGame(gid); if (!g) return;
   if (['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0 || gtIsPK(g)) return;
   if (gtSwapPending(gid)) { showToast('Wait for the lineup to update.'); return; }
-  var onField = gtOnField(gid);
-  var clock = gtClockSeconds(g), period = g.current_period || 1;
-  var players = gtAvailIds(gid).map(function(id){ return gtP(id); }).filter(Boolean).sort(function(a, b){ return (a.jersey_number == null ? 999 : a.jersey_number) - (b.jersey_number == null ? 999 : b.jersey_number); });
-  var onList = players.filter(function(p){ return onField[p.id] !== false; });
-  var bench = players.filter(function(p){ return onField[p.id] === false && !gtPlayerRedInfo(gid, p.id); });
-  var offHtml = onList.length ? onList.map(function(p){
-    return '<div class="gt-avail-row"><label class="gt-avail-name" style="cursor:pointer"><input type="checkbox" class="gt-ms-off" value="' + p.id + '" style="margin-right:8px"/>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(p.id)) + ' <span style="color:var(--muted);font-size:.75rem">' + gtEsc(gtLastPosition(gid, p.id)) + '</span></label></div>';
-  }).join('') : '<div class="gt-empty">No players on the field.</div>';
-  var onHtml = bench.length ? bench.map(function(p){
-    var def = p.default_position || gtLastPosition(gid, p.id) || '';
-    return '<div class="gt-avail-row"><label class="gt-avail-name" style="cursor:pointer"><input type="checkbox" class="gt-ms-on" value="' + p.id + '" style="margin-right:8px"/>' + (p.jersey_number != null ? '#' + p.jersey_number + ' ' : '') + gtEsc(gtPlayerShort(p.id)) + '</label><select class="gt-ms-pos" data-pid="' + p.id + '">' + gtPositionOptions(def) + '</select></div>';
-  }).join('') : '<div class="gt-empty">No bench players.</div>';
-  gtOpenModal(
-    '<h3><span>🔄 Mass Substitution</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<div class="gm-clock">🕐 ' + gtEsc(gtPeriodLabel(g, period, 'in_progress')) + ' · ' + gtFmtMMSS(clock) + '</div>' +
-    '<p style="font-size:.9rem;margin:6px 0">Choose players coming OFF and ON. To fill empty spots, select extra players coming ON. Positions are optional.</p>' +
-    '<div id="gt-ms-count" role="status" aria-live="polite" style="font-weight:800;margin:12px 0"></div>' +
-    '<label style="font-weight:800;font-size:.8rem;display:block;margin-top:6px">⬇ Coming OFF</label>' + offHtml +
-    '<label style="font-weight:800;font-size:.8rem;display:block;margin-top:12px">⬆ Coming ON</label>' + onHtml +
-    '<div class="gm-actions"><button class="btn-primary" onclick="gtSaveMassSub(\'' + gid + '\',' + clock + ',' + period + ')">🔄 Apply Subs</button><button class="gt-minibtn" onclick="gtCloseModal()">Cancel</button></div>'
-  );
-  Array.prototype.forEach.call(document.querySelectorAll('.gt-ms-off, .gt-ms-on'), function(el){ el.onchange = function(){ gtMassSubCount(gid); }; });
-  gtMassSubCount(gid);
+  GT.massSel = { gid: gid, period: g.current_period || 1, on: [], off: [] };
+  gtOpenModal('<div id="gt-ms-body"></div>');
+  document.getElementById('gt-modal-overlay').classList.add('gt-ms-open');
+  document.getElementById('gt-modal').classList.add('gt-ms-full');
+  gtMassSubRender();
 }
-function gtMassSubCount(gid) {
-  var g = gtGame(gid), el = document.getElementById('gt-ms-count'); if (!g || !el) return;
-  var on = gtOnField(gid);
-  var count = Object.keys(on).filter(function(pid){ return on[pid] === true; }).length;
-  var next = count - document.querySelectorAll('.gt-ms-off:checked').length + document.querySelectorAll('.gt-ms-on:checked').length;
-  var limit = g.players_per_side || 11;
-  el.textContent = 'After changes: ' + next + '/' + limit + ' on field' + (next < limit ? ' — ' + (limit - next) + ' empty spots' : next > limit ? ' — too many players' : ' — full lineup');
-}
-function gtSaveMassSub(gid, clock, period) {
-  if (!gtCanEdit()) return;
-  var g = gtGame(gid); if (!g || ['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0 || gtIsPK(g) || gtSwapPending(gid)) return;
-  if ((g.current_period || 1) !== period) { showToast('The period changed. Reopen Mass Sub.'); return; }
-  var offs = Array.prototype.slice.call(document.querySelectorAll('.gt-ms-off:checked')).map(function(c){ return c.value; });
-  var ons = Array.prototype.slice.call(document.querySelectorAll('.gt-ms-on:checked')).map(function(c){ return c.value; });
-  if (!offs.length && !ons.length) { showToast('Select players coming off or on.'); return; }
-  var on = gtOnField(gid), available = gtAvailIds(gid);
-  var ids = offs.concat(ons);
-  if (new Set(ids).size !== ids.length || offs.some(function(pid){ return available.indexOf(pid) < 0 || on[pid] !== true; }) || ons.some(function(pid){ return available.indexOf(pid) < 0 || on[pid] !== false || gtPlayerRedInfo(gid, pid); })) {
-    showToast('The lineup changed. Reopen Mass Sub and select players again.'); return;
+function gtMassSubRender() {
+  var s = GT.massSel, el = document.getElementById('gt-ms-body'); if (!s || !el) return;
+  var g = gtGame(s.gid); if (!g) return;
+  var onField = gtOnField(s.gid);
+  var players = gtAvailIds(s.gid).map(function(id){ return gtP(id); }).filter(Boolean).sort(function(a, b){ return gtPlayerShort(a.id).localeCompare(gtPlayerShort(b.id)); });
+  var field = players.filter(function(p){ return onField[p.id] !== false; });
+  var bench = players.filter(function(p){ return onField[p.id] === false && !gtPlayerRedInfo(s.gid, p.id); });
+  function btn(p, side) {
+    var list = side === 'off' ? s.off : s.on, k = list.indexOf(p.id);
+    return '<button type="button" class="gt-ms-btn' + (k >= 0 ? ' sel-' + side : '') + '" aria-pressed="' + (k >= 0) + '" onclick="gtMassSubTap(\'' + side + '\',\'' + p.id + '\')">' + gtEsc(gtPlayerShort(p.id)) + (k >= 0 ? '<span class="gt-ms-badge">' + (k + 1) + '</span>' : '') + '</button>';
   }
-  var next = Object.keys(on).filter(function(pid){ return on[pid] === true; }).length - offs.length + ons.length;
-  if (next > (g.players_per_side || 11)) { showToast('That would put ' + next + ' players on the field. Select fewer players coming on.'); return; }
-  var posByPid = {};
-  Array.prototype.slice.call(document.querySelectorAll('.gt-ms-pos')).forEach(function(sel){ posByPid[sel.getAttribute('data-pid')] = sel.value; });
+  var n = s.on.length, match = n > 0 && n === s.off.length, status;
+  if (!n && !s.off.length) status = 'Tap bench players coming on, then the same number of field players coming off.';
+  else if (match) status = s.on.map(function(pid, i){ return gtEsc(gtPlayerShort(pid)) + ' for ' + gtEsc(gtPlayerShort(s.off[i])); }).join(' · ');
+  else if (n > s.off.length) status = n + ' coming on. Now tap ' + (n - s.off.length) + ' more field player' + (n - s.off.length === 1 ? '' : 's') + ' coming off.';
+  else status = s.off.length + ' coming off. Tap ' + (s.off.length - n) + ' more bench player' + (s.off.length - n === 1 ? '' : 's') + ' coming on.';
+  el.innerHTML =
+    '<h3><span>🔄 Mass Subs · ' + gtEsc(gtPeriodLabel(g, s.period, 'in_progress')) + ' · ' + gtFmtMMSS(gtClockSeconds(g)) + '</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<div class="gt-ms-half"><div class="gt-ms-label off">⬇ On the field (' + field.length + ') · tap who\'s coming off</div><div class="gt-ms-grid">' + (field.length ? field.map(function(p){ return btn(p, 'off'); }).join('') : '<div class="gt-empty">No players on the field.</div>') + '</div></div>' +
+    '<div class="gt-ms-half bench"><div class="gt-ms-label on">⬆ Bench (' + bench.length + ') · tap who\'s coming on</div><div class="gt-ms-grid">' + (bench.length ? bench.map(function(p){ return btn(p, 'on'); }).join('') : '<div class="gt-empty">No bench players.</div>') + '</div></div>' +
+    '<div class="gt-ms-status' + (match ? ' ok' : '') + '" role="status" aria-live="polite">' + status + '</div>' +
+    '<button class="btn-primary gt-ms-submit" onclick="gtSaveMassSub()">✅ Submit ' + (match ? n : 0) + ' sub' + (match && n === 1 ? '' : 's') + '</button>';
+}
+function gtMassSubTap(side, pid) {
+  var s = GT.massSel; if (!s) return;
+  var list = side === 'off' ? s.off : s.on, k = list.indexOf(pid);
+  if (k >= 0) list.splice(k, 1); else list.push(pid);
+  gtMassSubRender();
+}
+function gtSaveMassSub() {
+  if (!gtCanEdit()) return;
+  var s = GT.massSel; if (!s) return;
+  var gid = s.gid, g = gtGame(gid);
+  if (!g || ['in_progress', 'paused', 'between_periods'].indexOf(g.status) < 0 || gtIsPK(g) || gtSwapPending(gid)) return;
+  if ((g.current_period || 1) !== s.period) { showToast('The period changed. Reopen Mass Subs.'); return; }
+  var offs = s.off.slice(), ons = s.on.slice();
+  if (!ons.length || ons.length !== offs.length) { showToast('Select the same number of players coming on and coming off.'); return; }
+  var on = gtOnField(gid), available = gtAvailIds(gid);
+  if (offs.some(function(pid){ return available.indexOf(pid) < 0 || on[pid] === false; }) || ons.some(function(pid){ return available.indexOf(pid) < 0 || on[pid] !== false || gtPlayerRedInfo(gid, pid); })) {
+    showToast('The lineup changed. Reopen Mass Subs and select players again.'); return;
+  }
+  // One clock reading for every sub so they all share the same timestamp.
+  var clock = gtClockSeconds(g);
   var ts = firebase.firestore.FieldValue.serverTimestamp();
   var batch = db.batch();
   var pending = { gid: gid, ids: [] };
-  for (var i = 0; i < Math.max(ons.length, offs.length); i++) {
+  for (var i = 0; i < ons.length; i++) {
     var ref = tdb('gt_subs').doc();
     pending.ids.push(ref.id);
-    batch.set(ref, { game_id: gid, player_out_id: offs[i] || null, player_in_id: ons[i] || null, position: posByPid[ons[i]] || '', game_clock_seconds: gtClockSeconds(g), period: period, created_at: ts });
+    batch.set(ref, { game_id: gid, player_out_id: offs[i], player_in_id: ons[i], position: '', game_clock_seconds: clock, period: s.period, created_at: ts });
   }
   GT.massSubPending = pending; GT.swapSelection = null; GT.lastSwap = null;
   batch.commit().then(function(){ if (GT.massSubPending === pending) GT.massSubPending = null; gtRerender(); }).catch(function(e){ if (GT.massSubPending === pending) GT.massSubPending = null; showToast('Substitutions failed: ' + e.message); gtRerender(); });
+  showToast('🔄 ' + ons.length + ' sub' + (ons.length === 1 ? '' : 's') + ' made at ' + gtFmtMMSS(clock));
   gtCloseModal(); gtRerender();
 }
 function gtOpenSubEditor(sid) {
