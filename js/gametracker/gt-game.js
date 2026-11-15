@@ -489,6 +489,7 @@ function gtRenderLive(view, gameId) {
       if (cur && el) el.innerHTML = gtFmtDisplayClock(cur);
       if (cur && pl) pl.textContent = gtPeriodLabel(cur);
       if (cur && el) gtUpdatePlayerMinutes(view, gameId);
+      gtMassSubTick();
     }, 500);
   }
 }
@@ -1102,25 +1103,34 @@ function gtOpenMassSub(gid) {
 function gtMassSubRender() {
   var s = GT.massSel, el = document.getElementById('gt-ms-body'); if (!s || !el) return;
   var g = gtGame(s.gid); if (!g) return;
-  var onField = gtOnField(s.gid);
+  var onField = gtOnField(s.gid), mins = gtMinutesMap(s.gid);
   var players = gtAvailIds(s.gid).map(function(id){ return gtP(id); }).filter(Boolean).sort(function(a, b){ return gtPlayerShort(a.id).localeCompare(gtPlayerShort(b.id)); });
   var field = players.filter(function(p){ return onField[p.id] !== false; });
   var bench = players.filter(function(p){ return onField[p.id] === false && !gtPlayerRedInfo(s.gid, p.id); });
   function btn(p, side) {
     var list = side === 'off' ? s.off : s.on, k = list.indexOf(p.id);
-    return '<button type="button" class="gt-ms-btn' + (k >= 0 ? ' sel-' + side : '') + '" aria-pressed="' + (k >= 0) + '" onclick="gtMassSubTap(\'' + side + '\',\'' + p.id + '\')">' + gtEsc(gtPlayerShort(p.id)) + (k >= 0 ? '<span class="gt-ms-badge">' + (k + 1) + '</span>' : '') + '</button>';
+    return '<button type="button" class="gt-ms-btn' + (k >= 0 ? ' sel-' + side : '') + '" aria-pressed="' + (k >= 0) + '" onclick="gtMassSubTap(\'' + side + '\',\'' + p.id + '\')">' + gtEsc(gtPlayerShort(p.id)) + '<span class="gt-ms-min" data-gt-ms-min="' + gtEsc(p.id) + '">' + gtFmtMMSS(mins[p.id] || 0) + '</span>' + (k >= 0 ? '<span class="gt-ms-badge">' + (k + 1) + '</span>' : '') + '</button>';
   }
   var n = s.on.length, match = n > 0 && n === s.off.length, status;
-  if (!n && !s.off.length) status = 'Tap bench players coming on, then the same number of field players coming off.';
+  if (!n && !s.off.length) status = 'Tap who\'s coming on, then who\'s coming off.';
   else if (match) status = s.on.map(function(pid, i){ return gtEsc(gtPlayerShort(pid)) + ' for ' + gtEsc(gtPlayerShort(s.off[i])); }).join(' · ');
-  else if (n > s.off.length) status = n + ' coming on. Now tap ' + (n - s.off.length) + ' more field player' + (n - s.off.length === 1 ? '' : 's') + ' coming off.';
-  else status = s.off.length + ' coming off. Tap ' + (s.off.length - n) + ' more bench player' + (s.off.length - n === 1 ? '' : 's') + ' coming on.';
+  else if (n > s.off.length) status = n + ' coming on · tap ' + (n - s.off.length) + ' more coming off';
+  else status = s.off.length + ' coming off · tap ' + (s.off.length - n) + ' more coming on';
   el.innerHTML =
-    '<h3><span>🔄 Mass Subs · ' + gtEsc(gtPeriodLabel(g, s.period, 'in_progress')) + ' · ' + gtFmtMMSS(gtClockSeconds(g)) + '</span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
-    '<div class="gt-ms-half"><div class="gt-ms-label off">⬇ On the field (' + field.length + ') · tap who\'s coming off</div><div class="gt-ms-grid">' + (field.length ? field.map(function(p){ return btn(p, 'off'); }).join('') : '<div class="gt-empty">No players on the field.</div>') + '</div></div>' +
-    '<div class="gt-ms-half bench"><div class="gt-ms-label on">⬆ Bench (' + bench.length + ') · tap who\'s coming on</div><div class="gt-ms-grid">' + (bench.length ? bench.map(function(p){ return btn(p, 'on'); }).join('') : '<div class="gt-empty">No bench players.</div>') + '</div></div>' +
+    '<h3><span>🔄 Mass Subs · ' + gtEsc(gtPeriodLabel(g, s.period, 'in_progress')) + ' · <span id="gt-ms-clock">' + gtFmtMMSS(gtClockSeconds(g)) + '</span></span><button class="gm-close" onclick="gtCloseModal()">✕</button></h3>' +
+    '<div class="gt-ms-scroll"><div class="gt-ms-half"><div class="gt-ms-label off">⬇ On the field (' + field.length + ') · tap who\'s coming off</div><div class="gt-ms-grid">' + (field.length ? field.map(function(p){ return btn(p, 'off'); }).join('') : '<div class="gt-empty">No players on the field.</div>') + '</div></div>' +
+    '<div class="gt-ms-half bench"><div class="gt-ms-label on">⬆ Bench (' + bench.length + ') · tap who\'s coming on</div><div class="gt-ms-grid">' + (bench.length ? bench.map(function(p){ return btn(p, 'on'); }).join('') : '<div class="gt-empty">No bench players.</div>') + '</div></div></div>' +
     '<div class="gt-ms-status' + (match ? ' ok' : '') + '" role="status" aria-live="polite">' + status + '</div>' +
     '<button class="btn-primary gt-ms-submit" onclick="gtSaveMassSub()">✅ Submit ' + (match ? n : 0) + ' sub' + (match && n === 1 ? '' : 's') + '</button>';
+}
+function gtMassSubTick() {
+  // Update only the clock and time labels so a tap in progress is not interrupted.
+  var s = GT.massSel, g = s && gtGame(s.gid), clk = document.getElementById('gt-ms-clock'); if (!g || !clk) return;
+  clk.textContent = gtFmtMMSS(gtClockSeconds(g));
+  var mins = gtMinutesMap(s.gid);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-gt-ms-min]'), function(el) {
+    el.textContent = gtFmtMMSS(mins[el.getAttribute('data-gt-ms-min')] || 0);
+  });
 }
 function gtMassSubTap(side, pid) {
   var s = GT.massSel; if (!s) return;
