@@ -408,10 +408,10 @@ test('nine-player halftime lineup can reach eleven with standalone additions and
 
 function massContext() {
   const ctx = shortElevenContext(), { c, fixture } = ctx;
-  const selection = { offs: [], ons: [] }, count = { textContent: '' };
-  c.document.querySelectorAll = selector => selector === '.gt-ms-off:checked' ? selection.offs.map(value => ({ value })) : selector === '.gt-ms-on:checked' ? selection.ons.map(value => ({ value })) : [];
-  c.document.getElementById = id => id === 'gt-ms-count' ? count : null;
-  c.gtCloseModal = () => {};
+  const body = { innerHTML: '' }, classes = { add: () => {} };
+  c.document.getElementById = id => id === 'gt-ms-body' ? body : ['gt-modal-overlay', 'gt-modal'].includes(id) ? { classList: classes } : null;
+  c.gtOpenModal = () => {};
+  c.gtCloseModal = () => { c.GT.massSel = null; };
   c.db = { batch: () => {
     const records = [];
     return { set: (ref, data) => records.push({ id: ref.id, ...data }), commit: () => {
@@ -420,42 +420,60 @@ function massContext() {
       return Promise.resolve();
     } };
   } };
-  return { ...ctx, selection, count };
+  c.gtOpenMassSub('demo');
+  return { ...ctx, selection: c.GT.massSel, body };
 }
 
-test('Mass Sub fills nine to eleven without outgoing players or required positions', () => {
-  const { c, fixture, selection, count } = massContext();
-  selection.ons = ['chris', 'max'];
-  c.gtMassSubCount('demo');
-  assert.match(count.textContent, /11\/11.*full lineup/);
-  c.gtSaveMassSub('demo', 0, 2);
+test('Mass Subs pairs taps in selection order without duplicate choices or required positions', () => {
+  const { c, fixture, selection, body } = massContext();
+  c.gtMassSubTap('on', 'chris');
+  c.gtMassSubTap('on', 'chris');
+  assert.deepEqual(plain(selection.on), []);
+  c.gtMassSubTap('on', 'max'); c.gtMassSubTap('on', 'chris');
+  c.gtMassSubTap('off', 'sam'); c.gtMassSubTap('off', 'alex');
+  assert.match(body.innerHTML, /Max for Samuel.*Christopher for Alexander/);
+  assert.match(body.innerHTML, /Submit 2 subs/);
+  assert.equal((body.innerHTML.match(/aria-pressed="true"/g) || []).length, 4);
+  c.gtSaveMassSub();
   assert.equal(fixture.writes.length, 1);
   assert.equal(c.GT.subs.length, 2);
-  assert.ok(c.GT.subs.every(s => s.player_out_id === null && s.position === ''));
-  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 11);
+  assert.deepEqual(plain(c.GT.subs.map(s => [s.player_in_id, s.player_out_id])), [['max', 'sam'], ['chris', 'alex']]);
+  assert.ok(c.GT.subs.every(s => s.position === ''));
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 9);
   assert.equal(fixture.game.status, 'between_periods');
+  assert.equal(c.GT.massSel, null);
 });
 
-test('Mass Sub allows unequal swaps to fill vacancies in one atomic batch', () => {
+test('Mass Subs writes each paired substitution in one atomic batch with a shared clock', () => {
   const { c, fixture, selection } = massContext();
-  selection.offs = ['alex']; selection.ons = ['chris', 'max', 'leo'];
-  c.gtSaveMassSub('demo', 0, 2);
+  fixture.game.status = 'in_progress';
+  let ticks = 125;
+  c.gtClockSeconds = () => ticks++;
+  selection.off = ['alex', 'sam', 'jordan']; selection.on = ['chris', 'max', 'leo'];
+  c.gtSaveMassSub();
   assert.equal(fixture.writes.length, 1);
-  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 11);
+  assert.equal(fixture.writes[0].length, 3);
+  assert.ok(c.GT.subs.every(s => s.game_clock_seconds === 125 && s.period === 2 && s.created_at === 1));
+  assert.equal(ticks, 126);
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 9);
   assert.equal(c.gtOnField('demo').alex, false);
 });
 
-test('Mass Sub rejects stale selections, duplicates, excess players and sent-off players', () => {
-  for (const scenario of ['stale', 'duplicate', 'excess', 'red', 'period', 'spectator']) {
+test('Mass Subs rejects stale, unavailable, unpaired and sent-off choices or a changed period', () => {
+  for (const scenario of ['empty', 'stale-off', 'stale-on', 'unavailable', 'unpaired', 'red', 'period', 'spectator', 'shootout', 'complete']) {
     const { c, fixture, selection } = massContext();
-    selection.ons = ['chris'];
-    if (scenario === 'stale') selection.offs = ['max'];
-    if (scenario === 'duplicate') selection.ons = ['chris', 'chris'];
-    if (scenario === 'excess') selection.ons = ['chris', 'max', 'leo'];
+    selection.on = ['chris']; selection.off = ['alex'];
+    if (scenario === 'empty') { selection.on = []; selection.off = []; }
+    if (scenario === 'stale-off') selection.off = ['max'];
+    if (scenario === 'stale-on') selection.on = ['sam'];
+    if (scenario === 'unavailable') selection.on = ['unknown'];
+    if (scenario === 'unpaired') selection.on = ['chris', 'max'];
     if (scenario === 'red') c.gtPlayerRedInfo = (_, pid) => pid === 'chris' ? { t: 0 } : null;
     if (scenario === 'period') fixture.game.current_period = 3;
     if (scenario === 'spectator') c.gtCanEdit = () => false;
-    c.gtSaveMassSub('demo', 0, 2);
+    if (scenario === 'shootout') c.gtIsPK = () => true;
+    if (scenario === 'complete') fixture.game.status = 'complete';
+    c.gtSaveMassSub();
     assert.equal(fixture.writes.length, 0, scenario);
   }
 });
@@ -464,22 +482,25 @@ test('pending Mass Sub blocks duplicate saves and quick additions until local li
   const { c, fixture, selection } = massContext();
   const queued = [];
   c.db = { batch: () => ({ set: (ref, data) => queued.push({ id: ref.id, ...data }), commit: () => new Promise(() => {}) }) };
-  selection.ons = ['chris', 'max'];
-  c.gtSaveMassSub('demo', 0, 2);
-  c.gtSaveMassSub('demo', 0, 2);
+  selection.on = ['chris', 'max']; selection.off = ['alex', 'sam'];
+  c.gtSaveMassSub();
+  c.GT.massSel = selection;
+  c.gtSaveMassSub();
   c.gtTapSwap('demo', 'leo', true);
   assert.equal(queued.length, 2);
   assert.equal(fixture.writes.length, 0);
   c.GT.subs.push(...queued);
   assert.equal(c.gtSwapPending('demo'), false);
-  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 11);
+  assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 9);
+  assert.equal(c.gtOnField('demo').chris, true);
+  assert.equal(c.gtOnField('demo').alex, false);
 });
 
 test('failed Mass Sub clears pending state and preserves the existing lineup', async () => {
   const { c, fixture, selection } = massContext();
   c.db = { batch: () => ({ set: () => {}, commit: () => Promise.reject(new Error('Test failure')) }) };
-  selection.ons = ['chris', 'max'];
-  c.gtSaveMassSub('demo', 0, 2);
+  selection.on = ['chris', 'max']; selection.off = ['alex', 'sam'];
+  c.gtSaveMassSub();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(c.gtSwapPending('demo'), false);
   assert.equal(Object.values(c.gtOnField('demo')).filter(Boolean).length, 9);

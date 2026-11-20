@@ -19,6 +19,9 @@ function gtRenderReview(view, gameId) {
     '</div>';
   var _tUrl = (typeof gtTournUrlFor === 'function') ? gtTournUrlFor(g) : '';
   html += gtRsvpActions(g);
+  html += '<div class="gt-card"><button class="btn-primary" onclick="gtExportGameExcel(\'' + g.id + '\',this)">📊 Download Full Report (Excel)</button>' +
+    '<div style="font-size:.8rem;color:var(--muted);margin-top:8px">Starting XI, player stats, timestamped highlights, the full timeline and substitutions in one Excel file.' +
+    (g.status !== 'complete' ? ' This game is not complete; the report includes what has been recorded so far.' : '') + '</div></div>';
   if (_tUrl) html += '<a class="gt-tourn-link" href="' + gtAttr(_tUrl) + '" target="_blank" rel="noopener">🔗 Official tournament site →</a>';
   // stat strip
   var statEvents = (typeof gtGameEventsForStats === 'function') ? gtGameEventsForStats(g.id) : events;
