@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameTracker modal scroll check</title>
+<link rel="stylesheet" href="../styles.css?scroll-check=1">
+<body>
+<main style="padding:20px;min-height:2600px">
+  <h1>GameTracker modal scroll check</h1>
+  <p>Synthetic game only. No database connection or writes.</p>
+  <div style="position:fixed;top:90px;left:12px;z-index:900;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn-primary" onclick="gtOpenEventPopup('scroll-test','p1')">Open Alex stats</button>
+    <button class="gt-minibtn" onclick="gtOpenEventPopup('scroll-test','p2')">Open Blair stats</button>
+    <button class="gt-minibtn" onclick="gtOpenMassSub('scroll-test')">Mass Subs</button>
+  </div>
+  <p style="margin-top:1100px">Background scroll marker</p>
+</main>
+<div id="gt-modal-overlay" class="gt-modal-overlay" onclick="if(event.target===this)gtCloseModal()"><div id="gt-modal" class="gt-modal"></div></div>
+<script src="../js/gametracker/gt-core.js"></script>
+<script src="../js/gametracker/gt-shell.js?scroll-check=1"></script>
+<script src="../js/gametracker/gt-game.js"></script>
+<script>
+  function gtCanEdit() { return true; }
+  function showToast(message) { document.title = message; }
+  GT.games = [{ id: 'scroll-test', status: 'paused', current_period: 1, num_periods: 2, period_duration_minutes: 40, clock_elapsed_seconds: 1250, players_per_side: 11 }];
+  for (var i = 1; i <= 24; i++) {
+    GT.players.push({ id: 'p' + i, first_name: i === 1 ? 'Alex' : i === 2 ? 'Blair' : 'Player', last_name: 'Example ' + i, jersey_number: i });
+    GT.avail.push({ game_id: 'scroll-test', player_id: 'p' + i, available: true, started: i <= 11, start_position: i === 1 ? 'GK' : 'CMID' });
+  }
+</script>
+</body>
+</html>

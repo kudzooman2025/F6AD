@@ -99,6 +99,7 @@ function siteRender() {
   }
 }
 function gtRoute() {
+  if (gtModalPage) gtCloseModal();
   var h = window.location.hash || '';
   var isGT = h.indexOf('#/gametracker') === 0;
   var hero = document.querySelector('.hero');
@@ -195,9 +196,26 @@ function gtCoachLogin() {
 }
 
 // ---------- modal ----------
+var gtModalPage = null;
 function gtOpenModal(html) {
-  document.getElementById('gt-modal').innerHTML = html;
-  document.getElementById('gt-modal-overlay').classList.add('open');
+  var overlay = document.getElementById('gt-modal-overlay'), modal = document.getElementById('gt-modal');
+  // Freeze the page at its current position, including on touch browsers where
+  // overflow:hidden alone can still let the background move under a dialog.
+  if (!gtModalPage) {
+    var body = document.body, gap = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+    gtModalPage = { x: window.scrollX, y: window.scrollY, top: body.style.top, left: body.style.left, paddingRight: body.style.paddingRight };
+    var padding = parseFloat(window.getComputedStyle(body).paddingRight) || 0;
+    body.style.top = -gtModalPage.y + 'px';
+    body.style.left = -gtModalPage.x + 'px';
+    if (gap) body.style.paddingRight = (padding + gap) + 'px';
+    body.classList.add('gt-modal-open');
+  }
+  overlay.classList.remove('gt-ms-open');
+  modal.classList.remove('gt-ms-full');
+  modal.innerHTML = html;
+  overlay.classList.add('open');
+  overlay.scrollTop = 0;
+  modal.scrollTop = 0;
 }
 function gtCloseModal() {
   var sug = document.getElementById('gt-pf-sug');
@@ -207,6 +225,13 @@ function gtCloseModal() {
   GT.massSel = null;
   document.getElementById('gt-modal').innerHTML = '';
   GT.pendingEvent = null;
+  if (gtModalPage) {
+    var page = gtModalPage, body = document.body;
+    gtModalPage = null;
+    body.classList.remove('gt-modal-open');
+    body.style.top = page.top; body.style.left = page.left; body.style.paddingRight = page.paddingRight;
+    window.scrollTo(page.x, page.y);
+  }
 }
 
 // ---------- status pill ----------
